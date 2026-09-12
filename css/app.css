@@ -228,7 +228,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   font-size: 0.95rem;
   line-height: 1;
   flex: 0 0 auto;
-  align-self: center;
+  align-self: end;
 }
 .locact svg {
   width: 22px;
@@ -311,14 +311,21 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   cursor: pointer;
 }
 .locrow.remaining {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "main main main"
+    "nav . done";
+  align-items: end;
+  column-gap: 8px;
+  row-gap: 8px;
 }
 .locrow-main {
-  flex: 1;
+  grid-area: main;
   min-width: 0;
 }
+.locrow.remaining .locact-nav { grid-area: nav; }
+.locrow.remaining .locact-done { grid-area: done; }
 .locrow strong { display: block; }
 .locrow.selected { border: 2px solid var(--blue); background: #eef4ff; }
 .locrow.completed { background: #e8f5e9; border-color: #b7dfc1; cursor: default; }
@@ -520,8 +527,15 @@ footer button { margin: 0; padding: 10px; font-size: 0.875rem; }
   font-size: 0.6875rem;
   color: var(--muted);
 }
-.versionbar .vrow strong { color: var(--txt); }
-.versionbar .vrow-refresh { flex-wrap: nowrap; }
+.versionbar .vrow strong {
+  color: var(--txt);
+  font-weight: 800;
+  white-space: nowrap;
+}
+.versionbar .vrow-refresh {
+  flex-wrap: nowrap;
+  margin-top: 4px;
+}
 button.small {
   width: auto;
   margin: 0;

@@ -1010,19 +1010,13 @@ if ("serviceWorker" in navigator) {
     try {
       const reg = await navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" });
       await reg.update();
-      const appStatus = document.getElementById("appUpdateStatus");
-      if (appStatus) appStatus.textContent = `Route Runner ${APP_VERSION}`;
       navigator.serviceWorker.addEventListener("controllerchange", () => {
         if (sessionStorage.getItem("peak_reloaded_for_update")) return;
         sessionStorage.setItem("peak_reloaded_for_update", "1");
         location.reload();
       });
     } catch (e) {
-      const appStatus = document.getElementById("appUpdateStatus");
-      if (appStatus) {
-        appStatus.textContent = "Update check unavailable";
-        appStatus.className = "updatewarn";
-      }
+      setRouteDataStatus("Update check unavailable", "updatewarn");
     }
   });
 }
