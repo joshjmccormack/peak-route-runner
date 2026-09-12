@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <title>Peak Route Runner</title>
-<link rel="stylesheet" href="css/app.css?v=1.1e">
+<link rel="stylesheet" href="css/app.css?v=1.1g">
 </head>
 <body class="locked">
 <section id="lockScreen" class="lock-screen">
@@ -34,12 +34,11 @@
 <main>
 <section id="select" class="card">
   <h2>Choose today's route</h2>
-  <p class="muted">Pick a Peak route, or combine two routes when short-staffed.</p>
-  <button id="combineMode" class="secondary" type="button">Combine two routes</button>
-  <div id="combineHint" class="combinehint hidden">Select two routes below, then tap Start combined routes.</div>
+  <p class="muted">Pick a Peak route, or combine two routes.</p>
   <div id="routeGroups"></div>
+  <button id="combineMode" class="secondary" type="button">Combine two routes</button>
+  <div id="combineHint" class="combinehint hidden">Select two routes above, then tap Start combined routes.</div>
   <button id="startCombined" class="primary hidden" type="button" disabled>Start combined routes</button>
-  <button id="refreshRoutes" class="secondary" type="button">Refresh route data</button>
 </section>
 
 <section id="dash" class="hidden">
@@ -57,19 +56,6 @@
     </div>
     <div id="where" class="muted where-line"></div>
     <div id="geoStatus" class="muted geo-line"></div>
-  </div>
-
-  <div class="card">
-    <div id="targetLabel" class="muted">Nearest remaining location</div>
-    <div id="nearName" class="big" style="margin-top:5px">Waiting for location…</div>
-    <div id="nearDetail" class="muted" style="margin-top:6px"></div>
-    <div id="nearDistance" class="distance"></div>
-    <div id="selectionHint" class="muted" style="margin-top:7px">Tap any other active location below to choose it instead.</div>
-    <div class="action-row">
-      <button id="nav" class="primary" type="button" disabled>Navigate</button>
-      <button id="complete" class="good" type="button" disabled>Complete</button>
-      <button id="skip" class="warn hidden" type="button" disabled>Skip</button>
-    </div>
   </div>
 
   <div class="card">
@@ -101,6 +87,9 @@
     <span id="routeDataUpdated">Route data updated: checking…</span>
     <span id="routeDataStatus"></span>
   </div>
+  <div class="vrow" style="margin-top:4px">
+    <button id="refreshRoutes" class="version-refresh" type="button">Refresh route data</button>
+  </div>
 </div>
 </main>
 <footer>
@@ -109,6 +98,15 @@
     <button id="findBtn" class="secondary" type="button">Find my location</button>
   </div>
 </footer>
-<script src="js/app.js?v=1.1e" defer></script>
+<script src="js/app.js?v=1.1g" defer></script>
+<div id="resetDialog" class="dialog-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="resetDialogMsg">
+  <div class="dialog-card">
+    <p id="resetDialogMsg">Reset all completed and skipped locations for this route?</p>
+    <div class="dialog-actions">
+      <button id="resetCancel" class="secondary" type="button">Cancel</button>
+      <button id="resetConfirm" class="danger" type="button">Reset</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

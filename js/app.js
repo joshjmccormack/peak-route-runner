@@ -239,7 +239,6 @@ function updateSortToggle() {
   const nearestBtn = document.getElementById("sortNearest");
   const recommendedBtn = document.getElementById("sortRecommended");
   const hint = document.getElementById("sortHint");
-  const label = document.getElementById("targetLabel");
   const routeOrder = isRouteSort();
   if (nearestBtn) nearestBtn.setAttribute("aria-pressed", String(!routeOrder));
   if (recommendedBtn) recommendedBtn.setAttribute("aria-pressed", String(routeOrder));
@@ -247,11 +246,6 @@ function updateSortToggle() {
     hint.textContent = routeOrder
       ? "Remaining stops follow the order numbers in routes.js (lower first)."
       : "Remaining stops are listed closest first.";
-  }
-  if (label) {
-    label.textContent = routeOrder
-      ? "Next recommended location"
-      : "Nearest remaining location";
   }
 }
 
@@ -493,6 +487,33 @@ function sortStreetRows(items) {
   return [...remaining, ...finished];
 }
 
+const NAV_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.5 21 21l-9-3.6L3 21z"/></svg>';
+
+function appendLocActions(host, loc) {
+  const acts = document.createElement("div");
+  acts.className = "locacts";
+  const navBtn = document.createElement("button");
+  navBtn.type = "button";
+  navBtn.className = "locact locact-nav";
+  navBtn.setAttribute("aria-label", `Navigate to ${loc.name}`);
+  navBtn.innerHTML = NAV_ICON;
+  navBtn.onclick = (e) => {
+    e.stopPropagation();
+    navigateTo(loc);
+  };
+  const doneBtn = document.createElement("button");
+  doneBtn.type = "button";
+  doneBtn.className = "locact locact-done";
+  doneBtn.setAttribute("aria-label", `Complete ${loc.name}`);
+  doneBtn.textContent = "✓";
+  doneBtn.onclick = (e) => {
+    e.stopPropagation();
+    markLocation(loc.id, "complete");
+  };
+  acts.append(navBtn, doneBtn);
+  host.appendChild(acts);
+}
+
 function createLocRow(row, hideName) {
   const { l, distance, status } = row;
   const d = document.createElement("div");
@@ -509,8 +530,8 @@ function createLocRow(row, hideName) {
     : status === "skipped" ? "↷ Skipped"
       : status === "expired" ? `⏱ Expired${l.expireTime ? ` at ${formatClock24(l.expireTime)}` : ""}`
         : "";
-  const hint = status === "remaining"
-    ? (selected && selected.id === l.id ? "Selected destination" : "Tap to select this location")
+  const hint = status === "remaining" && selected && selected.id === l.id
+    ? "First for remaining route"
     : "";
   const titleHtml = hideName
     ? `<div class="muted">${esc(l.detail || l.name)}</div>`
@@ -518,7 +539,11 @@ function createLocRow(row, hideName) {
   d.innerHTML = `<div class="rowtop">${titleHtml}${l.sourceRouteName ? `<div class="muted sourceroute">${esc(l.sourceRouteName)}</div>` : ""}</div>
                 ${stateText ? `<div class="state">${stateText}</div>` : ""}
                 ${status === "remaining" ? `<div class="rowmeta"><div class="rowhint">${hint}</div><div class="rowdistance">${distanceText ? `${esc(distanceText)} away` : ""}</div></div>` : ""}`;
-  if (status === "remaining") d.onclick = () => selectLocation(l.id);
+  if (status === "remaining") {
+    const meta = d.querySelector(".rowmeta");
+    if (meta) appendLocActions(meta, l);
+    d.onclick = () => selectLocation(l.id);
+  }
   return d;
 }
 
@@ -604,12 +629,7 @@ function selectLocation(id) {
   if (!l || p[id] || isExpired(l)) return;
   selected = { ...l, distance: distanceFor(l) };
   selectedManual = true;
-  updateTargetCard();
   renderLocationList();
-  window.scrollTo({
-    top: document.getElementById("nearName").getBoundingClientRect().top + window.scrollY - 90,
-    behavior: "smooth"
-  });
 }
 
 function gpsLine(candidate, title) {
@@ -716,13 +736,12 @@ function calcNearest() {
   if (!r) return;
   const p = progress(r.id);
   const remain = r.locations.filter((l) => !p[l.id] && !isExpired(l));
-  const buttons = ["nav", "navRoute", "complete", "skip"].map((x) => document.getElementById(x));
+  const navRoute = document.getElementById("navRoute");
   if (!remain.length) {
     nearest = null;
     selected = null;
     selectedManual = false;
-    updateTargetCard();
-    buttons.forEach((b) => { b.disabled = true; });
+    if (navRoute) navRoute.disabled = true;
     renderLocationList();
     return;
   }
@@ -750,48 +769,8 @@ function calcNearest() {
     const original = remain.find((l) => l.id === selected.id);
     if (original) selected = { ...original, distance: distanceFor(original) };
   }
-  updateTargetCard();
-  const usable = !!selected;
-  buttons.forEach((b) => { b.disabled = !usable; });
+  if (navRoute) navRoute.disabled = !selected;
   renderLocationList();
-}
-
-function updateTargetCard() {
-  const nn = document.getElementById("nearName");
-  const nd = document.getElementById("nearDetail");
-  const dist = document.getElementById("nearDistance");
-  const hint = document.getElementById("selectionHint");
-  const r = route();
-  const p = r ? progress(r.id) : {};
-  const active = r ? r.locations.filter((l) => !p[l.id] && !isExpired(l)) : [];
-  const unfinished = r ? r.locations.filter((l) => !p[l.id]) : [];
-  if (r && !active.length) {
-    nn.textContent = unfinished.length ? "No active locations remaining" : "Route finished";
-    nd.textContent = unfinished.length ? "Any unfinished locations have reached their route cut-off time." : "All locations completed or skipped.";
-    dist.textContent = "";
-    hint.textContent = "";
-    return;
-  }
-  if (!pos) {
-    nn.textContent = selected ? selected.name : "Waiting for your GPS location…";
-    nd.textContent = selected ? selected.detail : "";
-    dist.textContent = "";
-    hint.textContent = selected
-      ? "Selected. GPS distance will appear when location is available."
-      : "Nearest active location will be selected automatically once GPS is available.";
-    return;
-  }
-  if (!selected) {
-    nn.textContent = "Preparing route locations…";
-    nd.textContent = "The app is locating the streets for the first use of this route.";
-    dist.textContent = "";
-    hint.textContent = "You can still tap an active location in the list to select it.";
-    return;
-  }
-  nn.textContent = selected.name;
-  nd.textContent = selected.detail;
-  dist.textContent = selected.distance == null ? "Distance unavailable" : `${formatDistance(selected.distance)} away`;
-  hint.textContent = "Tap any other active location below to choose it instead.";
 }
 
 async function geocodeMissing() {
@@ -824,26 +803,45 @@ async function geocodeMissing() {
   calcNearest();
 }
 
-function mark(st) {
-  if (!selected || isExpired(selected)) {
+function markLocation(id, st) {
+  const r = route();
+  if (!r) return;
+  const loc = r.locations.find((x) => x.id === id);
+  if (!loc || isExpired(loc)) {
     renderDash();
     return;
   }
   const p = progress(currentId);
-  p[selected.id] = st;
+  if (p[id]) {
+    renderDash();
+    return;
+  }
+  p[id] = st;
   saveProgress(currentId, p);
-  selected = null;
-  selectedManual = false;
+  if (selected && selected.id === id) {
+    selected = null;
+    selectedManual = false;
+  }
   nearest = null;
   renderDash();
   findLocation();
 }
 
+function mark(st) {
+  if (!selected) return;
+  markLocation(selected.id, st);
+}
+
+function navigateTo(loc) {
+  if (!loc) return;
+  const g = coordsFor(loc);
+  const dest = g ? `${g.lat},${g.lng}` : loc.query;
+  location.href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}&travelmode=driving`;
+}
+
 function navigate() {
   if (!selected) return;
-  const g = coordsFor(selected);
-  const dest = g ? `${g.lat},${g.lng}` : selected.query;
-  location.href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}&travelmode=driving`;
+  navigateTo(selected);
 }
 
 function navigationOrder() {
@@ -880,12 +878,20 @@ function navigateRemainingRoute() {
   location.href = url;
 }
 
+function applyReset() {
+  currentId.split("+").forEach((id) => localStorage.removeItem(progKey(id)));
+  renderDash();
+  findLocation();
+}
+
+function closeResetDialog() {
+  document.getElementById("resetDialog").classList.add("hidden");
+}
+
 function resetRoute() {
-  if (currentId && confirm("Reset all completed and skipped locations for this route?")) {
-    currentId.split("+").forEach((id) => localStorage.removeItem(progKey(id)));
-    renderDash();
-    findLocation();
-  }
+  if (!currentId) return;
+  document.getElementById("resetDialog").classList.remove("hidden");
+  document.getElementById("resetCancel").focus();
 }
 
 async function refreshRouteData() {
@@ -940,13 +946,23 @@ function bindUi() {
   document.getElementById("findMe").onclick = findLocation;
   document.getElementById("findBtn").onclick = findLocation;
   document.getElementById("recalc").onclick = () => { findLocation(); geocodeMissing(); };
-  document.getElementById("nav").onclick = navigate;
   document.getElementById("navRoute").onclick = navigateRemainingRoute;
   document.getElementById("combineMode").onclick = toggleCombineMode;
   document.getElementById("startCombined").onclick = startCombinedRoutes;
-  document.getElementById("complete").onclick = () => mark("complete");
-  document.getElementById("skip").onclick = () => mark("skipped");
   document.getElementById("reset").onclick = resetRoute;
+  document.getElementById("resetCancel").onclick = closeResetDialog;
+  document.getElementById("resetConfirm").onclick = () => {
+    closeResetDialog();
+    if (currentId) applyReset();
+  };
+  document.getElementById("resetDialog").addEventListener("click", (event) => {
+    if (event.target.id === "resetDialog") closeResetDialog();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !document.getElementById("resetDialog").classList.contains("hidden")) {
+      closeResetDialog();
+    }
+  });
   document.getElementById("change").onclick = showSelect;
   document.getElementById("routesBtn").onclick = showSelect;
   document.getElementById("refreshRoutes").onclick = refreshRouteData;
