@@ -315,7 +315,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   grid-template-columns: auto 1fr auto;
   grid-template-areas:
     "main main main"
-    "nav . done";
+    "nav km done";
   align-items: end;
   column-gap: 8px;
   row-gap: 8px;
@@ -325,6 +325,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   min-width: 0;
 }
 .locrow.remaining .locact-nav { grid-area: nav; }
+.locrow.remaining .rowdistance { grid-area: km; }
 .locrow.remaining .locact-done { grid-area: done; }
 .locrow strong { display: block; }
 .locrow.selected { border: 2px solid var(--blue); background: #eef4ff; }
@@ -335,30 +336,18 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .locrow.completed .state { color: var(--green); font-weight: 800; }
 .locrow.skipped .state { color: var(--amber); font-weight: 800; }
 .locrow.remaining .state { color: var(--muted); font-weight: 700; }
-.locrow .rowmeta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 4px;
-}
 .locrow .rowdistance {
   font-size: 0.75rem;
   font-weight: 800;
   color: var(--blue);
   text-align: right;
-  margin-top: 0;
+  justify-self: end;
+  align-self: end;
+  margin: 0;
+  padding-bottom: 2px;
+  line-height: 1.2;
   white-space: nowrap;
 }
-.locrow .rowhint {
-  font-size: 0.6875rem;
-  font-weight: 700;
-  color: var(--blue);
-  margin-top: 0;
-  flex: 1;
-  min-width: 0;
-}
-.locrow.selected .rowhint { font-weight: 800; }
 .locrow .sourceroute {
   font-size: 11px;
   margin-top: 4px;

@@ -531,15 +531,11 @@ function createLocRow(row, hideName) {
     : status === "skipped" ? "↷ Skipped"
       : status === "expired" ? `⏱ Expired${l.expireTime ? ` at ${formatClock24(l.expireTime)}` : ""}`
         : "";
-  const hint = status === "remaining" && selected && selected.id === l.id
-    ? "First for remaining route"
-    : "";
   const titleHtml = hideName
     ? `<div class="muted">${esc(l.detail || l.name)}</div>`
     : `<strong>${esc(l.name)}</strong><div class="muted">${esc(l.detail)}</div>`;
   d.innerHTML = `<div class="locrow-main"><div class="rowtop">${titleHtml}${l.sourceRouteName ? `<div class="muted sourceroute">${esc(l.sourceRouteName)}</div>` : ""}</div>
-                ${stateText ? `<div class="state">${stateText}</div>` : ""}
-                ${status === "remaining" ? `<div class="rowmeta"><div class="rowhint">${hint}</div><div class="rowdistance">${distanceText ? `${esc(distanceText)} away` : ""}</div></div>` : ""}</div>`;
+                ${stateText ? `<div class="state">${stateText}</div>` : ""}</div>${status === "remaining" && distanceText ? `<div class="rowdistance">${esc(distanceText)} away</div>` : ""}`;
   if (status === "remaining") {
     d.prepend(createNavButton(l));
     d.appendChild(createDoneButton(l));
@@ -770,7 +766,7 @@ function calcNearest() {
     const original = remain.find((l) => l.id === selected.id);
     if (original) selected = { ...original, distance: distanceFor(original) };
   }
-  if (navRoute) navRoute.disabled = !selected;
+  if (navRoute) navRoute.disabled = remain.length === 0;
   renderLocationList();
 }
 
@@ -849,14 +845,10 @@ function navigationOrder() {
   const r = route();
   if (!r) return [];
   const p = progress(r.id);
-  const remain = r.locations.map((l, idx) => ({ l, idx, distance: distanceFor(l) }))
-    .filter((x) => !p[x.l.id] && !isExpired(x.l));
-  const sorted = remain.sort(compareRemaining).map((x) => x.l);
-  if (selected) {
-    const chosen = sorted.find((l) => l.id === selected.id);
-    if (chosen) return [chosen, ...sorted.filter((l) => l.id !== selected.id)];
-  }
-  return sorted;
+  return r.locations.map((l, idx) => ({ l, idx, distance: distanceFor(l) }))
+    .filter((x) => !p[x.l.id] && !isExpired(x.l))
+    .sort(compareRemaining)
+    .map((x) => x.l);
 }
 
 function mapsPoint(l) {
