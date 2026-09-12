@@ -244,7 +244,7 @@ function updateSortToggle() {
   if (recommendedBtn) recommendedBtn.setAttribute("aria-pressed", String(routeOrder));
   if (hint) {
     hint.textContent = routeOrder
-      ? "Remaining stops follow the order numbers in routes.js (lower first)."
+      ? "Remaining stops follow the recommended order"
       : "Remaining stops are listed closest first.";
   }
 }
@@ -487,11 +487,9 @@ function sortStreetRows(items) {
   return [...remaining, ...finished];
 }
 
-const NAV_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.5 21 21l-9-3.6L3 21z"/></svg>';
+const NAV_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" d="M8.4 18.45V12.1C8.4 8.9 10.75 7.25 14.15 7.25H16.9"/><path fill="currentColor" d="M15.55 4.6 21.45 7.45l-5.9 2.85z"/></svg>';
 
-function appendLocActions(host, loc) {
-  const acts = document.createElement("div");
-  acts.className = "locacts";
+function createNavButton(loc) {
   const navBtn = document.createElement("button");
   navBtn.type = "button";
   navBtn.className = "locact locact-nav";
@@ -501,6 +499,10 @@ function appendLocActions(host, loc) {
     e.stopPropagation();
     navigateTo(loc);
   };
+  return navBtn;
+}
+
+function createDoneButton(loc) {
   const doneBtn = document.createElement("button");
   doneBtn.type = "button";
   doneBtn.className = "locact locact-done";
@@ -510,8 +512,7 @@ function appendLocActions(host, loc) {
     e.stopPropagation();
     markLocation(loc.id, "complete");
   };
-  acts.append(navBtn, doneBtn);
-  host.appendChild(acts);
+  return doneBtn;
 }
 
 function createLocRow(row, hideName) {
@@ -536,12 +537,12 @@ function createLocRow(row, hideName) {
   const titleHtml = hideName
     ? `<div class="muted">${esc(l.detail || l.name)}</div>`
     : `<strong>${esc(l.name)}</strong><div class="muted">${esc(l.detail)}</div>`;
-  d.innerHTML = `<div class="rowtop">${titleHtml}${l.sourceRouteName ? `<div class="muted sourceroute">${esc(l.sourceRouteName)}</div>` : ""}</div>
+  d.innerHTML = `<div class="locrow-main"><div class="rowtop">${titleHtml}${l.sourceRouteName ? `<div class="muted sourceroute">${esc(l.sourceRouteName)}</div>` : ""}</div>
                 ${stateText ? `<div class="state">${stateText}</div>` : ""}
-                ${status === "remaining" ? `<div class="rowmeta"><div class="rowhint">${hint}</div><div class="rowdistance">${distanceText ? `${esc(distanceText)} away` : ""}</div></div>` : ""}`;
+                ${status === "remaining" ? `<div class="rowmeta"><div class="rowhint">${hint}</div><div class="rowdistance">${distanceText ? `${esc(distanceText)} away` : ""}</div></div>` : ""}</div>`;
   if (status === "remaining") {
-    const meta = d.querySelector(".rowmeta");
-    if (meta) appendLocActions(meta, l);
+    d.prepend(createNavButton(l));
+    d.appendChild(createDoneButton(l));
     d.onclick = () => selectLocation(l.id);
   }
   return d;
