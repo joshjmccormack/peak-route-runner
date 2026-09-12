@@ -13,9 +13,21 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <title>Peak Route Runner</title>
-<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/app.css?v=1.1e">
 </head>
-<body>
+<body class="locked">
+<section id="lockScreen" class="lock-screen">
+  <div class="lock-card">
+    <h1>Peak Route Runner</h1>
+    <p class="muted">Enter the access PIN to continue.</p>
+    <form id="lockForm">
+      <label class="hidden" for="accessPin">Access PIN</label>
+      <input id="accessPin" name="accessPin" type="password" inputmode="numeric" autocomplete="off" maxlength="32" required>
+      <button id="unlockBtn" class="primary" type="submit">Unlock</button>
+      <p id="lockError" class="lock-error hidden">Incorrect PIN.</p>
+    </form>
+  </div>
+</section>
 <header>
   <b>Peak Route Runner</b>
 </header>
@@ -38,44 +50,51 @@
       <div class="pills">
         <span id="remainPill" class="pill active"></span>
         <span id="donePill" class="pill done"></span>
-        <span id="skipPill" class="pill skipped"></span>
+        <span id="skipPill" class="pill skipped hidden"></span>
         <span id="expiredPill" class="pill expired"></span>
       </div>
-      <button id="findMe" class="secondary find-compact" type="button">Find me</button>
+      <button id="findMe" class="primary find-compact" type="button">Find me</button>
     </div>
     <div id="where" class="muted where-line"></div>
     <div id="geoStatus" class="muted geo-line"></div>
   </div>
 
   <div class="card">
-    <div class="muted">Nearest remaining location</div>
+    <div id="targetLabel" class="muted">Nearest remaining location</div>
     <div id="nearName" class="big" style="margin-top:5px">Waiting for location…</div>
     <div id="nearDetail" class="muted" style="margin-top:6px"></div>
     <div id="nearDistance" class="distance"></div>
-    <div id="selectionHint" class="muted" style="margin-top:7px">Nearest location is selected automatically. Tap any remaining location below to choose it instead.</div>
+    <div id="selectionHint" class="muted" style="margin-top:7px">Tap any other active location below to choose it instead.</div>
     <div class="action-row">
       <button id="nav" class="primary" type="button" disabled>Navigate</button>
       <button id="complete" class="good" type="button" disabled>Complete</button>
-      <button id="skip" class="warn" type="button" disabled>Skip</button>
+      <button id="skip" class="warn hidden" type="button" disabled>Skip</button>
     </div>
   </div>
 
   <div class="card">
     <h2>Route locations</h2>
+    <div class="sort-toggle" role="group" aria-label="Sort remaining locations">
+      <button type="button" id="sortNearest" class="sort-opt" aria-pressed="true">Nearest</button>
+      <button type="button" id="sortRecommended" class="sort-opt" aria-pressed="false">Recommended</button>
+    </div>
+    <div id="sortHint" class="muted locations-nav-hint">Remaining stops are listed closest first.</div>
     <button id="navRoute" class="secondary nav-remaining" type="button" disabled>Navigate remaining</button>
-    <div class="muted locations-nav-hint">Opens Google Maps with the selected stop first, then up to 9 more remaining stops.</div>
+    <div class="muted locations-nav-hint">Opens Google Maps with the selected stop first, then up to 9 more remaining stops in this order.</div>
     <div id="list"></div>
   </div>
   <div class="card">
-    <button id="recalc" class="secondary" type="button">Recalculate nearest</button>
-    <button id="reset" class="danger" type="button">Reset this route</button>
+    <div class="tools-row">
+      <button id="recalc" class="secondary" type="button">Recalculate nearest</button>
+      <button id="reset" class="danger" type="button">Reset this route</button>
+    </div>
     <button id="change" class="secondary" type="button">Choose another route</button>
   </div>
 </section>
 
 <div class="versionbar">
   <div class="vrow">
-    <span><strong id="appVersionLabel">Route Runner v14.0</strong></span>
+    <span><strong id="appVersionLabel">Route Runner v1.1</strong></span>
     <span id="appUpdateStatus">App ready</span>
   </div>
   <div class="vrow" style="margin-top:5px">
@@ -90,6 +109,6 @@
     <button id="findBtn" class="secondary" type="button">Find my location</button>
   </div>
 </footer>
-<script src="js/app.js" defer></script>
+<script src="js/app.js?v=1.1e" defer></script>
 </body>
 </html>

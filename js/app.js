@@ -1,4 +1,7 @@
-const APP_VERSION = "v14.0";
+const APP_VERSION = "v1.1";
+const ACCESS_SALT = "peak-route-runner";
+const ACCESS_HASH = "2918fd829429cfa0a8d97c1b105cecc60f28158d3aa38042506701e5dc1221d3";
+const ACCESS_SESSION_KEY = "peak_unlocked";
 
 let ROUTES = [];
 let currentId = localStorage.getItem("peak_current") || null;
@@ -8,6 +11,11 @@ let selected = null;
 let watchId = null;
 let combineMode = false;
 let combineSelection = [];
+let selectedManual = false;
+const streetExpanded = {};
+let lastExpandSelectedId = null;
+const SORT_MODE_KEY = "peak_sort_mode";
+let sortMode = localStorage.getItem(SORT_MODE_KEY) === "route" ? "route" : "nearest";
 const geocache = JSON.parse(localStorage.getItem("peak_geocache") || "{}");
 
 const ROUTE_DATA_CACHE_KEY = "peak_routes_cache_v11";
@@ -188,12 +196,92 @@ function esc(s) {
   }[c]));
 }
 
+function isRouteSort() {
+  return sortMode === "route";
+}
+
+function persistSortMode() {
+  localStorage.setItem(SORT_MODE_KEY, sortMode);
+}
+
+function recommendedOrder(l) {
+  const n = Number(l && l.order);
+  return Number.isFinite(n) ? n : null;
+}
+
+function compareRemaining(a, b) {
+  if (isRouteSort()) {
+    const ao = recommendedOrder(a.l);
+    const bo = recommendedOrder(b.l);
+    const aMissing = ao == null;
+    const bMissing = bo == null;
+    if (aMissing !== bMissing) return aMissing ? 1 : -1;
+    if (!aMissing && ao !== bo) return ao - bo;
+    return a.idx - b.idx;
+  }
+  if (a.distance == null && b.distance == null) return a.idx - b.idx;
+  if (a.distance == null) return 1;
+  if (b.distance == null) return -1;
+  return a.distance - b.distance;
+}
+
+function setSortMode(mode) {
+  const next = mode === "route" ? "route" : "nearest";
+  if (next === sortMode) return;
+  sortMode = next;
+  persistSortMode();
+  if (!selectedManual) selected = null;
+  updateSortToggle();
+  if (currentId) calcNearest();
+}
+
+function updateSortToggle() {
+  const nearestBtn = document.getElementById("sortNearest");
+  const recommendedBtn = document.getElementById("sortRecommended");
+  const hint = document.getElementById("sortHint");
+  const label = document.getElementById("targetLabel");
+  const routeOrder = isRouteSort();
+  if (nearestBtn) nearestBtn.setAttribute("aria-pressed", String(!routeOrder));
+  if (recommendedBtn) recommendedBtn.setAttribute("aria-pressed", String(routeOrder));
+  if (hint) {
+    hint.textContent = routeOrder
+      ? "Remaining stops follow the order numbers in routes.js (lower first)."
+      : "Remaining stops are listed closest first.";
+  }
+  if (label) {
+    label.textContent = routeOrder
+      ? "Next recommended location"
+      : "Nearest remaining location";
+  }
+}
+
+function resetStreetExpand() {
+  Object.keys(streetExpanded).forEach((k) => { delete streetExpanded[k]; });
+  lastExpandSelectedId = null;
+}
+
+function rememberSelectedStreet() {
+  if (!selected) return;
+  if (lastExpandSelectedId === selected.id) return;
+  lastExpandSelectedId = selected.id;
+  streetExpanded[selected.name] = true;
+}
+
+function streetIsOpen(name, containsSelected) {
+  if (Object.prototype.hasOwnProperty.call(streetExpanded, name)) {
+    return streetExpanded[name];
+  }
+  return containsSelected;
+}
+
 function showSelect() {
   selected = null;
+  selectedManual = false;
   nearest = null;
   currentId = null;
   combineMode = false;
   combineSelection = [];
+  resetStreetExpand();
   localStorage.removeItem("peak_current");
   document.getElementById("select").classList.remove("hidden");
   document.getElementById("dash").classList.add("hidden");
@@ -201,12 +289,17 @@ function showSelect() {
   renderRoutes();
 }
 
+function peakToneClass(group) {
+  return String(group || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
 function renderRoutes() {
   const host = document.getElementById("routeGroups");
   host.innerHTML = "";
   [...new Set(ROUTES.map((r) => r.group))].forEach((g) => {
+    const tone = peakToneClass(g);
     const title = document.createElement("div");
-    title.className = "group";
+    title.className = tone ? `group ${tone}` : "group";
     title.textContent = g;
     host.appendChild(title);
     const grid = document.createElement("div");
@@ -217,7 +310,7 @@ function renderRoutes() {
       const remain = r.locations.filter((l) => !p[l.id] && !isExpired(l)).length;
       const b = document.createElement("button");
       b.type = "button";
-      b.className = "routebtn";
+      b.className = tone ? `routebtn ${tone}` : "routebtn";
       const chosen = combineSelection.includes(r.id);
       if (chosen) b.classList.add("routechosen");
       b.setAttribute("aria-pressed", combineMode ? String(chosen) : "false");
@@ -267,7 +360,9 @@ function startCombinedRoutes() {
 
 function openRoute(id) {
   selected = null;
+  selectedManual = false;
   nearest = null;
+  resetStreetExpand();
   currentId = id;
   localStorage.setItem("peak_current", id);
   document.getElementById("select").classList.add("hidden");
@@ -290,6 +385,7 @@ function renderDash() {
   document.getElementById("donePill").textContent = `${done} complete`;
   document.getElementById("skipPill").textContent = `${skipped} skipped`;
   document.getElementById("expiredPill").textContent = `${expired} expired`;
+  updateSortToggle();
   calcNearest();
   renderLocationList();
 }
@@ -347,9 +443,126 @@ function formatClock24(t) {
   return `${h12}:${String(mm).padStart(2, "0")} ${suffix}`;
 }
 
+function statusRank(status) {
+  if (status === "remaining") return 0;
+  if (status === "expired") return 2;
+  return 1;
+}
+
+function streetSummary(items) {
+  const active = items.filter((x) => x.status === "remaining").length;
+  const complete = items.filter((x) => x.status === "complete").length;
+  const skipped = items.filter((x) => x.status === "skipped").length;
+  const expired = items.filter((x) => x.status === "expired").length;
+  const parts = [];
+  if (active) parts.push(`${active} active`);
+  if (complete) parts.push(`${complete} complete`);
+  if (skipped) parts.push(`${skipped} skipped`);
+  if (expired) parts.push(`${expired} expired`);
+  return parts.join(" · ") || `${items.length} stop${items.length === 1 ? "" : "s"}`;
+}
+
+function streetParentStatus(items) {
+  if (items.some((x) => x.status === "remaining")) return "remaining";
+  const leftover = items.filter((x) => x.status !== "complete" && x.status !== "skipped");
+  if (leftover.length && leftover.every((x) => x.status === "expired")) return "expired";
+  if (items.every((x) => x.status === "skipped")) return "skipped";
+  if (items.every((x) => x.status === "complete" || x.status === "skipped")) return "complete";
+  return "remaining";
+}
+
+function streetExpiredLabel(items) {
+  let best = null;
+  items.forEach((x) => {
+    if (x.status !== "expired") return;
+    const mins = expiryMinutes(x.l);
+    if (mins == null) return;
+    if (best == null || mins > best.mins) best = { mins, time: x.l.expireTime };
+  });
+  return best ? `⏱ Expired at ${formatClock24(best.time)}` : "⏱ Expired";
+}
+
+function sortStreetRows(items) {
+  const remaining = items.filter((x) => x.status === "remaining").sort(compareRemaining);
+  const finished = items.filter((x) => x.status !== "remaining").sort((a, b) => {
+    const ar = statusRank(a.status);
+    const br = statusRank(b.status);
+    if (ar !== br) return ar - br;
+    return a.idx - b.idx;
+  });
+  return [...remaining, ...finished];
+}
+
+function createLocRow(row, hideName) {
+  const { l, distance, status } = row;
+  const d = document.createElement("div");
+  d.className = "locrow";
+  if (hideName) d.classList.add("segment");
+  d.setAttribute("role", status === "remaining" ? "button" : "listitem");
+  if (status === "complete") d.classList.add("completed");
+  else if (status === "skipped") d.classList.add("skipped");
+  else if (status === "expired") d.classList.add("expired");
+  else d.classList.add("remaining");
+  if (selected && selected.id === l.id && status === "remaining") d.classList.add("selected");
+  const distanceText = status === "remaining" && distance != null ? formatDistance(distance) : "";
+  const stateText = status === "complete" ? "✓ Completed"
+    : status === "skipped" ? "↷ Skipped"
+      : status === "expired" ? `⏱ Expired${l.expireTime ? ` at ${formatClock24(l.expireTime)}` : ""}`
+        : "";
+  const hint = status === "remaining"
+    ? (selected && selected.id === l.id ? "Selected destination" : "Tap to select this location")
+    : "";
+  const titleHtml = hideName
+    ? `<div class="muted">${esc(l.detail || l.name)}</div>`
+    : `<strong>${esc(l.name)}</strong><div class="muted">${esc(l.detail)}</div>`;
+  d.innerHTML = `<div class="rowtop">${titleHtml}${l.sourceRouteName ? `<div class="muted sourceroute">${esc(l.sourceRouteName)}</div>` : ""}</div>
+                ${stateText ? `<div class="state">${stateText}</div>` : ""}
+                ${status === "remaining" ? `<div class="rowmeta"><div class="rowhint">${hint}</div><div class="rowdistance">${distanceText ? `${esc(distanceText)} away` : ""}</div></div>` : ""}`;
+  if (status === "remaining") d.onclick = () => selectLocation(l.id);
+  return d;
+}
+
+function createStreetCard(name, items) {
+  const remaining = items.filter((x) => x.status === "remaining");
+  const parentStatus = streetParentStatus(items);
+  const containsSelected = !!(selected && items.some((x) => x.l.id === selected.id));
+  const open = streetIsOpen(name, containsSelected && remaining.length > 0);
+  const card = document.createElement("div");
+  card.className = "streetcard";
+  if (open) card.classList.add("open");
+  if (containsSelected) card.classList.add("has-selected");
+  if (parentStatus === "complete") card.classList.add("completed");
+  else if (parentStatus === "skipped") card.classList.add("skipped");
+  else if (parentStatus === "expired") card.classList.add("expired");
+  else card.classList.add("remaining");
+  const statusLine = parentStatus === "expired"
+    ? `<div class="state">${esc(streetExpiredLabel(items))}</div>`
+    : parentStatus === "complete" ? `<div class="state">✓ Completed</div>`
+      : parentStatus === "skipped" ? `<div class="state">↷ Skipped</div>`
+        : `<div class="streetsum">${esc(streetSummary(items))}</div>`;
+  const head = document.createElement("button");
+  head.type = "button";
+  head.className = "streethead";
+  head.setAttribute("aria-expanded", String(open));
+  head.innerHTML = `<div class="streetcopy"><strong>${esc(name)}</strong>${statusLine}</div><span class="streetchevron" aria-hidden="true">${open ? "▾" : "▸"}</span>`;
+  head.onclick = () => {
+    streetExpanded[name] = !open;
+    renderLocationList();
+  };
+  card.appendChild(head);
+  if (open) {
+    const segs = document.createElement("div");
+    segs.className = "streetsegs";
+    sortStreetRows(items).forEach((row) => segs.appendChild(createLocRow(row, true)));
+    card.appendChild(segs);
+  }
+  return card;
+}
+
 function renderLocationList() {
   const r = route();
   if (!r) return;
+  rememberSelectedStreet();
   const p = progress(r.id);
   const host = document.getElementById("list");
   host.innerHTML = "";
@@ -358,39 +571,28 @@ function renderLocationList() {
     const status = (saved === "remaining" && isExpired(l)) ? "expired" : saved;
     return { l, idx, distance: distanceFor(l), status };
   });
-  rows.sort((a, b) => {
-    const rank = (s) => s === "remaining" ? 0 : (s === "expired" ? 2 : 1);
-    const ar = rank(a.status);
-    const br = rank(b.status);
-    if (ar !== br) return ar - br;
-    if (a.status !== "remaining") return a.idx - b.idx;
-    if (a.distance == null && b.distance == null) return a.idx - b.idx;
-    if (a.distance == null) return 1;
-    if (b.distance == null) return -1;
-    return a.distance - b.distance;
+  const byName = new Map();
+  rows.forEach((row) => {
+    const key = row.l.name;
+    if (!byName.has(key)) byName.set(key, []);
+    byName.get(key).push(row);
   });
-  rows.forEach(({ l, distance, status }) => {
-    const d = document.createElement("div");
-    d.className = "locrow";
-    d.setAttribute("role", status === "remaining" ? "button" : "listitem");
-    if (status === "complete") d.classList.add("completed");
-    else if (status === "skipped") d.classList.add("skipped");
-    else if (status === "expired") d.classList.add("expired");
-    else d.classList.add("remaining");
-    if (selected && selected.id === l.id && status === "remaining") d.classList.add("selected");
-    const distanceText = status === "remaining" && distance != null ? formatDistance(distance) : "";
-    const stateText = status === "complete" ? "✓ Completed"
-      : status === "skipped" ? "↷ Skipped"
-        : status === "expired" ? `⏱ Expired${l.expireTime ? ` at ${formatClock24(l.expireTime)}` : ""}`
-          : "Remaining";
-    const hint = status === "remaining"
-      ? (selected && selected.id === l.id ? "Selected destination" : "Tap to select this location")
-      : "";
-    d.innerHTML = `<div class="rowtop"><strong>${esc(l.name)}</strong><div class="muted">${esc(l.detail)}</div>${l.sourceRouteName ? `<div class="muted" style="font-size:11px;margin-top:4px;font-weight:700">${esc(l.sourceRouteName)}</div>` : ""}</div>
-                <div class="state">${stateText}</div>
-                ${status === "remaining" ? `<div class="rowmeta"><div class="rowhint">${hint}</div><div class="rowdistance">${distanceText ? `${esc(distanceText)} away` : ""}</div></div>` : ""}`;
-    if (status === "remaining") d.onclick = () => selectLocation(l.id);
-    host.appendChild(d);
+  const groups = [...byName.entries()].map(([name, items]) => {
+    const remaining = items.filter((x) => x.status === "remaining").sort(compareRemaining);
+    return { name, items, remaining, isActive: remaining.length > 0 };
+  });
+  const active = groups.filter((g) => g.isActive);
+  const finished = groups.filter((g) => !g.isActive);
+  active.sort((a, b) => compareRemaining(a.remaining[0], b.remaining[0]));
+  finished.sort((a, b) => {
+    const aAllExpired = a.items.every((x) => x.status === "expired");
+    const bAllExpired = b.items.every((x) => x.status === "expired");
+    if (aAllExpired !== bAllExpired) return aAllExpired ? 1 : -1;
+    return Math.min(...a.items.map((x) => x.idx)) - Math.min(...b.items.map((x) => x.idx));
+  });
+  [...active, ...finished].forEach((g) => {
+    if (g.items.length > 1) host.appendChild(createStreetCard(g.name, g.items));
+    else host.appendChild(createLocRow(g.items[0], false));
   });
 }
 
@@ -401,6 +603,7 @@ function selectLocation(id) {
   const l = r.locations.find((x) => x.id === id);
   if (!l || p[id] || isExpired(l)) return;
   selected = { ...l, distance: distanceFor(l) };
+  selectedManual = true;
   updateTargetCard();
   renderLocationList();
   window.scrollTo({
@@ -514,27 +717,35 @@ function calcNearest() {
   const p = progress(r.id);
   const remain = r.locations.filter((l) => !p[l.id] && !isExpired(l));
   const buttons = ["nav", "navRoute", "complete", "skip"].map((x) => document.getElementById(x));
-  if (selected && isExpired(selected)) selected = null;
   if (!remain.length) {
     nearest = null;
     selected = null;
+    selectedManual = false;
     updateTargetCard();
     buttons.forEach((b) => { b.disabled = true; });
     renderLocationList();
     return;
   }
-  if (!pos) {
+  if (selected && (p[selected.id] || isExpired(selected))) {
+    selected = null;
+    selectedManual = false;
+  }
+  if (pos) {
+    const candidates = remain.filter((l) => coordsFor(l)).map((l) => ({ ...l, distance: distanceFor(l) })).sort((a, b) => a.distance - b.distance);
+    nearest = candidates[0] || null;
+  } else {
     nearest = null;
-    if (selected && (p[selected.id] || isExpired(selected))) selected = null;
-    updateTargetCard();
-    buttons.forEach((b) => { b.disabled = true; });
-    renderLocationList();
-    return;
   }
-  const candidates = remain.filter((l) => coordsFor(l)).map((l) => ({ ...l, distance: distanceFor(l) })).sort((a, b) => a.distance - b.distance);
-  nearest = candidates[0] || null;
-  if (selected && (p[selected.id] || isExpired(selected))) selected = null;
-  if (!selected && nearest) selected = { ...nearest };
+  if (!selected) {
+    if (isRouteSort()) {
+      const first = remain
+        .map((l, idx) => ({ l, idx, distance: distanceFor(l) }))
+        .sort(compareRemaining)[0];
+      if (first) selected = { ...first.l, distance: first.distance };
+    } else if (nearest) {
+      selected = { ...nearest };
+    }
+  }
   if (selected) {
     const original = remain.find((l) => l.id === selected.id);
     if (original) selected = { ...original, distance: distanceFor(original) };
@@ -566,7 +777,7 @@ function updateTargetCard() {
     nd.textContent = selected ? selected.detail : "";
     dist.textContent = "";
     hint.textContent = selected
-      ? "Selected manually. GPS distance will appear when location is available."
+      ? "Selected. GPS distance will appear when location is available."
       : "Nearest active location will be selected automatically once GPS is available.";
     return;
   }
@@ -580,9 +791,7 @@ function updateTargetCard() {
   nn.textContent = selected.name;
   nd.textContent = selected.detail;
   dist.textContent = selected.distance == null ? "Distance unavailable" : `${formatDistance(selected.distance)} away`;
-  hint.textContent = nearest && selected.id === nearest.id
-    ? "Nearest active location. Tap any other active location below to choose it instead."
-    : "Manually selected active location. It does not have to be the nearest.";
+  hint.textContent = "Tap any other active location below to choose it instead.";
 }
 
 async function geocodeMissing() {
@@ -624,6 +833,7 @@ function mark(st) {
   p[selected.id] = st;
   saveProgress(currentId, p);
   selected = null;
+  selectedManual = false;
   nearest = null;
   renderDash();
   findLocation();
@@ -640,13 +850,9 @@ function navigationOrder() {
   const r = route();
   if (!r) return [];
   const p = progress(r.id);
-  const remain = r.locations.filter((l) => !p[l.id] && !isExpired(l));
-  const sorted = remain.map((l, idx) => ({ l, idx, d: distanceFor(l) })).sort((a, b) => {
-    if (a.d == null && b.d == null) return a.idx - b.idx;
-    if (a.d == null) return 1;
-    if (b.d == null) return -1;
-    return a.d - b.d;
-  }).map((x) => x.l);
+  const remain = r.locations.map((l, idx) => ({ l, idx, distance: distanceFor(l) }))
+    .filter((x) => !p[x.l.id] && !isExpired(x.l));
+  const sorted = remain.sort(compareRemaining).map((x) => x.l);
   if (selected) {
     const chosen = sorted.find((l) => l.id === selected.id);
     if (chosen) return [chosen, ...sorted.filter((l) => l.id !== selected.id)];
@@ -693,6 +899,43 @@ async function refreshRouteData() {
   }
 }
 
+async function sha256Hex(text) {
+  const data = new TextEncoder().encode(text);
+  const buf = await crypto.subtle.digest("SHA-256", data);
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function showLockError(visible) {
+  document.getElementById("lockError").classList.toggle("hidden", !visible);
+}
+
+function unlockApp() {
+  sessionStorage.setItem(ACCESS_SESSION_KEY, "1");
+  document.body.classList.remove("locked");
+  const lock = document.getElementById("lockScreen");
+  if (lock) lock.classList.add("hidden");
+}
+
+async function tryUnlock(event) {
+  event.preventDefault();
+  const pin = document.getElementById("accessPin").value.trim();
+  const hash = await sha256Hex(`${ACCESS_SALT}\n${pin}`);
+  if (hash !== ACCESS_HASH) {
+    showLockError(true);
+    document.getElementById("accessPin").value = "";
+    document.getElementById("accessPin").focus();
+    return;
+  }
+  showLockError(false);
+  unlockApp();
+  await startApp();
+}
+
+function bindLockUi() {
+  const form = document.getElementById("lockForm");
+  if (form) form.addEventListener("submit", tryUnlock);
+}
+
 function bindUi() {
   document.getElementById("findMe").onclick = findLocation;
   document.getElementById("findBtn").onclick = findLocation;
@@ -707,6 +950,8 @@ function bindUi() {
   document.getElementById("change").onclick = showSelect;
   document.getElementById("routesBtn").onclick = showSelect;
   document.getElementById("refreshRoutes").onclick = refreshRouteData;
+  document.getElementById("sortNearest").onclick = () => setSortMode("nearest");
+  document.getElementById("sortRecommended").onclick = () => setSortMode("route");
 }
 
 async function startApp() {
@@ -719,6 +964,7 @@ async function startApp() {
     console.error(e);
   }
   updateCombineUI();
+  updateSortToggle();
   renderRoutes();
   if (currentId) {
     const ids = currentId.split("+");
@@ -727,7 +973,14 @@ async function startApp() {
   }
 }
 
-startApp();
+bindLockUi();
+if (sessionStorage.getItem(ACCESS_SESSION_KEY) === "1") {
+  unlockApp();
+  startApp();
+} else {
+  const pinBox = document.getElementById("accessPin");
+  if (pinBox) pinBox.focus();
+}
 
 setInterval(() => {
   if (currentId && !document.getElementById("dash").classList.contains("hidden")) {
