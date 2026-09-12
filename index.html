@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0946a8">
+<meta name="description" content="Peak Route Runner">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://nominatim.openstreetmap.org; img-src 'self' data:; style-src 'self'; script-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Peak Route Runner</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<header>
+  <b>Peak Route Runner</b>
+</header>
+<main>
+<section id="select" class="card">
+  <h2>Choose today's route</h2>
+  <p class="muted">Pick a Peak route, or combine two routes when short-staffed.</p>
+  <button id="combineMode" class="secondary" type="button">Combine two routes</button>
+  <div id="combineHint" class="combinehint hidden">Select two routes below, then tap Start combined routes.</div>
+  <div id="routeGroups"></div>
+  <button id="startCombined" class="primary hidden" type="button" disabled>Start combined routes</button>
+  <button id="refreshRoutes" class="secondary" type="button">Refresh route data</button>
+</section>
+
+<section id="dash" class="hidden">
+  <div class="card">
+    <div class="muted">Selected route</div>
+    <div id="routeTitle" class="big"></div>
+    <div class="status-row">
+      <div class="pills">
+        <span id="remainPill" class="pill active"></span>
+        <span id="donePill" class="pill done"></span>
+        <span id="skipPill" class="pill skipped"></span>
+        <span id="expiredPill" class="pill expired"></span>
+      </div>
+      <button id="findMe" class="secondary find-compact" type="button">Find me</button>
+    </div>
+    <div id="where" class="muted where-line"></div>
+    <div id="geoStatus" class="muted geo-line"></div>
+  </div>
+
+  <div class="card">
+    <div class="muted">Nearest remaining location</div>
+    <div id="nearName" class="big" style="margin-top:5px">Waiting for location…</div>
+    <div id="nearDetail" class="muted" style="margin-top:6px"></div>
+    <div id="nearDistance" class="distance"></div>
+    <div id="selectionHint" class="muted" style="margin-top:7px">Nearest location is selected automatically. Tap any remaining location below to choose it instead.</div>
+    <div class="action-row">
+      <button id="nav" class="primary" type="button" disabled>Navigate</button>
+      <button id="complete" class="good" type="button" disabled>Complete</button>
+      <button id="skip" class="warn" type="button" disabled>Skip</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Route locations</h2>
+    <button id="navRoute" class="secondary nav-remaining" type="button" disabled>Navigate remaining</button>
+    <div class="muted locations-nav-hint">Opens Google Maps with the selected stop first, then up to 9 more remaining stops.</div>
+    <div id="list"></div>
+  </div>
+  <div class="card">
+    <button id="recalc" class="secondary" type="button">Recalculate nearest</button>
+    <button id="reset" class="danger" type="button">Reset this route</button>
+    <button id="change" class="secondary" type="button">Choose another route</button>
+  </div>
+</section>
+
+<div class="versionbar">
+  <div class="vrow">
+    <span><strong id="appVersionLabel">Route Runner v14.0</strong></span>
+    <span id="appUpdateStatus">App ready</span>
+  </div>
+  <div class="vrow" style="margin-top:5px">
+    <span id="routeDataUpdated">Route data updated: checking…</span>
+    <span id="routeDataStatus"></span>
+  </div>
+</div>
+</main>
+<footer>
+  <div>
+    <button id="routesBtn" class="secondary" type="button">Routes</button>
+    <button id="findBtn" class="secondary" type="button">Find my location</button>
+  </div>
+</footer>
+<script src="js/app.js" defer></script>
+</body>
+</html>
