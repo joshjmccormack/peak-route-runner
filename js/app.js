@@ -98,7 +98,7 @@ function expireTimeFromDetail(detail) {
 function applyDerivedExpiry(routes) {
   routes.forEach((routeItem) => {
     (routeItem.locations || []).forEach((loc) => {
-      const derived = expireTimeFromDetail(loc.detail);
+      const derived = expireTimeFromDetail(loc.detailLong || loc.detail);
       if (derived) loc.expireTime = derived;
     });
   });
@@ -516,7 +516,7 @@ function openPhotoDialog(loc) {
   const body = document.getElementById("photoDialogBody");
   if (!overlay || !title || !detail || !body) return;
   title.textContent = loc.name || "Location";
-  const detailText = loc.detail || "";
+  const detailText = loc.detailLong || loc.detail || "";
   detail.textContent = detailText;
   detail.classList.toggle("hidden", !detailText);
   const src = locationPhotoSrc(loc);

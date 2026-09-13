@@ -66,10 +66,14 @@ Open routes.js in a text editor. Each location has:
   id      = unique internal identifier (best left unchanged)
   name    = the label shown in Route Runner
   query   = the address/location text used for geocoding
-  detail  = the enforcement/location description shown beneath the name
-  photo   = optional map screenshot path, e.g. "photos/albert-st.jpg"
+  detail      = short text shown on the location card
+  detailLong  = full restriction text shown in the photo popup (used for expiry times)
+  photo       = optional map screenshot path, e.g. "photos/albert-st.jpg"
 
-For a simple correction, edit name, query and/or detail in routes.js, save it,
+When shortening card text, edit detail only. Leave detailLong as the full restriction
+text so expiry still reads the times.
+
+For a simple correction, edit name, query, detail and/or detailLong in routes.js, save it,
 then upload the updated routes.js to your Netlify deployment.
 
 IMPORTANT: Route Runner caches geocoded coordinates in the phone browser. If you
