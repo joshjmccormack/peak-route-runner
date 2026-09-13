@@ -18,8 +18,8 @@ const SORT_MODE_KEY = "peak_sort_mode";
 let sortMode = localStorage.getItem(SORT_MODE_KEY) === "route" ? "route" : "nearest";
 const geocache = JSON.parse(localStorage.getItem("peak_geocache") || "{}");
 
-const ROUTE_DATA_CACHE_KEY = "peak_routes_cache_v11";
-const ROUTE_DATA_UPDATED_KEY = "peak_routes_updated_v11";
+const ROUTE_DATA_CACHE_KEY = "peak_routes_cache_v12";
+const ROUTE_DATA_UPDATED_KEY = "peak_routes_updated_v12";
 
 function formatLocalTimestamp(iso) {
   try {
@@ -57,10 +57,98 @@ function stripTrailingCommas(text) {
   return out;
 }
 
-function parseRoutesJs(text) {
-  const m = text.match(/const\s+ROUTES\s*=\s*(\[[\s\S]*\]);?\s*$/);
+function walkJsText(text, onPlain, onStringChar) {
+  let inStr = false;
+  let esc = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (inStr) {
+      if (onStringChar) onStringChar(ch, i);
+      if (esc) esc = false;
+      else if (ch === "\\") esc = true;
+      else if (ch === "\"") inStr = false;
+      continue;
+    }
+    if (ch === "\"") {
+      inStr = true;
+      if (onPlain) onPlain(ch, i);
+      continue;
+    }
+    if (ch === "/" && text[i + 1] === "/") {
+      i += 1;
+      while (i + 1 < text.length && text[i + 1] !== "\n") i++;
+      continue;
+    }
+    if (ch === "/" && text[i + 1] === "*") {
+      i += 2;
+      while (i + 1 < text.length && !(text[i] === "*" && text[i + 1] === "/")) i++;
+      i += 1;
+      continue;
+    }
+    if (onPlain) onPlain(ch, i);
+  }
+}
+
+function stripJsComments(text) {
+  let out = "";
+  walkJsText(text, (ch) => { out += ch; }, (ch) => { out += ch; });
+  return out;
+}
+
+function extractRoutesArray(text) {
+  const m = text.match(/const\s+ROUTES\s*=/);
   if (!m) throw new Error("Invalid routes.js format");
-  return JSON.parse(stripTrailingCommas(m[1]));
+  const start = text.indexOf("[", m.index + m[0].length - 1);
+  if (start < 0) throw new Error("Invalid routes.js format");
+  let depth = 0;
+  let end = -1;
+  walkJsText(text.slice(start), (ch, i) => {
+    if (end >= 0) return;
+    if (ch === "[") depth++;
+    else if (ch === "]") {
+      depth--;
+      if (depth === 0) end = start + i;
+    }
+  });
+  if (end < 0) throw new Error("Invalid routes.js format");
+  return text.slice(start, end + 1);
+}
+
+function insertMissingCommas(text) {
+  let out = "";
+  let pending = "";
+  walkJsText(text, (ch) => {
+    if (ch === "}" || ch === "]") {
+      out += pending + ch;
+      pending = "";
+      return;
+    }
+    if (/\s/.test(ch)) {
+      if (out.endsWith("}") || out.endsWith("]")) pending += ch;
+      else out += ch;
+      return;
+    }
+    if ((ch === "{" || ch === "[") && (out.endsWith("}") || out.endsWith("]"))) {
+      out += pending + "," + ch;
+      pending = "";
+      return;
+    }
+    out += pending + ch;
+    pending = "";
+  }, (ch) => {
+    out += pending + ch;
+    pending = "";
+  });
+  return out + pending;
+}
+
+function parseRoutesJs(text) {
+  const extracted = extractRoutesArray(stripJsComments(text));
+  return JSON.parse(stripTrailingCommas(insertMissingCommas(extracted)));
+}
+
+function locCardDetail(loc) {
+  return String(loc && loc.detail || "").trim();
 }
 
 function clockToMinutes(hour, minute, mer) {
@@ -456,6 +544,18 @@ function streetSummary(items) {
   return parts.join(" · ") || `${items.length} stop${items.length === 1 ? "" : "s"}`;
 }
 
+function streetCardDetails(items) {
+  const seen = new Set();
+  const details = [];
+  items.forEach((x) => {
+    const d = locCardDetail(x.l);
+    if (!d || seen.has(d)) return;
+    seen.add(d);
+    details.push(d);
+  });
+  return details;
+}
+
 function streetParentStatus(items) {
   if (items.some((x) => x.status === "remaining")) return "remaining";
   const leftover = items.filter((x) => x.status !== "complete" && x.status !== "skipped");
@@ -590,9 +690,10 @@ function createLocRow(row, hideName) {
     : status === "skipped" ? "↷ Skipped"
       : status === "expired" ? `⏱ Expired${l.expireTime ? ` at ${formatClock24(l.expireTime)}` : ""}`
         : "";
+  const cardDetail = locCardDetail(l);
   const titleHtml = hideName
-    ? `<div class="muted">${esc(l.detail || l.name)}</div>`
-    : `<strong>${esc(l.name)}</strong><div class="muted">${esc(l.detail)}</div>`;
+    ? `<div class="muted">${esc(cardDetail || l.name)}</div>`
+    : `<strong>${esc(l.name)}</strong>${cardDetail ? `<div class="muted">${esc(cardDetail)}</div>` : ""}`;
   d.innerHTML = `<div class="locrow-main"><div class="rowtop">${titleHtml}${l.sourceRouteName ? `<div class="muted sourceroute">${esc(l.sourceRouteName)}</div>` : ""}</div>
                 ${stateText ? `<div class="state">${stateText}</div>` : ""}</div>${status === "remaining" && distanceText ? `<div class="rowdistance">${esc(distanceText)} away</div>` : ""}`;
   if (status === "remaining") {
@@ -625,11 +726,14 @@ function createStreetCard(name, items) {
     : parentStatus === "complete" ? `<div class="state">✓ Completed</div>`
       : parentStatus === "skipped" ? `<div class="state">↷ Skipped</div>`
         : `<div class="streetsum">${esc(streetSummary(items))}</div>`;
+  const detailHtml = streetCardDetails(items)
+    .map((d) => `<div class="muted">${esc(d)}</div>`)
+    .join("");
   const head = document.createElement("button");
   head.type = "button";
   head.className = "streethead";
   head.setAttribute("aria-expanded", String(open));
-  head.innerHTML = `<div class="streetcopy"><strong>${esc(name)}</strong>${statusLine}</div><span class="streetchevron" aria-hidden="true">${open ? "▾" : "▸"}</span>`;
+  head.innerHTML = `<div class="streetcopy"><strong>${esc(name)}</strong>${detailHtml}${statusLine}</div><span class="streetchevron" aria-hidden="true">${open ? "▾" : "▸"}</span>`;
   head.onclick = () => {
     streetExpanded[name] = !open;
     renderLocationList();

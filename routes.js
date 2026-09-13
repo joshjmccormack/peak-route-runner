@@ -140,7 +140,7 @@ const ROUTES = [
         "lat": null,
         "lng": null,
         "photo": null,
-      }
+      },
       {
         "id": "peak12-am-12",
         "order": 12,

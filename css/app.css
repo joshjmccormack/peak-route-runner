@@ -428,6 +428,12 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .streetcard.skipped.open .streethead { border-bottom-color: #efd39f; }
 .streetcard.skipped .state { color: var(--amber); font-weight: 800; }
 .streetcopy { min-width: 0; }
+.streetcopy .muted {
+  color: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  margin-top: 2px;
+}
 .streethead strong { display: block; font-size: 1rem; }
 .streetsum {
   color: var(--muted);
