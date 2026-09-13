@@ -1,4 +1,4 @@
-const CACHE = "peak-route-runner-v1.1l";
+const CACHE = "peak-route-runner-v1.1m";
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./css/app.css", "./js/app.js"];
 
 self.addEventListener("install", (event) => {
@@ -41,6 +41,22 @@ self.addEventListener("fetch", (event) => {
         if (cached) return cached;
         if (url.pathname.endsWith("/routes.js")) throw e;
         return caches.match("./index.html");
+      }
+    })());
+    return;
+  }
+
+  if (url.origin === self.location.origin && url.pathname.includes("/photos/")) {
+    event.respondWith((async () => {
+      try {
+        const fresh = await fetch(req, { cache: "no-store" });
+        const cache = await caches.open(CACHE);
+        if (fresh.ok) cache.put(req, fresh.clone());
+        return fresh;
+      } catch (e) {
+        const cached = await caches.match(req);
+        if (cached) return cached;
+        throw e;
       }
     })());
     return;

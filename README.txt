@@ -67,6 +67,7 @@ Open routes.js in a text editor. Each location has:
   name    = the label shown in Route Runner
   query   = the address/location text used for geocoding
   detail  = the enforcement/location description shown beneath the name
+  photo   = optional map screenshot path, e.g. "photos/albert-st.jpg"
 
 For a simple correction, edit name, query and/or detail in routes.js, save it,
 then upload the updated routes.js to your Netlify deployment.

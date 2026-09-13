@@ -488,6 +488,52 @@ function sortStreetRows(items) {
 }
 
 const NAV_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" d="M8.4 18.45V12.1C8.4 8.9 10.75 7.25 14.15 7.25H16.9"/><path fill="currentColor" d="M15.55 4.6 21.45 7.45l-5.9 2.85z"/></svg>';
+const PIN_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#d32f2f" d="M12 21.8s7.15-7.05 7.15-12.05A7.15 7.15 0 0 0 12 2.6 7.15 7.15 0 0 0 4.85 9.75C4.85 14.75 12 21.8 12 21.8z"/><circle fill="#fff" cx="12" cy="9.55" r="2.55"/></svg>';
+
+function locationPhotoSrc(loc) {
+  const raw = loc && typeof loc.photo === "string" ? loc.photo.trim() : "";
+  if (!/^photos\/[A-Za-z0-9._-]+\.(jpe?g|png|webp)$/i.test(raw)) return "";
+  return raw;
+}
+
+function showPhotoEmpty(host) {
+  host.replaceChildren();
+  const empty = document.createElement("p");
+  empty.className = "photo-empty";
+  empty.textContent = "No map screenshot yet.";
+  host.appendChild(empty);
+}
+
+function closePhotoDialog() {
+  const overlay = document.getElementById("photoDialog");
+  if (overlay) overlay.classList.add("hidden");
+}
+
+function openPhotoDialog(loc) {
+  const overlay = document.getElementById("photoDialog");
+  const title = document.getElementById("photoDialogTitle");
+  const detail = document.getElementById("photoDialogDetail");
+  const body = document.getElementById("photoDialogBody");
+  if (!overlay || !title || !detail || !body) return;
+  title.textContent = loc.name || "Location";
+  const detailText = loc.detail || "";
+  detail.textContent = detailText;
+  detail.classList.toggle("hidden", !detailText);
+  const src = locationPhotoSrc(loc);
+  if (!src) {
+    showPhotoEmpty(body);
+  } else {
+    body.replaceChildren();
+    const img = document.createElement("img");
+    img.src = src;
+    img.alt = `Map screenshot of ${loc.name || "this location"}`;
+    img.onerror = () => showPhotoEmpty(body);
+    body.appendChild(img);
+  }
+  overlay.classList.remove("hidden");
+  const closeBtn = document.getElementById("photoDialogClose");
+  if (closeBtn) closeBtn.focus();
+}
 
 function createNavButton(loc) {
   const navBtn = document.createElement("button");
@@ -515,6 +561,19 @@ function createDoneButton(loc) {
   return doneBtn;
 }
 
+function createPhotoButton(loc) {
+  const photoBtn = document.createElement("button");
+  photoBtn.type = "button";
+  photoBtn.className = "locact locact-photo";
+  photoBtn.setAttribute("aria-label", `Map screenshot for ${loc.name}`);
+  photoBtn.innerHTML = PIN_ICON;
+  photoBtn.onclick = (e) => {
+    e.stopPropagation();
+    openPhotoDialog(loc);
+  };
+  return photoBtn;
+}
+
 function createLocRow(row, hideName) {
   const { l, distance, status } = row;
   const d = document.createElement("div");
@@ -538,8 +597,12 @@ function createLocRow(row, hideName) {
                 ${stateText ? `<div class="state">${stateText}</div>` : ""}</div>${status === "remaining" && distanceText ? `<div class="rowdistance">${esc(distanceText)} away</div>` : ""}`;
   if (status === "remaining") {
     d.prepend(createNavButton(l));
+    const navEl = d.querySelector(".locact-nav");
+    navEl.after(createPhotoButton(l));
     d.appendChild(createDoneButton(l));
     d.onclick = () => selectLocation(l.id);
+  } else {
+    d.appendChild(createPhotoButton(l));
   }
   return d;
 }
@@ -951,8 +1014,18 @@ function bindUi() {
   document.getElementById("resetDialog").addEventListener("click", (event) => {
     if (event.target.id === "resetDialog") closeResetDialog();
   });
+  document.getElementById("photoDialogClose").onclick = closePhotoDialog;
+  document.getElementById("photoDialog").addEventListener("click", (event) => {
+    if (event.target.id === "photoDialog") closePhotoDialog();
+  });
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !document.getElementById("resetDialog").classList.contains("hidden")) {
+    if (event.key !== "Escape") return;
+    const photo = document.getElementById("photoDialog");
+    if (photo && !photo.classList.contains("hidden")) {
+      closePhotoDialog();
+      return;
+    }
+    if (!document.getElementById("resetDialog").classList.contains("hidden")) {
       closeResetDialog();
     }
   });
