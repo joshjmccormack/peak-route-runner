@@ -544,18 +544,6 @@ function streetSummary(items) {
   return parts.join(" · ") || `${items.length} stop${items.length === 1 ? "" : "s"}`;
 }
 
-function streetCardDetails(items) {
-  const seen = new Set();
-  const details = [];
-  items.forEach((x) => {
-    const d = locCardDetail(x.l);
-    if (!d || seen.has(d)) return;
-    seen.add(d);
-    details.push(d);
-  });
-  return details;
-}
-
 function streetParentStatus(items) {
   if (items.some((x) => x.status === "remaining")) return "remaining";
   const leftover = items.filter((x) => x.status !== "complete" && x.status !== "skipped");
@@ -726,14 +714,11 @@ function createStreetCard(name, items) {
     : parentStatus === "complete" ? `<div class="state">✓ Completed</div>`
       : parentStatus === "skipped" ? `<div class="state">↷ Skipped</div>`
         : `<div class="streetsum">${esc(streetSummary(items))}</div>`;
-  const detailHtml = streetCardDetails(items)
-    .map((d) => `<div class="muted">${esc(d)}</div>`)
-    .join("");
   const head = document.createElement("button");
   head.type = "button";
   head.className = "streethead";
   head.setAttribute("aria-expanded", String(open));
-  head.innerHTML = `<div class="streetcopy"><strong>${esc(name)}</strong>${detailHtml}${statusLine}</div><span class="streetchevron" aria-hidden="true">${open ? "▾" : "▸"}</span>`;
+  head.innerHTML = `<div class="streetcopy"><strong>${esc(name)}</strong>${statusLine}</div><span class="streetchevron" aria-hidden="true">${open ? "▾" : "▸"}</span>`;
   head.onclick = () => {
     streetExpanded[name] = !open;
     renderLocationList();
