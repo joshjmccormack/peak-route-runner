@@ -1,4 +1,4 @@
-const CACHE = "peak-route-runner-v1.1w";
+const CACHE = "peak-route-runner-v1.1x";
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./css/app.css", "./js/app.js"];
 
 self.addEventListener("install", (event) => {
