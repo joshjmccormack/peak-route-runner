@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <title>Peak Route Runner</title>
-<link rel="stylesheet" href="css/app.css?v=1.1n">
+<link rel="stylesheet" href="css/app.css?v=1.1s">
 </head>
 <body class="locked">
 <section id="lockScreen" class="lock-screen">
@@ -32,13 +32,32 @@
   <b>Peak Route Runner</b>
 </header>
 <main>
-<section id="select" class="card">
-  <h2>Choose today's route</h2>
-  <p class="muted">Pick a Peak route, or combine two routes.</p>
+<section id="home" class="card">
+  <h2>Home</h2>
+  <p class="muted">Choose Peak Routes or Run Maps.</p>
+  <button id="openPeakRoutes" class="primary home-choice" type="button">
+    <strong>Peak Routes</strong>
+    <span>Peak 1&amp;2 through Peak 7, morning and afternoon</span>
+  </button>
+  <button id="openRunMaps" class="secondary home-choice" type="button">
+    <strong>Run Maps</strong>
+    <span>Open Google My Maps for each run group</span>
+  </button>
+</section>
+
+<section id="select" class="card hidden">
+  <h2>Choose today's Peak route</h2>
+  <p class="muted">Pick a Peak route, or combine two Peak routes.</p>
   <div id="routeGroups"></div>
   <button id="combineMode" class="secondary" type="button">Combine two routes</button>
-  <div id="combineHint" class="combinehint hidden">Select two routes above, then tap Start combined routes.</div>
+  <div id="combineHint" class="combinehint hidden">Select two Peak routes above, then tap Start combined routes.</div>
   <button id="startCombined" class="primary hidden" type="button" disabled>Start combined routes</button>
+</section>
+
+<section id="runMaps" class="card hidden">
+  <h2>Choose a Run Map</h2>
+  <p class="muted">Pick a run map group to open it in Google Maps.</p>
+  <div id="runMapGroups" class="routegrid"></div>
 </section>
 
 <section id="dash" class="hidden">
@@ -60,17 +79,19 @@
 
   <div class="card">
     <h2>Route locations</h2>
-    <div class="sort-toggle" role="group" aria-label="Sort remaining locations">
-      <button type="button" id="sortNearest" class="sort-opt" aria-pressed="true">Nearest</button>
-      <button type="button" id="sortRecommended" class="sort-opt" aria-pressed="false">Recommended</button>
+    <div id="dashListControls">
+      <div class="sort-toggle" role="group" aria-label="Sort remaining locations">
+        <button type="button" id="sortNearest" class="sort-opt" aria-pressed="true">Nearest</button>
+        <button type="button" id="sortRecommended" class="sort-opt" aria-pressed="false">Recommended</button>
+      </div>
+      <div id="sortHint" class="muted locations-nav-hint">Remaining stops are listed closest first.</div>
+      <button id="navRoute" class="secondary nav-remaining" type="button" disabled>Navigate remaining</button>
+      <div class="muted locations-nav-hint">Opens Google Maps with up to 10 remaining stops in this order.</div>
     </div>
-    <div id="sortHint" class="muted locations-nav-hint">Remaining stops are listed closest first.</div>
-    <button id="navRoute" class="secondary nav-remaining" type="button" disabled>Navigate remaining</button>
-    <div class="muted locations-nav-hint">Opens Google Maps with up to 10 remaining stops in this order.</div>
     <div id="list"></div>
   </div>
   <div class="card">
-    <div class="tools-row">
+    <div id="dashRouteTools" class="tools-row">
       <button id="recalc" class="secondary" type="button">Recalculate nearest</button>
       <button id="reset" class="danger" type="button">Reset this route</button>
     </div>
@@ -91,11 +112,10 @@
 </main>
 <footer>
   <div>
-    <button id="routesBtn" class="secondary" type="button">Routes</button>
-    <button id="findBtn" class="secondary" type="button">Find my location</button>
+    <button id="homeBtn" class="secondary" type="button">Home</button>
   </div>
 </footer>
-<script src="js/app.js?v=1.1n" defer></script>
+<script src="js/app.js?v=1.1s" defer></script>
 <div id="resetDialog" class="dialog-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="resetDialogMsg">
   <div class="dialog-card">
     <p id="resetDialogMsg">Reset all completed and skipped locations for this route?</p>

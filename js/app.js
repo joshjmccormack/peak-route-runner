@@ -2,6 +2,22 @@ const APP_VERSION = "v1.1";
 const ACCESS_SALT = "peak-route-runner";
 const ACCESS_HASH = "2918fd829429cfa0a8d97c1b105cecc60f28158d3aa38042506701e5dc1221d3";
 const ACCESS_SESSION_KEY = "peak_unlocked";
+const SCREEN_IDS = ["home", "select", "runMaps", "dash"];
+const RUNMAP_PREFIX = "runmap:";
+const SHOW_ALL_MAPS_URL = "https://www.google.com/maps/d/u/1/edit?mid=1du12Xr1YcXO5iB9CEYstssvNaV92LZI&usp=sharing";
+const RUN_MAPS = [
+  { id: "1-6", name: "Run: 1, 2, 3, 4, 5 & 6", suburb: "Brisbane City", mapsUrl: SHOW_ALL_MAPS_URL },
+  { id: "7-16", name: "Run: 7 & 16", suburb: "Fortitude Valley, New Farm, Newstead and Teneriffe", mapsUrl: "https://www.google.com/maps/d/u/1/edit?mid=1KO4TyHNX4vFgjgE2StLLxnXZG3V-S9w&usp=sharing" },
+  { id: "8-9", name: "Run: 8 & 9", suburb: "Brisbane City, Fortitude Valley and Spring Hill", mapsUrl: SHOW_ALL_MAPS_URL },
+  { id: "10", name: "Run: 10", suburb: "Bowen Hills, Fortitude Valley, and Newstead", mapsUrl: SHOW_ALL_MAPS_URL },
+  { id: "11-12", name: "Run: 11 & 12", suburb: "East Brisbane, Highgate Hill, Kangaroo Point, South Brisbane, West End and Woolloongabba", mapsUrl: SHOW_ALL_MAPS_URL },
+  { id: "13-15-19", name: "Run: 13, 14, 15, 19", suburb: "Auchenflower, Brisbane City, Kelvin Grove, Milton, Paddington and Red Hill", mapsUrl: SHOW_ALL_MAPS_URL },
+  { id: "17", name: "Run: 17", suburb: "Herston and Kelvin Grove", mapsUrl: SHOW_ALL_MAPS_URL },
+  { id: "18", name: "Run: 18", suburb: "Annerley and Woolloongabba", mapsUrl: SHOW_ALL_MAPS_URL },
+  { id: "19", name: "Run: 19", mapsUrl: SHOW_ALL_MAPS_URL },
+  { id: "st-lucia", name: "Run: St Lucia", suburb: "St Lucia", mapsUrl: SHOW_ALL_MAPS_URL },
+  { id: "all", name: "Show All", wide: true, mapsUrl: SHOW_ALL_MAPS_URL }
+];
 
 let ROUTES = [];
 let currentId = localStorage.getItem("peak_current") || null;
@@ -259,8 +275,22 @@ function saveProgress(id, p) {
   });
 }
 
+function isRunMapId(id) {
+  return String(id || "").startsWith(RUNMAP_PREFIX);
+}
+
+function runMapFromCurrent() {
+  if (!isRunMapId(currentId)) return null;
+  const key = currentId.slice(RUNMAP_PREFIX.length);
+  return RUN_MAPS.find((m) => m.id === key) || null;
+}
+
 function route() {
   if (!currentId) return null;
+  const runMap = runMapFromCurrent();
+  if (runMap) {
+    return { id: currentId, name: runMap.name, locations: [] };
+  }
   const ids = currentId.split("+");
   const chosen = ids.map((id) => ROUTES.find((r) => r.id === id)).filter(Boolean);
   if (!chosen.length) return null;
@@ -356,19 +386,86 @@ function streetIsOpen(name, containsSelected) {
   return containsSelected;
 }
 
-function showSelect() {
-  selected = null;
-  selectedManual = false;
-  nearest = null;
-  currentId = null;
+function hideAllScreens() {
+  SCREEN_IDS.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add("hidden");
+  });
+}
+
+function showScreen(id) {
+  hideAllScreens();
+  const el = document.getElementById(id);
+  if (el) el.classList.remove("hidden");
+}
+
+function isHomeVisible() {
+  const home = document.getElementById("home");
+  return !!(home && !home.classList.contains("hidden"));
+}
+
+function showHome() {
+  if (isHomeVisible()) return;
   combineMode = false;
   combineSelection = [];
-  resetStreetExpand();
-  localStorage.removeItem("peak_current");
-  document.getElementById("select").classList.remove("hidden");
-  document.getElementById("dash").classList.add("hidden");
+  if (isRunMapId(currentId)) {
+    selected = null;
+    selectedManual = false;
+    nearest = null;
+    currentId = null;
+    resetStreetExpand();
+  }
+  showScreen("home");
+}
+
+function showPeakPicker(abandon) {
+  if (abandon) {
+    selected = null;
+    selectedManual = false;
+    nearest = null;
+    currentId = null;
+    resetStreetExpand();
+    localStorage.removeItem("peak_current");
+  }
+  combineMode = false;
+  combineSelection = [];
+  showScreen("select");
   updateCombineUI();
   renderRoutes();
+}
+
+function showRunMaps() {
+  if (isRunMapId(currentId)) {
+    selected = null;
+    selectedManual = false;
+    nearest = null;
+    currentId = null;
+    resetStreetExpand();
+  }
+  showScreen("runMaps");
+  renderRunMaps();
+}
+
+function chooseAnotherRoute() {
+  if (isRunMapId(currentId)) {
+    showRunMaps();
+    return;
+  }
+  showPeakPicker(true);
+}
+
+function renderRunMaps() {
+  const host = document.getElementById("runMapGroups");
+  if (!host) return;
+  host.innerHTML = "";
+  RUN_MAPS.forEach((m) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = m.wide ? "routebtn runmap-all" : "routebtn";
+    b.innerHTML = `<strong>${esc(m.name)}</strong>${m.suburb ? `<span>${esc(m.suburb)}</span>` : ""}`;
+    b.onclick = () => openRunMap(m.id);
+    host.appendChild(b);
+  });
 }
 
 function peakToneClass(group) {
@@ -447,26 +544,44 @@ function openRoute(id) {
   resetStreetExpand();
   currentId = id;
   localStorage.setItem("peak_current", id);
-  document.getElementById("select").classList.add("hidden");
-  document.getElementById("dash").classList.remove("hidden");
+  showScreen("dash");
   renderDash();
   findLocation();
   geocodeMissing();
 }
 
+function openRunMap(id) {
+  const map = RUN_MAPS.find((m) => m.id === id);
+  if (!map || !map.mapsUrl) return;
+  location.href = map.mapsUrl;
+}
+
+function setDashEmptyState(isEmpty) {
+  const extras = document.getElementById("dashListControls");
+  if (extras) extras.classList.toggle("hidden", isEmpty);
+  const tools = document.getElementById("dashRouteTools");
+  if (tools) tools.classList.toggle("hidden", isEmpty);
+}
+
 function renderDash() {
   const r = route();
-  if (!r) return showSelect();
+  if (!r) {
+    currentId = null;
+    localStorage.removeItem("peak_current");
+    return showHome();
+  }
   const p = progress(r.id);
   const done = Object.values(p).filter((x) => x === "complete").length;
   const skipped = Object.values(p).filter((x) => x === "skipped").length;
   const expired = r.locations.filter((l) => !p[l.id] && isExpired(l)).length;
   const active = r.locations.filter((l) => !p[l.id] && !isExpired(l)).length;
+  const isEmpty = !r.locations.length;
   document.getElementById("routeTitle").textContent = r.name;
   document.getElementById("remainPill").textContent = `${active} active`;
   document.getElementById("donePill").textContent = `${done} complete`;
   document.getElementById("skipPill").textContent = `${skipped} skipped`;
   document.getElementById("expiredPill").textContent = `${expired} expired`;
+  setDashEmptyState(isEmpty);
   updateSortToggle();
   calcNearest();
   renderLocationList();
@@ -494,6 +609,21 @@ function distanceFor(l) {
 function formatDistance(m) {
   if (m == null || !Number.isFinite(m)) return "";
   return `${(m / 1000).toFixed(1)} km`;
+}
+
+function brisbaneDateToday() {
+  const parts = new Intl.DateTimeFormat("en-AU", {
+    timeZone: "Australia/Brisbane",
+    year: "numeric", month: "2-digit", day: "2-digit"
+  }).formatToParts(new Date());
+  const y = parts.find((p) => p.type === "year")?.value || "0000";
+  const m = parts.find((p) => p.type === "month")?.value || "00";
+  const d = parts.find((p) => p.type === "day")?.value || "00";
+  return `${y}-${m}-${d}`;
+}
+
+function isUnlockedToday() {
+  return localStorage.getItem(ACCESS_SESSION_KEY) === brisbaneDateToday();
 }
 
 function brisbaneMinutesNow() {
@@ -740,6 +870,10 @@ function renderLocationList() {
   const p = progress(r.id);
   const host = document.getElementById("list");
   host.innerHTML = "";
+  if (!r.locations.length) {
+    host.innerHTML = `<p class="notice">No locations yet.</p>`;
+    return;
+  }
   const rows = r.locations.map((l, idx) => {
     const saved = p[l.id] || "remaining";
     const status = (saved === "remaining" && isExpired(l)) ? "expired" : saved;
@@ -849,15 +983,46 @@ async function nominatimJson(url) {
   return res.json();
 }
 
+function looksLikeHouseNumber(value) {
+  return /^(?:\d+[A-Za-z]?|\d+[A-Za-z]?(?:-\d+[A-Za-z]?)+)$/.test(String(value || "").trim());
+}
+
+function formatDisplayNameFallback(displayName) {
+  if (!displayName) return "";
+  const skip = /^(Australia|Queensland|QLD|\d{4})$/i;
+  const parts = String(displayName).split(",").map((p) => p.trim()).filter((p) => p && !skip.test(p));
+  if (!parts.length) return "";
+  if (looksLikeHouseNumber(parts[0]) && parts[1]) {
+    const street = `${parts[0]} ${parts[1]}`;
+    return parts[2] ? `${street}, ${parts[2]}` : street;
+  }
+  const numbered = parts.findIndex(looksLikeHouseNumber);
+  if (numbered >= 0 && parts[numbered + 1]) {
+    const street = `${parts[numbered]} ${parts[numbered + 1]}`;
+    const place = parts[numbered + 2] || parts[numbered - 1] || "";
+    return place ? `${street}, ${place}` : street;
+  }
+  return parts.slice(0, 3).join(", ");
+}
+
 function formatClosestAddress(result) {
   const a = result.address || {};
-  const road = a.road || a.pedestrian || a.residential || a.footway || a.path || "";
-  const street = [a.house_number, road].filter(Boolean).join(" ");
-  const place = a.suburb || a.neighbourhood || a.city_district || a.town || a.city || "";
-  if (street && place) return `${street}, ${place}`;
+  const road = String(a.road || a.pedestrian || a.residential || a.footway || a.path || "").trim();
+  let houseNumber = String(a.house_number || "").trim();
+  if (!houseNumber && result.display_name) {
+    const parts = String(result.display_name).split(",").map((p) => p.trim()).filter(Boolean);
+    if (looksLikeHouseNumber(parts[0])) houseNumber = parts[0];
+    else if (road) {
+      const roadIdx = parts.findIndex((p) => p.toLowerCase() === road.toLowerCase());
+      if (roadIdx > 0 && looksLikeHouseNumber(parts[roadIdx - 1])) houseNumber = parts[roadIdx - 1];
+    }
+  }
+  const suburb = String(a.suburb || a.neighbourhood || a.city_district || a.city || a.town || "").trim();
+  const street = [houseNumber, road].filter(Boolean).join(" ");
+  if (street && suburb) return `${street}, ${suburb}`;
   if (street) return street;
-  if (result.display_name) return result.display_name.split(",").slice(0, 3).join(",").trim();
-  return "";
+  if (suburb) return suburb;
+  return formatDisplayNameFallback(result.display_name);
 }
 
 async function reverseLookup() {
@@ -925,8 +1090,12 @@ function calcNearest() {
 async function geocodeMissing() {
   const r = route();
   if (!r) return;
-  const missing = r.locations.filter((l) => !hasExactCoords(l) && !geocache[l.query]);
   const s = document.getElementById("geoStatus");
+  if (!r.locations.length) {
+    if (s) s.textContent = "";
+    return;
+  }
+  const missing = r.locations.filter((l) => !hasExactCoords(l) && !geocache[l.query]);
   if (!missing.length) {
     s.textContent = "Route locations ready.";
     calcNearest();
@@ -1034,7 +1203,9 @@ function closeResetDialog() {
 }
 
 function resetRoute() {
-  if (!currentId) return;
+  if (!currentId || isRunMapId(currentId)) return;
+  const r = route();
+  if (!r || !r.locations.length) return;
   document.getElementById("resetDialog").classList.remove("hidden");
   document.getElementById("resetCancel").focus();
 }
@@ -1043,8 +1214,8 @@ async function refreshRouteData() {
   setRouteDataStatus("Checking for route updates…", "");
   try {
     await loadLatestRoutes();
-    if (currentId) renderDash();
-    else renderRoutes();
+    if (currentId && !isRunMapId(currentId)) renderDash();
+    else if (!document.getElementById("select").classList.contains("hidden")) renderRoutes();
   } catch (e) {
     console.error(e);
   }
@@ -1061,7 +1232,7 @@ function showLockError(visible) {
 }
 
 function unlockApp() {
-  sessionStorage.setItem(ACCESS_SESSION_KEY, "1");
+  localStorage.setItem(ACCESS_SESSION_KEY, brisbaneDateToday());
   document.body.classList.remove("locked");
   const lock = document.getElementById("lockScreen");
   if (lock) lock.classList.add("hidden");
@@ -1089,7 +1260,6 @@ function bindLockUi() {
 
 function bindUi() {
   document.getElementById("findMe").onclick = findLocation;
-  document.getElementById("findBtn").onclick = findLocation;
   document.getElementById("recalc").onclick = () => { findLocation(); geocodeMissing(); };
   document.getElementById("navRoute").onclick = navigateRemainingRoute;
   document.getElementById("combineMode").onclick = toggleCombineMode;
@@ -1118,8 +1288,10 @@ function bindUi() {
       closeResetDialog();
     }
   });
-  document.getElementById("change").onclick = showSelect;
-  document.getElementById("routesBtn").onclick = showSelect;
+  document.getElementById("change").onclick = chooseAnotherRoute;
+  document.getElementById("homeBtn").onclick = showHome;
+  document.getElementById("openPeakRoutes").onclick = () => showPeakPicker(false);
+  document.getElementById("openRunMaps").onclick = showRunMaps;
   document.getElementById("refreshRoutes").onclick = refreshRouteData;
   document.getElementById("sortNearest").onclick = () => setSortMode("nearest");
   document.getElementById("sortRecommended").onclick = () => setSortMode("route");
@@ -1137,18 +1309,26 @@ async function startApp() {
   updateCombineUI();
   updateSortToggle();
   renderRoutes();
-  if (currentId) {
+  renderRunMaps();
+  if (currentId && !isRunMapId(currentId)) {
     const ids = currentId.split("+");
     if (ids.every((id) => ROUTES.some((r) => r.id === id))) openRoute(currentId);
-    else showSelect();
+    else {
+      currentId = null;
+      localStorage.removeItem("peak_current");
+      showHome();
+    }
+  } else {
+    showHome();
   }
 }
 
 bindLockUi();
-if (sessionStorage.getItem(ACCESS_SESSION_KEY) === "1") {
+if (isUnlockedToday()) {
   unlockApp();
   startApp();
 } else {
+  localStorage.removeItem(ACCESS_SESSION_KEY);
   const pinBox = document.getElementById("accessPin");
   if (pinBox) pinBox.focus();
 }
