@@ -550,10 +550,39 @@ function openRoute(id) {
   geocodeMissing();
 }
 
+function myMapsViewerUrl(url) {
+  try {
+    const parsed = new URL(url, location.href);
+    const mid = parsed.searchParams.get("mid");
+    if (!mid) return url;
+    return `https://www.google.com/maps/d/viewer?mid=${encodeURIComponent(mid)}&usp=sharing`;
+  } catch (e) {
+    return url;
+  }
+}
+
+function openInGoogleMapsApp(url) {
+  const httpsUrl = myMapsViewerUrl(url);
+  const ua = navigator.userAgent || "";
+  const isAndroid = /Android/i.test(ua);
+  if (isAndroid) {
+    const path = httpsUrl.replace(/^https:\/\//i, "");
+    location.href = `intent://${path}#Intent;scheme=https;package=com.google.android.apps.maps;S.browser_fallback_url=${encodeURIComponent(httpsUrl)};end`;
+    return;
+  }
+  const link = document.createElement("a");
+  link.href = httpsUrl;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
 function openRunMap(id) {
   const map = RUN_MAPS.find((m) => m.id === id);
   if (!map || !map.mapsUrl) return;
-  location.href = map.mapsUrl;
+  openInGoogleMapsApp(map.mapsUrl);
 }
 
 function setDashEmptyState(isEmpty) {
