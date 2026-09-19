@@ -6,7 +6,7 @@ const SCREEN_IDS = ["home", "select", "runMaps", "dash"];
 const RUNMAP_PREFIX = "runmap:";
 const SHOW_ALL_MAPS_URL = "https://www.google.com/maps/d/u/1/edit?mid=1du12Xr1YcXO5iB9CEYstssvNaV92LZI&usp=sharing";
 const RUN_MAPS = [
-  { id: "1-6", name: "Run: 1, 2, 3, 4, 5 & 6", suburb: "Brisbane City", mapsUrl: SHOW_ALL_MAPS_URL },
+  { id: "1-6", name: "Run: 1, 2, 3, 4, 5 & 6", suburb: "Brisbane City", mapsUrl: "https://www.google.com/maps/d/u/1/edit?mid=1qQuzEAXdgHALbVtl5abd9yciKm-egBA&usp=sharing" },
   { id: "7-16", name: "Run: 7 & 16", suburb: "Fortitude Valley, New Farm, Newstead and Teneriffe", mapsUrl: "https://www.google.com/maps/d/u/1/edit?mid=1KO4TyHNX4vFgjgE2StLLxnXZG3V-S9w&usp=sharing" },
   { id: "8-9", name: "Run: 8 & 9", suburb: "Brisbane City, Fortitude Valley and Spring Hill", mapsUrl: "https://www.google.com/maps/d/u/1/edit?mid=1mxbsQahdnSsmFYPuaSew6OlBXd6_5T4&usp=sharing" },
   { id: "10", name: "Run: 10", suburb: "Bowen Hills, Fortitude Valley, and Newstead", mapsUrl: SHOW_ALL_MAPS_URL },
