@@ -555,36 +555,10 @@ function myMapsViewerUrl(url) {
     const parsed = new URL(url, location.href);
     const mid = parsed.searchParams.get("mid");
     if (!mid) return url;
-    const account = parsed.pathname.match(/\/d\/u\/(\d+)\//);
-    const accountPath = account ? `/u/${account[1]}` : "";
-    return `https://www.google.com/maps/d${accountPath}/viewer?mid=${encodeURIComponent(mid)}`;
+    return `https://www.google.com/maps/d/viewer?mid=${encodeURIComponent(mid)}&usp=sharing`;
   } catch (e) {
     return url;
   }
-}
-
-function launchHref(href, targetBlank) {
-  const link = document.createElement("a");
-  link.href = href;
-  if (targetBlank) link.target = "_blank";
-  link.rel = "noopener noreferrer";
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-}
-
-function androidMapsIntentUrl(httpsUrl) {
-  const path = httpsUrl.replace(/^https:\/\//i, "").replace(/&/g, "%26");
-  return (
-    `intent://${path}#Intent;` +
-    "scheme=https;" +
-    "action=android.intent.action.VIEW;" +
-    "category=android.intent.category.BROWSABLE;" +
-    "package=com.google.android.apps.maps;" +
-    "launchFlags=0x10000000;" +
-    `S.browser_fallback_url=${encodeURIComponent(httpsUrl)};` +
-    "end"
-  );
 }
 
 function openInGoogleMapsApp(url) {
@@ -592,14 +566,17 @@ function openInGoogleMapsApp(url) {
   const ua = navigator.userAgent || "";
   const isAndroid = /Android/i.test(ua);
   if (isAndroid) {
-    const intentUrl = androidMapsIntentUrl(httpsUrl);
-    // Maps often shows "Couldn't open map" on a cold start, then works on the
-    // next tap. Fire twice in this gesture so the running app gets the URL.
-    launchHref(intentUrl, true);
-    launchHref(intentUrl, true);
+    const path = httpsUrl.replace(/^https:\/\//i, "");
+    location.href = `intent://${path}#Intent;scheme=https;package=com.google.android.apps.maps;S.browser_fallback_url=${encodeURIComponent(httpsUrl)};end`;
     return;
   }
-  launchHref(httpsUrl, true);
+  const link = document.createElement("a");
+  link.href = httpsUrl;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
 
 function openRunMap(id) {
