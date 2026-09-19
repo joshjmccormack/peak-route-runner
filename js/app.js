@@ -13,10 +13,10 @@ const RUN_MAPS = [
   { id: "11", name: "Run: 11", suburb: "East Brisbane, Highgate Hill, Kangaroo Point, South Brisbane, West End and Woolloongabba", mapsUrl: "https://www.google.com/maps/d/u/1/edit?mid=1fJwEG-oHxfPbS5s2Vhy7xv16nU_sE3A&usp=sharing" },
   { id: "12", name: "Run: 12", suburb: "East Brisbane, Highgate Hill, Kangaroo Point, South Brisbane, West End and Woolloongabba", mapsUrl: "https://www.google.com/maps/d/u/1/edit?mid=1E5EQkXGgTI1bqXaE6hbcoupm6dv1mkE&usp=sharing" },
   { id: "13-19", name: "Run: 13 & 19", suburb: "Auchenflower, Brisbane City, Kelvin Grove, Milton, Paddington and Red Hill", mapsUrl: "https://www.google.com/maps/d/u/1/edit?mid=1zPubT82SCib4vL_c2uHcgj6bHD2EzFM&usp=sharing" },
-  { id: "14-15", name: "Run: 14 & 15", suburb: "Auchenflower, Brisbane City, Kelvin Grove, Milton, Paddington and Red Hill", mapsUrl: SHOW_ALL_MAPS_URL },
-  { id: "17", name: "Run: 17", suburb: "Herston and Kelvin Grove", mapsUrl: SHOW_ALL_MAPS_URL },
-  { id: "18", name: "Run: 18", suburb: "Annerley and Woolloongabba", mapsUrl: SHOW_ALL_MAPS_URL },
-  { id: "19", name: "Run: 19", mapsUrl: SHOW_ALL_MAPS_URL },
+  { id: "14-15", name: "Run: 14 & 15", suburb: "Auchenflower, Brisbane City, Kelvin Grove, Milton, Paddington and Red Hill", mapsUrl: "https://www.google.com/maps/d/u/1/edit?mid=1hFI5oztzLmWlsr_Si1zRyq08On86Ga0&usp=sharing" },
+  { id: "17", name: "Run: 17", suburb: "Herston and Kelvin Grove", mapsUrl: "https://www.google.com/maps/d/u/1/edit?mid=19MAXVYIT6Et70I_gDCFYb-7ao62AhHc&usp=sharing" },
+  { id: "18", name: "Run: 18", suburb: "Annerley and Woolloongabba", mapsUrl: "https://www.google.com/maps/d/u/1/edit?mid=1OGosRdw8Pk_itL9YBkaYocUedCsY68s&usp=sharing" },
+  { id: "20", name: "Run: 20" },
   { id: "st-lucia", name: "Run: St Lucia", suburb: "St Lucia", mapsUrl: "https://www.google.com/maps/d/u/1/edit?mid=1vfToweHksS1oYf7RbMeqgGAoL9JdXs4&usp=sharing" },
   { id: "all", name: "Show All", wide: true, mapsUrl: SHOW_ALL_MAPS_URL }
 ];
