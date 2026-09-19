@@ -94,6 +94,11 @@ main {
 
 h2 { font-size: 1.1rem; margin: 0 0 12px; }
 .muted { color: var(--muted); font-size: 0.8125rem; }
+.runmaps-note {
+  color: var(--red);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
 .big { font-size: 1.35rem; font-weight: 750; letter-spacing: -0.02em; }
 
 button {
