@@ -146,6 +146,13 @@ body.locked .lock-screen { display: flex; }
   max-width: 50%;
 }
 .job-time-row select { margin: 0; }
+#jobDate,
+#jobHour,
+#jobMinute,
+#jobOfficers,
+#jobReporting {
+  font-weight: 700;
+}
 .job-time-sep {
   font-size: 1.4rem;
   font-weight: 800;
@@ -173,7 +180,11 @@ body.locked .lock-screen { display: flex; }
   margin: 8px 0;
   background: #fff;
 }
-#jobPhotoClear { width: auto; margin: 0; }
+#jobPhotoClear {
+  width: 100%;
+  margin: 0 0 8px;
+  background: #edf1f7;
+}
 #jobClosureBtn {
   display: flex;
   align-items: baseline;

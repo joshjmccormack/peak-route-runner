@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <title>Peak Route Runner</title>
-<link rel="stylesheet" href="css/app.css?v=1.1au">
+<link rel="stylesheet" href="css/app.css?v=1.1az">
 </head>
 <body class="locked">
 <section id="lockScreen" class="lock-screen">
@@ -123,8 +123,8 @@
     <div class="field-label">Complainant contacted</div>
     <div class="sort-toggle complainant-toggle" role="group" aria-label="Complainant contacted">
       <button type="button" class="sort-opt" data-job-complainant="yes" aria-pressed="false">Yes</button>
-      <button type="button" class="sort-opt" data-job-complainant="no" aria-pressed="false">No</button>
       <button type="button" class="sort-opt" data-job-complainant="left_message" aria-pressed="false">Yes, left message</button>
+      <button type="button" class="sort-opt" data-job-complainant="no" aria-pressed="false">No</button>
       <button type="button" class="sort-opt" data-job-complainant="other" aria-pressed="false">Other</button>
     </div>
     <label class="field-label hidden" id="jobComplainantOtherLabel" for="jobComplainantOther">Other details</label>
@@ -142,10 +142,15 @@
       <button type="button" class="sort-opt" data-job-media="no" aria-pressed="false">No</button>
     </div>
     <div id="jobPhotoAttach" class="job-photo-attach hidden">
-      <label class="field-label" for="jobPhoto">Attach picture</label>
-      <input id="jobPhoto" name="jobPhoto" type="file" accept="image/*" capture="environment">
+      <div class="field-label">Attach picture</div>
+      <div class="sort-toggle" role="group" aria-label="Attach picture">
+        <button id="jobPhotoPick" class="sort-opt" type="button">Choose from gallery</button>
+        <button id="jobPhotoTake" class="sort-opt" type="button">Take photo</button>
+      </div>
+      <input id="jobPhotoCamera" class="hidden" type="file" accept="image/*" capture="environment">
+      <input id="jobPhoto" class="hidden" type="file" accept="image/*">
       <img id="jobPhotoPreview" class="job-photo-preview hidden" alt="Attached picture">
-      <button id="jobPhotoClear" class="secondary hidden" type="button">Remove picture</button>
+      <button id="jobPhotoClear" class="sort-opt hidden" type="button">Remove picture</button>
     </div>
 
     <label class="field-label" for="jobReferral">Referral</label>
@@ -287,7 +292,7 @@
 <script src="js/vendor/supabase.js" defer></script>
 <script src="js/supabase-config.js" defer></script>
 <script src="js/vehicles.js" defer></script>
-<script src="js/app.js?v=1.1au" defer></script>
+<script src="js/app.js?v=1.1az" defer></script>
 <div id="resetDialog" class="dialog-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="resetDialogMsg">
   <div class="dialog-card">
     <p id="resetDialogMsg">Reset all completed and skipped locations for this route?</p>

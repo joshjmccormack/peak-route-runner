@@ -1,4 +1,4 @@
-const CACHE = "peak-route-runner-v1.1au";
+const CACHE = "peak-route-runner-v1.1az";
 const CORE = [
   "./",
   "./index.html",

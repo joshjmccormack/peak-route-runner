@@ -700,9 +700,17 @@ function setComplainantOtherVisible(show) {
   }
 }
 
+function jobPhotoFile() {
+  return document.getElementById("jobPhoto")?.files?.[0]
+    || document.getElementById("jobPhotoCamera")?.files?.[0]
+    || null;
+}
+
 function clearJobPhoto() {
-  const input = document.getElementById("jobPhoto");
-  if (input) input.value = "";
+  ["jobPhoto", "jobPhotoCamera"].forEach((id) => {
+    const input = document.getElementById(id);
+    if (input) input.value = "";
+  });
   const preview = document.getElementById("jobPhotoPreview");
   if (preview) {
     preview.src = "";
@@ -885,8 +893,7 @@ async function trySaveJobClosure(event) {
       return;
     }
     let photoPath = null;
-    const photoInput = document.getElementById("jobPhoto");
-    const photoFile = photoInput?.files?.[0];
+    const photoFile = jobPhotoFile();
     if (jobMediaAttached === "yes" && photoFile) {
       const blob = await compressJobPhoto(photoFile);
       photoPath = `${user.id}/${Date.now()}.jpg`;
@@ -2221,8 +2228,32 @@ function bindUi() {
     };
   });
   const jobPhoto = document.getElementById("jobPhoto");
+  const jobPhotoCamera = document.getElementById("jobPhotoCamera");
+  const jobPhotoPick = document.getElementById("jobPhotoPick");
+  const jobPhotoTake = document.getElementById("jobPhotoTake");
+  if (jobPhotoPick && jobPhoto) {
+    jobPhotoPick.onclick = () => {
+      if (jobPhotoCamera) jobPhotoCamera.value = "";
+      jobPhoto.click();
+    };
+  }
+  if (jobPhotoTake && jobPhotoCamera) {
+    jobPhotoTake.onclick = () => {
+      if (jobPhoto) jobPhoto.value = "";
+      jobPhotoCamera.click();
+    };
+  }
   if (jobPhoto) {
-    jobPhoto.addEventListener("change", () => showJobPhotoPreview(jobPhoto.files?.[0]));
+    jobPhoto.addEventListener("change", () => {
+      if (jobPhotoCamera) jobPhotoCamera.value = "";
+      showJobPhotoPreview(jobPhoto.files?.[0]);
+    });
+  }
+  if (jobPhotoCamera) {
+    jobPhotoCamera.addEventListener("change", () => {
+      if (jobPhoto) jobPhoto.value = "";
+      showJobPhotoPreview(jobPhotoCamera.files?.[0]);
+    });
   }
   const jobPhotoClear = document.getElementById("jobPhotoClear");
   if (jobPhotoClear) jobPhotoClear.onclick = clearJobPhoto;
