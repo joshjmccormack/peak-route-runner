@@ -71,11 +71,159 @@ body.locked .lock-screen { display: flex; }
   border: 1px solid var(--line);
   border-radius: 13px;
   padding: 14px 15px;
-  margin: 12px 0 6px;
-  font-size: 1.15rem;
-  letter-spacing: 0.12em;
+  margin: 8px 0;
+  font-size: 1rem;
 }
 .lock-error { color: var(--red); font-size: 0.8125rem; font-weight: 700; margin: 4px 0 0; }
+.signed-in-line { margin: 16px 0 6px; }
+.account-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.account-row button { margin: 0; }
+#openAddOfficer { margin: 0 0 8px; }
+.role-toggle { grid-template-columns: 1fr 1fr 1fr; }
+.change-password {
+  margin-top: 8px;
+}
+.change-password h3 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+}
+.change-password input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 12px 14px;
+  margin: 6px 0;
+  font-size: 1rem;
+}
+.change-password-status { font-size: 0.8125rem; font-weight: 700; margin: 6px 0 0; }
+.change-password-status.ok { color: var(--green); }
+.change-password-status.err { color: var(--red); }
+.field-label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin: 12px 0 6px;
+}
+#vehicleSelect,
+#chargePercent {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 14px 15px;
+  margin: 0 0 6px;
+  font-size: 1rem;
+  background: #fff;
+}
+.job-closure-form input,
+.job-closure-form textarea,
+.job-closure-form select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 14px 15px;
+  margin: 0 0 6px;
+  font-size: 1rem;
+  background: #fff;
+  font-family: inherit;
+  color: var(--txt);
+}
+.job-closure-form textarea {
+  min-height: 88px;
+  resize: vertical;
+  line-height: 1.4;
+}
+.job-time-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  max-width: 50%;
+}
+.job-time-row select { margin: 0; }
+.job-time-sep {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--txt);
+}
+.complainant-toggle { grid-template-columns: 1fr 1fr; }
+.sort-toggle.outcome-toggle {
+  grid-template-columns: 1fr;
+}
+.outcome-toggle .sort-opt {
+  white-space: normal;
+  text-align: left;
+  line-height: 1.35;
+  height: auto;
+  min-height: 48px;
+}
+.job-photo-attach { margin: 0 0 8px; }
+.job-photo-preview {
+  display: block;
+  width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  margin: 8px 0;
+  background: #fff;
+}
+#jobPhotoClear { width: auto; margin: 0; }
+#jobClosureBtn {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+}
+#jobClosureBtn .job-under-construction {
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0.9;
+}
+.vehicle-log { margin-top: 22px; }
+.vehicle-log h3 { margin: 0; font-size: 1.05rem; }
+.vehicle-log-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.vehicle-log-head button { margin: 0; width: auto; }
+#vehicleLogSearch {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 12px 14px;
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+.charge-pct { font-weight: 800; }
+.charge-pct-high { color: var(--green); }
+.charge-pct-mid { color: #c4a000; }
+.charge-pct-low { color: #e07000; }
+.charge-pct-crit { color: var(--red); }
+.vehicle-log-body { overflow-x: auto; }
+.charge-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+.charge-table th,
+.charge-table td {
+  text-align: left;
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.charge-table th { color: var(--muted); font-weight: 700; }
 
 main {
   max-width: 760px;
@@ -218,6 +366,8 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 }
 .primary.home-choice span { color: rgba(255, 255, 255, 0.9); }
 .secondary.home-choice span { color: var(--muted); }
+.home-vehicles { margin-top: 56px; }
+.home-job-closures { margin-top: 10px; }
 
 .runmap-all { grid-column: 1 / -1; }
 
@@ -309,9 +459,13 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   -webkit-tap-highlight-color: transparent;
 }
 .sort-opt[aria-pressed="true"] {
-  background: #fff;
-  color: var(--blue);
-  box-shadow: 0 1px 4px rgba(16, 38, 72, 0.12);
+  background: var(--blue);
+  color: #fff;
+  box-shadow: none;
+}
+.sort-opt[aria-pressed="true"]:hover {
+  background: var(--blue-dark);
+  color: #fff;
 }
 .sort-opt:focus-visible {
   outline-offset: 0;

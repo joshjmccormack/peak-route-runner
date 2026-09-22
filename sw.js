@@ -1,5 +1,15 @@
-const CACHE = "peak-route-runner-v1.1ac";
-const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./css/app.css", "./js/app.js"];
+const CACHE = "peak-route-runner-v1.1au";
+const CORE = [
+  "./",
+  "./index.html",
+  "./manifest.webmanifest",
+  "./icon.svg",
+  "./css/app.css",
+  "./js/app.js",
+  "./js/supabase-config.js",
+  "./js/vehicles.js",
+  "./js/vendor/supabase.js"
+];
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
@@ -19,6 +29,9 @@ function isAppShell(url) {
     url.pathname.endsWith("/routes.js") ||
     url.pathname.endsWith("/index.html") ||
     url.pathname.endsWith("/js/app.js") ||
+    url.pathname.endsWith("/js/supabase-config.js") ||
+    url.pathname.endsWith("/js/vehicles.js") ||
+    url.pathname.endsWith("/js/vendor/supabase.js") ||
     url.pathname.endsWith("/css/app.css") ||
     url.pathname.endsWith("/")
   );

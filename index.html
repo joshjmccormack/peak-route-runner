@@ -6,25 +6,27 @@
 <meta name="theme-color" content="#0946a8">
 <meta name="description" content="Peak Route Runner">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://nominatim.openstreetmap.org; img-src 'self' data:; style-src 'self'; script-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://nominatim.openstreetmap.org https://*.supabase.co wss://*.supabase.co; img-src 'self' data:; style-src 'self'; script-src 'self'; worker-src 'self'; manifest-src 'self'; base-uri 'self'; form-action 'self'">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <title>Peak Route Runner</title>
-<link rel="stylesheet" href="css/app.css?v=1.1ac">
+<link rel="stylesheet" href="css/app.css?v=1.1au">
 </head>
 <body class="locked">
 <section id="lockScreen" class="lock-screen">
   <div class="lock-card">
     <h1>Peak Route Runner</h1>
-    <p class="muted">Enter the access PIN to continue.</p>
+    <p class="muted">Sign in with the email you were invited with.</p>
     <form id="lockForm">
-      <label class="hidden" for="accessPin">Access PIN</label>
-      <input id="accessPin" name="accessPin" type="password" inputmode="numeric" autocomplete="off" maxlength="32" required>
-      <button id="unlockBtn" class="primary" type="submit">Unlock</button>
-      <p id="lockError" class="lock-error hidden">Incorrect PIN.</p>
+      <label class="hidden" for="accessEmail">Email</label>
+      <input id="accessEmail" name="accessEmail" type="email" inputmode="email" autocomplete="username" required>
+      <label class="hidden" for="accessPassword">Password</label>
+      <input id="accessPassword" name="accessPassword" type="password" autocomplete="current-password" required>
+      <button id="unlockBtn" class="primary" type="submit">Sign in</button>
+      <p id="lockError" class="lock-error hidden"></p>
     </form>
   </div>
 </section>
@@ -34,7 +36,7 @@
 <main>
 <section id="home" class="card">
   <h2>Home</h2>
-  <p class="muted">Choose Peak Routes or Run Maps.</p>
+  <p class="muted">Choose Peak Routes, Run Maps, Vehicles, or Job closures.</p>
   <button id="openPeakRoutes" class="primary home-choice" type="button">
     <strong>Peak Routes</strong>
     <span>Peak 1&amp;2 through Peak 7, morning and afternoon</span>
@@ -43,6 +45,173 @@
     <strong>Run Maps</strong>
     <span>Open Google My Maps for each run group</span>
   </button>
+  <button id="openVehicles" class="secondary home-choice home-vehicles" type="button">
+    <strong>Vehicles</strong>
+    <span>Log charge percentage and locations of TACT or MET vehicles</span>
+  </button>
+  <button id="openJobClosures" class="secondary home-choice home-job-closures" type="button">
+    <strong>Job closures</strong>
+    <span>Record attendance and close a job</span>
+  </button>
+  <p id="signedInAs" class="muted signed-in-line"></p>
+  <button id="openAddOfficer" class="secondary hidden" type="button">Add officer</button>
+  <div class="account-row">
+    <button id="openChangePassword" class="secondary" type="button">Change password</button>
+    <button id="signOutBtn" class="secondary" type="button">Sign out</button>
+  </div>
+</section>
+
+<section id="vehicles" class="card hidden">
+  <h2>Vehicles</h2>
+  <p class="muted">Log a charge for TACT or MET. ROC and Admin also see the charge log.</p>
+  <form id="vehicleChargeForm">
+    <div class="field-label">Fleet</div>
+    <div class="sort-toggle" role="group" aria-label="Fleet">
+      <button type="button" id="fleetTact" class="sort-opt" data-fleet="TACT" aria-pressed="false">TACT</button>
+      <button type="button" id="fleetMet" class="sort-opt" data-fleet="MET" aria-pressed="false">MET</button>
+    </div>
+    <label class="field-label" for="vehicleSelect">Vehicle</label>
+    <select id="vehicleSelect" required>
+      <option value="">Select fleet first</option>
+    </select>
+    <label class="field-label" for="chargePercent">Charge %</label>
+    <input id="chargePercent" name="chargePercent" type="number" inputmode="numeric" min="0" max="100" step="1" required>
+    <div class="field-label">Location</div>
+    <div class="sort-toggle" role="group" aria-label="Location">
+      <button type="button" id="locOct" class="sort-opt" data-location="OCT" aria-pressed="false">OCT</button>
+      <button type="button" id="locGsq" class="sort-opt" data-location="GSQ" aria-pressed="false">GSQ</button>
+    </div>
+    <button id="vehicleChargeBtn" class="primary" type="submit">Save charge</button>
+    <p id="vehicleChargeStatus" class="change-password-status hidden"></p>
+  </form>
+  <div id="vehicleLogSection" class="vehicle-log hidden">
+    <div class="vehicle-log-head">
+      <h3>Charge log</h3>
+      <button id="refreshVehicleLog" class="secondary small" type="button">Refresh</button>
+    </div>
+    <label class="hidden" for="vehicleLogSearch">Search charge log</label>
+    <input id="vehicleLogSearch" type="search" placeholder="Search vehicle, fleet, location, officer…">
+    <div id="vehicleChargeLog" class="vehicle-log-body muted">Loading…</div>
+  </div>
+</section>
+
+<section id="jobClosures" class="card hidden">
+  <h2>Job closures</h2>
+  <p class="muted">Fill in the attendance details. This saves the job; email send is not set up yet.</p>
+  <form id="jobClosureForm" class="job-closure-form">
+    <label class="field-label" for="jobDate">Date of attendance (DD/MM/YYYY)</label>
+    <input id="jobDate" name="jobDate" type="date" required>
+
+    <label class="field-label">Time of attendance (24-hour)</label>
+    <div class="job-time-row">
+      <label class="hidden" for="jobHour">Hour</label>
+      <select id="jobHour" required></select>
+      <span class="job-time-sep" aria-hidden="true">:</span>
+      <label class="hidden" for="jobMinute">Minute</label>
+      <select id="jobMinute" required></select>
+    </div>
+
+    <label class="field-label" for="jobLocation">Location (if different from DART location)</label>
+    <input id="jobLocation" name="jobLocation" type="text" maxlength="200" placeholder="Leave blank if same as DART">
+
+    <label class="field-label" for="jobOfficers">Officer(s) surname / officer code(s)</label>
+    <input id="jobOfficers" name="jobOfficers" type="text" maxlength="200" required>
+
+    <label class="field-label" for="jobObservations">Observations / actions</label>
+    <textarea id="jobObservations" name="jobObservations" rows="4" maxlength="4000"></textarea>
+
+    <div class="field-label">Complainant contacted</div>
+    <div class="sort-toggle complainant-toggle" role="group" aria-label="Complainant contacted">
+      <button type="button" class="sort-opt" data-job-complainant="yes" aria-pressed="false">Yes</button>
+      <button type="button" class="sort-opt" data-job-complainant="no" aria-pressed="false">No</button>
+      <button type="button" class="sort-opt" data-job-complainant="left_message" aria-pressed="false">Yes, left message</button>
+      <button type="button" class="sort-opt" data-job-complainant="other" aria-pressed="false">Other</button>
+    </div>
+    <label class="field-label hidden" id="jobComplainantOtherLabel" for="jobComplainantOther">Other details</label>
+    <input id="jobComplainantOther" class="hidden" name="jobComplainantOther" type="text" maxlength="200" placeholder="Enter details">
+
+    <div class="field-label">Ward office contact (if WO complaint, email or phone contact must be made by officer)</div>
+    <div class="sort-toggle" role="group" aria-label="Ward office contact">
+      <button type="button" class="sort-opt" data-job-ward="yes" aria-pressed="false">Yes</button>
+      <button type="button" class="sort-opt" data-job-ward="no" aria-pressed="false">No</button>
+    </div>
+
+    <div class="field-label">Picture / voice recording to be attached</div>
+    <div class="sort-toggle" role="group" aria-label="Picture or voice recording attached">
+      <button type="button" class="sort-opt" data-job-media="yes" aria-pressed="false">Yes</button>
+      <button type="button" class="sort-opt" data-job-media="no" aria-pressed="false">No</button>
+    </div>
+    <div id="jobPhotoAttach" class="job-photo-attach hidden">
+      <label class="field-label" for="jobPhoto">Attach picture</label>
+      <input id="jobPhoto" name="jobPhoto" type="file" accept="image/*" capture="environment">
+      <img id="jobPhotoPreview" class="job-photo-preview hidden" alt="Attached picture">
+      <button id="jobPhotoClear" class="secondary hidden" type="button">Remove picture</button>
+    </div>
+
+    <label class="field-label" for="jobReferral">Referral</label>
+    <input id="jobReferral" name="jobReferral" type="text" maxlength="200">
+
+    <label class="field-label" for="jobReporting">Reporting</label>
+    <select id="jobReporting" required>
+      <option value="">Select reporting type</option>
+    </select>
+
+    <div class="field-label">Job complete</div>
+    <div class="sort-toggle" role="group" aria-label="Job complete">
+      <button type="button" class="sort-opt" data-job-complete="yes" aria-pressed="false">Yes</button>
+      <button type="button" class="sort-opt" data-job-complete="no" aria-pressed="false">No</button>
+    </div>
+
+    <div class="field-label">Outcome</div>
+    <div class="sort-toggle outcome-toggle" role="group" aria-label="Outcome">
+      <button type="button" class="sort-opt" data-job-outcome="not_located" aria-pressed="false">An officer has attended, and subject vehicle was not located.</button>
+      <button type="button" class="sort-opt" data-job-outcome="enforcement" aria-pressed="false">An officer has attended, and enforcement action was taken.</button>
+      <button type="button" class="sort-opt" data-job-outcome="not_in_breach" aria-pressed="false">An officer attended and located subject vehicle however it was assessed not to be in breach.</button>
+    </div>
+
+    <button id="jobClosureBtn" class="primary" type="submit" disabled>Finalise Job <span class="job-under-construction">(under construction)</span></button>
+    <p id="jobClosureStatus" class="change-password-status hidden"></p>
+  </form>
+</section>
+
+<section id="addOfficer" class="card hidden">
+  <h2>Add officer</h2>
+  <p class="muted">Create a login and choose Officer, ROC, or Admin.</p>
+  <form id="addOfficerForm">
+    <label class="field-label" for="newOfficerName">Display name</label>
+    <input id="newOfficerName" name="newOfficerName" type="text" maxlength="40" autocomplete="off" required>
+    <label class="field-label" for="newOfficerCode">Officer code</label>
+    <input id="newOfficerCode" name="newOfficerCode" type="text" maxlength="20" autocomplete="off" required>
+    <label class="field-label" for="newOfficerEmail">Email</label>
+    <input id="newOfficerEmail" name="newOfficerEmail" type="email" autocomplete="off" required>
+    <label class="field-label" for="newOfficerPassword">Temporary password</label>
+    <input id="newOfficerPassword" name="newOfficerPassword" type="password" autocomplete="new-password" minlength="8" required>
+    <label class="field-label" for="newOfficerPasswordConfirm">Confirm password</label>
+    <input id="newOfficerPasswordConfirm" name="newOfficerPasswordConfirm" type="password" autocomplete="new-password" minlength="8" required>
+    <div class="field-label">Role</div>
+    <div class="sort-toggle role-toggle" role="group" aria-label="Role">
+      <button type="button" class="sort-opt" data-new-role="officer" aria-pressed="true">Officer</button>
+      <button type="button" class="sort-opt" data-new-role="roc" aria-pressed="false">ROC</button>
+      <button type="button" class="sort-opt" data-new-role="admin" aria-pressed="false">Admin</button>
+    </div>
+    <button id="addOfficerBtn" class="primary" type="submit">Create login</button>
+    <p id="addOfficerStatus" class="change-password-status hidden"></p>
+  </form>
+</section>
+
+<section id="changePassword" class="card hidden">
+  <h2>Change password</h2>
+  <p class="muted">Use this after your first sign-in if you were given a temporary password.</p>
+  <form id="changePasswordForm" class="change-password">
+    <label class="hidden" for="currentPassword">Current password</label>
+    <input id="currentPassword" name="currentPassword" type="password" autocomplete="current-password" placeholder="Current password" required>
+    <label class="hidden" for="newPassword">New password</label>
+    <input id="newPassword" name="newPassword" type="password" autocomplete="new-password" placeholder="New password" minlength="8" required>
+    <label class="hidden" for="confirmPassword">Confirm new password</label>
+    <input id="confirmPassword" name="confirmPassword" type="password" autocomplete="new-password" placeholder="Confirm new password" minlength="8" required>
+    <button id="changePasswordBtn" class="primary" type="submit">Save new password</button>
+    <p id="changePasswordStatus" class="change-password-status hidden"></p>
+  </form>
 </section>
 
 <section id="select" class="card hidden">
@@ -115,7 +284,10 @@
     <button id="homeBtn" class="secondary" type="button">Home</button>
   </div>
 </footer>
-<script src="js/app.js?v=1.1ac" defer></script>
+<script src="js/vendor/supabase.js" defer></script>
+<script src="js/supabase-config.js" defer></script>
+<script src="js/vehicles.js" defer></script>
+<script src="js/app.js?v=1.1au" defer></script>
 <div id="resetDialog" class="dialog-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="resetDialogMsg">
   <div class="dialog-card">
     <p id="resetDialogMsg">Reset all completed and skipped locations for this route?</p>

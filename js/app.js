@@ -1,8 +1,5 @@
 const APP_VERSION = "v1.1";
-const ACCESS_SALT = "peak-route-runner";
-const ACCESS_HASH = "2918fd829429cfa0a8d97c1b105cecc60f28158d3aa38042506701e5dc1221d3";
-const ACCESS_SESSION_KEY = "peak_unlocked";
-const SCREEN_IDS = ["home", "select", "runMaps", "dash"];
+const SCREEN_IDS = ["home", "select", "runMaps", "dash", "changePassword", "vehicles", "jobClosures", "addOfficer"];
 const RUNMAP_PREFIX = "runmap:";
 const SHOW_ALL_MAPS_URL = "https://www.google.com/maps/d/u/1/edit?mid=1du12Xr1YcXO5iB9CEYstssvNaV92LZI&usp=sharing";
 const RUN_MAPS = [
@@ -420,6 +417,694 @@ function showHome() {
   showScreen("home");
 }
 
+function showAddOfficer() {
+  if (!isAdmin()) {
+    showHome();
+    return;
+  }
+  const form = document.getElementById("addOfficerForm");
+  if (form) form.reset();
+  newOfficerRole = "officer";
+  setChoiceGroup("[data-new-role]", "data-new-role", "officer");
+  showAddOfficerStatus("");
+  showScreen("addOfficer");
+}
+
+function showAddOfficerStatus(message, tone) {
+  const el = document.getElementById("addOfficerStatus");
+  if (!el) return;
+  el.classList.remove("ok", "err");
+  if (!message) {
+    el.textContent = "";
+    el.classList.add("hidden");
+    return;
+  }
+  el.textContent = message;
+  el.classList.remove("hidden");
+  if (tone) el.classList.add(tone);
+}
+
+async function tryAddOfficer(event) {
+  event.preventDefault();
+  if (!isAdmin()) {
+    showAddOfficerStatus("Only an admin can add users.", "err");
+    return;
+  }
+  const sb = getSupabase();
+  if (!sb) {
+    showAddOfficerStatus("Not signed in.", "err");
+    return;
+  }
+  const displayName = document.getElementById("newOfficerName").value.trim();
+  const officerCode = document.getElementById("newOfficerCode").value.trim();
+  const email = document.getElementById("newOfficerEmail").value.trim();
+  const password = document.getElementById("newOfficerPassword").value;
+  const confirm = document.getElementById("newOfficerPasswordConfirm").value;
+  if (!displayName) {
+    showAddOfficerStatus("Enter a display name.", "err");
+    return;
+  }
+  if (!officerCode) {
+    showAddOfficerStatus("Enter an officer code.", "err");
+    return;
+  }
+  if (password.length < 8) {
+    showAddOfficerStatus("Password must be at least 8 characters.", "err");
+    return;
+  }
+  if (password !== confirm) {
+    showAddOfficerStatus("Passwords do not match.", "err");
+    return;
+  }
+  const btn = document.getElementById("addOfficerBtn");
+  if (btn) btn.disabled = true;
+  showAddOfficerStatus("");
+  try {
+    const { data, error } = await sb.functions.invoke("create-user", {
+      body: { email, password, role: newOfficerRole, display_name: displayName, officer_code: officerCode }
+    });
+    if (error) {
+      let extra = error.message || "Could not create the login.";
+      try {
+        const body = await error.context?.json?.();
+        if (body?.error) extra = body.error;
+      } catch (e) { /* keep extra */ }
+      showAddOfficerStatus(extra, "err");
+      return;
+    }
+    if (data?.error) {
+      showAddOfficerStatus(data.error, "err");
+      return;
+    }
+    document.getElementById("addOfficerForm").reset();
+    newOfficerRole = "officer";
+    setChoiceGroup("[data-new-role]", "data-new-role", "officer");
+    showAddOfficerStatus(`Created ${data?.display_name || displayName} (${data?.email || email}) as ${roleLabel(data?.role || newOfficerRole)}.`, "ok");
+  } catch (e) {
+    showAddOfficerStatus("Could not create the login. Deploy the create-user function if it is missing.", "err");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function showChangePassword() {
+  const form = document.getElementById("changePasswordForm");
+  if (form) form.reset();
+  showChangePasswordStatus("");
+  showScreen("changePassword");
+  const current = document.getElementById("currentPassword");
+  if (current) current.focus();
+}
+
+let vehicleFleet = "";
+let vehicleLocation = "";
+
+function vehiclesForFleet(fleet) {
+  const lists = window.PEAK_VEHICLES || {};
+  const items = lists[fleet];
+  return Array.isArray(items) ? items : [];
+}
+
+function fillVehicleSelect() {
+  const select = document.getElementById("vehicleSelect");
+  if (!select) return;
+  const list = vehiclesForFleet(vehicleFleet);
+  select.innerHTML = "";
+  const first = document.createElement("option");
+  first.value = "";
+  first.textContent = vehicleFleet
+    ? (list.length ? "Select vehicle" : "No vehicles listed for this fleet")
+    : "Select fleet first";
+  select.appendChild(first);
+  list.forEach((name) => {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = name;
+    select.appendChild(opt);
+  });
+  select.disabled = !vehicleFleet || !list.length;
+}
+
+function setChoiceGroup(selector, attr, value) {
+  document.querySelectorAll(selector).forEach((btn) => {
+    btn.setAttribute("aria-pressed", btn.getAttribute(attr) === value ? "true" : "false");
+  });
+}
+
+function setVehicleFleet(fleet) {
+  vehicleFleet = fleet;
+  setChoiceGroup("[data-fleet]", "data-fleet", fleet);
+  fillVehicleSelect();
+}
+
+function setVehicleLocation(location) {
+  vehicleLocation = location;
+  setChoiceGroup("[data-location]", "data-location", location);
+}
+
+function showVehicleStatus(message, tone) {
+  const el = document.getElementById("vehicleChargeStatus");
+  if (!el) return;
+  el.classList.remove("ok", "err");
+  if (!message) {
+    el.textContent = "";
+    el.classList.add("hidden");
+    return;
+  }
+  el.textContent = message;
+  el.classList.remove("hidden");
+  if (tone) el.classList.add(tone);
+}
+
+function showVehicles() {
+  const form = document.getElementById("vehicleChargeForm");
+  if (form) form.reset();
+  vehicleFleet = "";
+  vehicleLocation = "";
+  setChoiceGroup("[data-fleet]", "data-fleet", "");
+  setChoiceGroup("[data-location]", "data-location", "");
+  fillVehicleSelect();
+  showVehicleStatus("");
+  applyRoleUi();
+  showScreen("vehicles");
+  if (canViewChargeLog()) loadVehicleCharges();
+}
+
+const JOB_OUTCOMES = {
+  not_located: "An officer has attended, and subject vehicle was not located.",
+  enforcement: "An officer has attended, and enforcement action was taken.",
+  not_in_breach: "An officer attended and located subject vehicle however it was assessed not to be in breach."
+};
+
+const JOB_COMPLAINANT = {
+  yes: "Yes",
+  no: "No",
+  left_message: "Yes, left message",
+  other: "Other"
+};
+
+const JOB_REPORTING = [
+  "Ambulance Zone",
+  "Authorised Vehicles Only",
+  "Bus Stop (7 day KPI)",
+  "Bus Zone",
+  "Clearway",
+  "Disability Parking",
+  "Driveway access",
+  "Driveway other",
+  "Emergency Vehicles",
+  "Footway/nature strip",
+  "Heavy and Long",
+  "Intersection",
+  "Loading Zone",
+  "Loading Zone Commercial",
+  "Loading Zone Other",
+  "Loading Zone Passenger",
+  "Longer Than Permitted",
+  "No Parking",
+  "No Standing",
+  "Opposite Direction",
+  "Other",
+  "Parked On Traffic Island",
+  "School Zone",
+  "Taxi Zone",
+  "Tech Advice",
+  "Traffic Area",
+  "Traffic Area Events",
+  "Work Zone",
+  "Yellow Line"
+];
+
+let jobMediaAttached = "";
+let jobCompleteChoice = "";
+let jobOutcomeChoice = "";
+let jobComplainantChoice = "";
+let jobWardChoice = "";
+
+function pad2(n) {
+  return String(n).padStart(2, "0");
+}
+
+function todayInputDate() {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+function fillJobTimeSelects() {
+  const hour = document.getElementById("jobHour");
+  const minute = document.getElementById("jobMinute");
+  if (!hour || !minute) return;
+  if (!hour.options.length) {
+    for (let h = 0; h < 24; h++) {
+      const opt = document.createElement("option");
+      opt.value = pad2(h);
+      opt.textContent = pad2(h);
+      hour.appendChild(opt);
+    }
+  }
+  if (!minute.options.length) {
+    for (let m = 0; m < 60; m++) {
+      const opt = document.createElement("option");
+      opt.value = pad2(m);
+      opt.textContent = pad2(m);
+      minute.appendChild(opt);
+    }
+  }
+}
+
+function fillJobReportingSelect() {
+  const el = document.getElementById("jobReporting");
+  if (!el || el.options.length > 1) return;
+  JOB_REPORTING.forEach((label) => {
+    const opt = document.createElement("option");
+    opt.value = label;
+    opt.textContent = label;
+    el.appendChild(opt);
+  });
+}
+
+function jobAttendanceTime() {
+  const hour = document.getElementById("jobHour")?.value;
+  const minute = document.getElementById("jobMinute")?.value;
+  if (!hour || !minute) return "";
+  return `${hour}:${minute}`;
+}
+
+function setComplainantOtherVisible(show) {
+  const label = document.getElementById("jobComplainantOtherLabel");
+  const input = document.getElementById("jobComplainantOther");
+  if (label) label.classList.toggle("hidden", !show);
+  if (input) {
+    input.classList.toggle("hidden", !show);
+    if (!show) input.value = "";
+  }
+}
+
+function clearJobPhoto() {
+  const input = document.getElementById("jobPhoto");
+  if (input) input.value = "";
+  const preview = document.getElementById("jobPhotoPreview");
+  if (preview) {
+    preview.src = "";
+    preview.classList.add("hidden");
+  }
+  const clearBtn = document.getElementById("jobPhotoClear");
+  if (clearBtn) clearBtn.classList.add("hidden");
+}
+
+function setJobPhotoAttachVisible(show) {
+  const box = document.getElementById("jobPhotoAttach");
+  if (box) box.classList.toggle("hidden", !show);
+  if (!show) clearJobPhoto();
+}
+
+function showJobPhotoPreview(file) {
+  const preview = document.getElementById("jobPhotoPreview");
+  const clearBtn = document.getElementById("jobPhotoClear");
+  if (!file || !preview) {
+    clearJobPhoto();
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    preview.src = reader.result;
+    preview.classList.remove("hidden");
+    if (clearBtn) clearBtn.classList.remove("hidden");
+  };
+  reader.readAsDataURL(file);
+}
+
+function compressJobPhoto(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Could not read the picture."));
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 1600;
+        let w = img.width;
+        let h = img.height;
+        if (w > max || h > max) {
+          const scale = Math.min(max / w, max / h);
+          w = Math.round(w * scale);
+          h = Math.round(h * scale);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+        canvas.toBlob((blob) => {
+          if (!blob) reject(new Error("Could not process the picture."));
+          else resolve(blob);
+        }, "image/jpeg", 0.72);
+      };
+      img.onerror = () => reject(new Error("Could not read the picture."));
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function complainantContactedValue() {
+  if (jobComplainantChoice === "other") {
+    const extra = document.getElementById("jobComplainantOther")?.value.trim() || "";
+    return extra ? `Other: ${extra}` : "";
+  }
+  return JOB_COMPLAINANT[jobComplainantChoice] || "";
+}
+
+function resetJobClosureForm() {
+  const form = document.getElementById("jobClosureForm");
+  if (form) form.reset();
+  fillJobTimeSelects();
+  fillJobReportingSelect();
+  jobMediaAttached = "";
+  jobCompleteChoice = "";
+  jobOutcomeChoice = "";
+  jobComplainantChoice = "";
+  jobWardChoice = "";
+  setChoiceGroup("[data-job-media]", "data-job-media", "");
+  setChoiceGroup("[data-job-complete]", "data-job-complete", "");
+  setChoiceGroup("[data-job-outcome]", "data-job-outcome", "");
+  setChoiceGroup("[data-job-complainant]", "data-job-complainant", "");
+  setChoiceGroup("[data-job-ward]", "data-job-ward", "");
+  setComplainantOtherVisible(false);
+  setJobPhotoAttachVisible(false);
+  const date = document.getElementById("jobDate");
+  if (date) date.value = todayInputDate();
+  const now = new Date();
+  const hour = document.getElementById("jobHour");
+  const minute = document.getElementById("jobMinute");
+  if (hour) hour.value = pad2(now.getHours());
+  if (minute) minute.value = pad2(now.getMinutes());
+  const officers = document.getElementById("jobOfficers");
+  if (officers) officers.value = currentOfficerCode;
+  showJobClosureStatus("");
+}
+
+function showJobClosureStatus(message, tone) {
+  const el = document.getElementById("jobClosureStatus");
+  if (!el) return;
+  el.classList.remove("ok", "err");
+  if (!message) {
+    el.textContent = "";
+    el.classList.add("hidden");
+    return;
+  }
+  el.textContent = message;
+  el.classList.remove("hidden");
+  if (tone) el.classList.add(tone);
+}
+
+function showJobClosures() {
+  resetJobClosureForm();
+  showScreen("jobClosures");
+}
+
+async function trySaveJobClosure(event) {
+  event.preventDefault();
+  return;
+  const sb = getSupabase();
+  if (!sb) {
+    showJobClosureStatus("Not signed in.", "err");
+    return;
+  }
+  const attendanceDate = document.getElementById("jobDate").value;
+  const attendanceTime = jobAttendanceTime();
+  const officers = document.getElementById("jobOfficers").value.trim();
+  const complainant = complainantContactedValue();
+  const reporting = document.getElementById("jobReporting").value;
+  if (!attendanceDate) {
+    showJobClosureStatus("Enter the date of attendance.", "err");
+    return;
+  }
+  if (!attendanceTime) {
+    showJobClosureStatus("Enter the time of attendance.", "err");
+    return;
+  }
+  if (!officers) {
+    showJobClosureStatus("Enter officer surname / officer code.", "err");
+    return;
+  }
+  if (!complainant) {
+    showJobClosureStatus(jobComplainantChoice === "other"
+      ? "Enter the other complainant contact details."
+      : "Choose whether the complainant was contacted.", "err");
+    return;
+  }
+  if (jobWardChoice !== "yes" && jobWardChoice !== "no") {
+    showJobClosureStatus("Choose whether the ward office was contacted.", "err");
+    return;
+  }
+  if (!reporting) {
+    showJobClosureStatus("Choose a reporting type.", "err");
+    return;
+  }
+  if (jobMediaAttached !== "yes" && jobMediaAttached !== "no") {
+    showJobClosureStatus("Choose whether a picture or voice recording is attached.", "err");
+    return;
+  }
+  if (jobCompleteChoice !== "yes" && jobCompleteChoice !== "no") {
+    showJobClosureStatus("Choose whether the job is complete.", "err");
+    return;
+  }
+  const outcome = JOB_OUTCOMES[jobOutcomeChoice];
+  if (!outcome) {
+    showJobClosureStatus("Choose an outcome.", "err");
+    return;
+  }
+  const btn = document.getElementById("jobClosureBtn");
+  if (btn) btn.disabled = true;
+  showJobClosureStatus("");
+  try {
+    const { data: sessionData, error: sessionError } = await sb.auth.getSession();
+    const user = sessionData?.session?.user;
+    if (sessionError || !user) {
+      showJobClosureStatus("Sign in again, then save the job.", "err");
+      return;
+    }
+    let photoPath = null;
+    const photoInput = document.getElementById("jobPhoto");
+    const photoFile = photoInput?.files?.[0];
+    if (jobMediaAttached === "yes" && photoFile) {
+      const blob = await compressJobPhoto(photoFile);
+      photoPath = `${user.id}/${Date.now()}.jpg`;
+      const { error: uploadError } = await sb.storage.from("job-closures").upload(photoPath, blob, {
+        contentType: "image/jpeg",
+        upsert: false
+      });
+      if (uploadError) {
+        showJobClosureStatus(uploadError.message || "Could not upload the picture. Run the job-closure photos SQL first.", "err");
+        return;
+      }
+    }
+    const payload = {
+      user_id: user.id,
+      officer_email: user.email || "",
+      officer_name: currentDisplayName || officerLabel(user.email || ""),
+      attendance_date: attendanceDate,
+      attendance_time: attendanceTime,
+      location_note: document.getElementById("jobLocation").value.trim() || null,
+      officers,
+      observations: document.getElementById("jobObservations").value.trim() || null,
+      complainant_contacted: complainant,
+      ward_office_contact: jobWardChoice,
+      media_attached: jobMediaAttached,
+      referral: document.getElementById("jobReferral").value.trim() || null,
+      reporting,
+      job_complete: jobCompleteChoice,
+      outcome,
+      photo_path: photoPath
+    };
+    let { error } = await sb.from("job_closures").insert(payload);
+    if (error && photoPath && /photo_path/i.test(error.message || "")) {
+      delete payload.photo_path;
+      const retry = await sb.from("job_closures").insert(payload);
+      error = retry.error;
+    }
+    if (error) {
+      showJobClosureStatus(error.message || "Could not save. Run the job-closures SQL first.", "err");
+      return;
+    }
+    resetJobClosureForm();
+    showJobClosureStatus("Job closure saved.", "ok");
+  } catch (e) {
+    showJobClosureStatus("Could not save the job closure.", "err");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function officerLabel(email) {
+  const raw = String(email || "").trim();
+  if (!raw) return "—";
+  return raw.split("@")[0];
+}
+
+function officerDisplayName(row) {
+  const name = String(row?.officer_name || "").trim();
+  if (name) return name;
+  return officerLabel(row?.officer_email);
+}
+
+let vehicleChargeRows = [];
+
+function chargePctClass(percent) {
+  const n = Number(percent);
+  if (!Number.isFinite(n)) return "charge-pct";
+  if (n >= 75) return "charge-pct charge-pct-high";
+  if (n >= 50) return "charge-pct charge-pct-mid";
+  if (n >= 25) return "charge-pct charge-pct-low";
+  return "charge-pct charge-pct-crit";
+}
+
+function vehicleLogQuery() {
+  const box = document.getElementById("vehicleLogSearch");
+  return String(box?.value || "").trim().toLowerCase();
+}
+
+function rowMatchesLogQuery(row, q) {
+  if (!q) return true;
+  const who = officerDisplayName(row).toLowerCase();
+  const hay = [
+    formatLocalTimestamp(row.created_at),
+    who,
+    row.officer_name,
+    row.officer_email,
+    row.fleet,
+    row.vehicle,
+    row.location,
+    String(row.charge_percent)
+  ].join(" ").toLowerCase();
+  return hay.includes(q);
+}
+
+function renderVehicleChargeLog() {
+  const host = document.getElementById("vehicleChargeLog");
+  if (!host) return;
+  if (!vehicleChargeRows.length) {
+    host.textContent = "No charge updates yet.";
+    return;
+  }
+  const q = vehicleLogQuery();
+  const matched = vehicleChargeRows.filter((row) => rowMatchesLogQuery(row, q));
+  if (!matched.length) {
+    host.textContent = "No matching updates.";
+    return;
+  }
+  const rows = matched.map((row) => `<tr>
+      <td>${esc(formatLocalTimestamp(row.created_at))}</td>
+      <td>${esc(officerDisplayName(row))}</td>
+      <td>${esc(row.fleet)}</td>
+      <td>${esc(row.vehicle)}</td>
+      <td class="${chargePctClass(row.charge_percent)}">${esc(row.charge_percent)}%</td>
+      <td>${esc(row.location)}</td>
+    </tr>`).join("");
+  host.innerHTML = `<table class="charge-table">
+    <thead><tr>
+      <th>When</th><th>Who</th><th>Fleet</th><th>Vehicle</th><th>Charge</th><th>Location</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+async function loadVehicleCharges() {
+  const host = document.getElementById("vehicleChargeLog");
+  if (!host) return;
+  const sb = getSupabase();
+  if (!sb) {
+    vehicleChargeRows = [];
+    host.textContent = "Not signed in.";
+    return;
+  }
+  host.textContent = "Loading…";
+  let { data, error } = await sb
+    .from("vehicle_charges")
+    .select("created_at, officer_email, officer_name, fleet, vehicle, charge_percent, location")
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (error) {
+    const retry = await sb
+      .from("vehicle_charges")
+      .select("created_at, officer_email, fleet, vehicle, charge_percent, location")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    data = retry.data;
+    error = retry.error;
+  }
+  if (error) {
+    vehicleChargeRows = [];
+    host.textContent = error.message || "Could not load the charge log.";
+    return;
+  }
+  vehicleChargeRows = data || [];
+  renderVehicleChargeLog();
+}
+
+async function trySaveVehicleCharge(event) {
+  event.preventDefault();
+  const sb = getSupabase();
+  if (!sb) {
+    showVehicleStatus("Not signed in.", "err");
+    return;
+  }
+  const vehicle = document.getElementById("vehicleSelect").value;
+  const percent = Number(document.getElementById("chargePercent").value);
+  if (!vehicleFleet) {
+    showVehicleStatus("Pick TACT or MET.", "err");
+    return;
+  }
+  if (!vehicle) {
+    showVehicleStatus("Pick a vehicle.", "err");
+    return;
+  }
+  if (!Number.isInteger(percent) || percent < 0 || percent > 100) {
+    showVehicleStatus("Charge must be a whole number from 0 to 100.", "err");
+    return;
+  }
+  if (!vehicleLocation) {
+    showVehicleStatus("Pick OCT or GSQ.", "err");
+    return;
+  }
+  const btn = document.getElementById("vehicleChargeBtn");
+  if (btn) btn.disabled = true;
+  showVehicleStatus("");
+  try {
+    const { data: sessionData, error: sessionError } = await sb.auth.getSession();
+    const user = sessionData?.session?.user;
+    if (sessionError || !user) {
+      showVehicleStatus("Sign in again, then save the charge.", "err");
+      return;
+    }
+    const { error } = await sb.from("vehicle_charges").insert({
+      user_id: user.id,
+      officer_email: user.email || "",
+      officer_name: currentDisplayName || officerLabel(user.email || ""),
+      fleet: vehicleFleet,
+      vehicle,
+      charge_percent: percent,
+      location: vehicleLocation
+    });
+    if (error) {
+      showVehicleStatus(error.message || "Could not save. Check the database is set up.", "err");
+      return;
+    }
+    document.getElementById("vehicleChargeForm").reset();
+    vehicleFleet = "";
+    vehicleLocation = "";
+    setChoiceGroup("[data-fleet]", "data-fleet", "");
+    setChoiceGroup("[data-location]", "data-location", "");
+    fillVehicleSelect();
+    showVehicleStatus("Charge saved.", "ok");
+    loadVehicleCharges();
+  } catch (e) {
+    showVehicleStatus("Could not save. Check your connection.", "err");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
 function showPeakPicker(abandon) {
   if (abandon) {
     selected = null;
@@ -640,21 +1325,6 @@ function distanceFor(l) {
 function formatDistance(m) {
   if (m == null || !Number.isFinite(m)) return "";
   return `${(m / 1000).toFixed(1)} km`;
-}
-
-function brisbaneDateToday() {
-  const parts = new Intl.DateTimeFormat("en-AU", {
-    timeZone: "Australia/Brisbane",
-    year: "numeric", month: "2-digit", day: "2-digit"
-  }).formatToParts(new Date());
-  const y = parts.find((p) => p.type === "year")?.value || "0000";
-  const m = parts.find((p) => p.type === "month")?.value || "00";
-  const d = parts.find((p) => p.type === "day")?.value || "00";
-  return `${y}-${m}-${d}`;
-}
-
-function isUnlockedToday() {
-  return localStorage.getItem(ACCESS_SESSION_KEY) === brisbaneDateToday();
 }
 
 function brisbaneMinutesNow() {
@@ -1252,44 +1922,248 @@ async function refreshRouteData() {
   }
 }
 
-async function sha256Hex(text) {
-  const data = new TextEncoder().encode(text);
-  const buf = await crypto.subtle.digest("SHA-256", data);
-  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+let authClient = null;
+let uiBound = false;
+let appStarted = false;
+let currentRole = "officer";
+let currentDisplayName = "";
+let currentOfficerCode = "";
+let signedInEmail = "";
+let newOfficerRole = "officer";
+
+function canViewChargeLog() {
+  return currentRole === "roc" || currentRole === "admin";
 }
 
-function showLockError(visible) {
-  document.getElementById("lockError").classList.toggle("hidden", !visible);
+function isAdmin() {
+  return currentRole === "admin";
+}
+
+function roleLabel(role) {
+  if (role === "admin") return "Admin";
+  if (role === "roc") return "ROC";
+  return "Officer";
+}
+
+async function loadProfile(userId) {
+  currentRole = "officer";
+  currentDisplayName = "";
+  currentOfficerCode = "";
+  const sb = getSupabase();
+  if (!sb || !userId) return;
+  try {
+    let { data, error } = await sb.from("profiles").select("role, display_name, officer_code").eq("id", userId).maybeSingle();
+    if (error) {
+      const retry = await sb.from("profiles").select("role, display_name").eq("id", userId).maybeSingle();
+      data = retry.data;
+    }
+    if (data?.role === "officer" || data?.role === "roc" || data?.role === "admin") {
+      currentRole = data.role;
+    }
+    currentDisplayName = String(data?.display_name || "").trim();
+    currentOfficerCode = String(data?.officer_code || "").trim();
+  } catch (e) {
+    currentRole = "officer";
+    currentDisplayName = "";
+    currentOfficerCode = "";
+  }
+}
+
+function applyRoleUi() {
+  const addBtn = document.getElementById("openAddOfficer");
+  if (addBtn) addBtn.classList.toggle("hidden", !isAdmin());
+  const log = document.getElementById("vehicleLogSection");
+  if (log) log.classList.toggle("hidden", !canViewChargeLog());
+}
+
+function getSupabase() {
+  if (authClient) return authClient;
+  const url = String(window.PEAK_SUPABASE_URL || "").trim();
+  const key = String(window.PEAK_SUPABASE_ANON_KEY || "").trim();
+  const lib = window.supabase;
+  if (!url || !key || !lib || typeof lib.createClient !== "function") return null;
+  authClient = lib.createClient(url, key, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+  });
+  return authClient;
+}
+
+function showLockError(message) {
+  const el = document.getElementById("lockError");
+  if (!el) return;
+  if (!message) {
+    el.textContent = "";
+    el.classList.add("hidden");
+    return;
+  }
+  el.textContent = message;
+  el.classList.remove("hidden");
+}
+
+function renderSignedIn(email) {
+  if (arguments.length) signedInEmail = email || "";
+  const el = document.getElementById("signedInAs");
+  if (!el) return;
+  const who = currentDisplayName || signedInEmail;
+  el.textContent = who ? `Signed in as ${who} (${roleLabel(currentRole)})` : "";
 }
 
 function unlockApp() {
-  localStorage.setItem(ACCESS_SESSION_KEY, brisbaneDateToday());
   document.body.classList.remove("locked");
   const lock = document.getElementById("lockScreen");
   if (lock) lock.classList.add("hidden");
 }
 
-async function tryUnlock(event) {
-  event.preventDefault();
-  const pin = document.getElementById("accessPin").value.trim();
-  const hash = await sha256Hex(`${ACCESS_SALT}\n${pin}`);
-  if (hash !== ACCESS_HASH) {
-    showLockError(true);
-    document.getElementById("accessPin").value = "";
-    document.getElementById("accessPin").focus();
+function lockApp() {
+  document.body.classList.add("locked");
+  const lock = document.getElementById("lockScreen");
+  if (lock) lock.classList.remove("hidden");
+  currentDisplayName = "";
+  currentOfficerCode = "";
+  signedInEmail = "";
+  renderSignedIn("");
+  const pwd = document.getElementById("accessPassword");
+  if (pwd) pwd.value = "";
+  const changeForm = document.getElementById("changePasswordForm");
+  if (changeForm) changeForm.reset();
+  showChangePasswordStatus("");
+  const addForm = document.getElementById("addOfficerForm");
+  if (addForm) addForm.reset();
+  newOfficerRole = "officer";
+  setChoiceGroup("[data-new-role]", "data-new-role", "officer");
+  showAddOfficerStatus("");
+  resetJobClosureForm();
+  currentRole = "officer";
+  applyRoleUi();
+}
+
+async function enterApp(session) {
+  await loadProfile(session?.user?.id);
+  applyRoleUi();
+  unlockApp();
+  renderSignedIn(session?.user?.email || "");
+  if (!appStarted) {
+    appStarted = true;
+    await startApp();
     return;
   }
-  showLockError(false);
-  unlockApp();
-  await startApp();
+  showHome();
+}
+
+async function trySignIn(event) {
+  event.preventDefault();
+  const sb = getSupabase();
+  if (!sb) {
+    showLockError("Login is not configured yet. Add the Supabase URL and anon key.");
+    return;
+  }
+  const email = document.getElementById("accessEmail").value.trim();
+  const password = document.getElementById("accessPassword").value;
+  const btn = document.getElementById("unlockBtn");
+  showLockError("");
+  if (btn) btn.disabled = true;
+  try {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) {
+      showLockError("Email or password is incorrect.");
+      const pwd = document.getElementById("accessPassword");
+      if (pwd) {
+        pwd.value = "";
+        pwd.focus();
+      }
+      return;
+    }
+    await enterApp(data.session);
+  } catch (e) {
+    showLockError("Could not sign in. Check your connection and try again.");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function signOut() {
+  const sb = getSupabase();
+  if (sb) {
+    try { await sb.auth.signOut(); } catch (e) { /* stay locked even if this fails */ }
+  }
+  lockApp();
+  const email = document.getElementById("accessEmail");
+  if (email) email.focus();
+}
+
+function showChangePasswordStatus(message, tone) {
+  const el = document.getElementById("changePasswordStatus");
+  if (!el) return;
+  el.classList.remove("ok", "err");
+  if (!message) {
+    el.textContent = "";
+    el.classList.add("hidden");
+    return;
+  }
+  el.textContent = message;
+  el.classList.remove("hidden");
+  if (tone) el.classList.add(tone);
+}
+
+async function tryChangePassword(event) {
+  event.preventDefault();
+  const sb = getSupabase();
+  if (!sb) {
+    showChangePasswordStatus("Not signed in.", "err");
+    return;
+  }
+  const current = document.getElementById("currentPassword").value;
+  const next = document.getElementById("newPassword").value;
+  const confirm = document.getElementById("confirmPassword").value;
+  if (next.length < 8) {
+    showChangePasswordStatus("New password must be at least 8 characters.", "err");
+    return;
+  }
+  if (next !== confirm) {
+    showChangePasswordStatus("New passwords do not match.", "err");
+    return;
+  }
+  if (next === current) {
+    showChangePasswordStatus("Choose a different password from the current one.", "err");
+    return;
+  }
+  const btn = document.getElementById("changePasswordBtn");
+  if (btn) btn.disabled = true;
+  showChangePasswordStatus("");
+  try {
+    const { data: sessionData, error: sessionError } = await sb.auth.getSession();
+    const email = sessionData?.session?.user?.email;
+    if (sessionError || !email) {
+      showChangePasswordStatus("Sign in again, then try changing your password.", "err");
+      return;
+    }
+    const { error: checkError } = await sb.auth.signInWithPassword({ email, password: current });
+    if (checkError) {
+      showChangePasswordStatus("Current password is incorrect.", "err");
+      return;
+    }
+    const { error } = await sb.auth.updateUser({ password: next });
+    if (error) {
+      showChangePasswordStatus(error.message || "Could not update password.", "err");
+      return;
+    }
+    document.getElementById("changePasswordForm").reset();
+    showChangePasswordStatus("Password updated. Use the new one next time you sign in.", "ok");
+  } catch (e) {
+    showChangePasswordStatus("Could not update password. Check your connection.", "err");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 function bindLockUi() {
   const form = document.getElementById("lockForm");
-  if (form) form.addEventListener("submit", tryUnlock);
+  if (form) form.addEventListener("submit", trySignIn);
 }
 
 function bindUi() {
+  if (uiBound) return;
+  uiBound = true;
   document.getElementById("findMe").onclick = findLocation;
   document.getElementById("recalc").onclick = () => { findLocation(); geocodeMissing(); };
   document.getElementById("navRoute").onclick = navigateRemainingRoute;
@@ -1323,9 +2197,80 @@ function bindUi() {
   document.getElementById("homeBtn").onclick = showHome;
   document.getElementById("openPeakRoutes").onclick = () => showPeakPicker(false);
   document.getElementById("openRunMaps").onclick = showRunMaps;
+  document.getElementById("openVehicles").onclick = showVehicles;
+  const openJobs = document.getElementById("openJobClosures");
+  if (openJobs) openJobs.onclick = showJobClosures;
+  document.querySelectorAll("[data-job-complainant]").forEach((btn) => {
+    btn.onclick = () => {
+      jobComplainantChoice = btn.getAttribute("data-job-complainant") || "";
+      setChoiceGroup("[data-job-complainant]", "data-job-complainant", jobComplainantChoice);
+      setComplainantOtherVisible(jobComplainantChoice === "other");
+    };
+  });
+  document.querySelectorAll("[data-job-ward]").forEach((btn) => {
+    btn.onclick = () => {
+      jobWardChoice = btn.getAttribute("data-job-ward") || "";
+      setChoiceGroup("[data-job-ward]", "data-job-ward", jobWardChoice);
+    };
+  });
+  document.querySelectorAll("[data-job-media]").forEach((btn) => {
+    btn.onclick = () => {
+      jobMediaAttached = btn.getAttribute("data-job-media") || "";
+      setChoiceGroup("[data-job-media]", "data-job-media", jobMediaAttached);
+      setJobPhotoAttachVisible(jobMediaAttached === "yes");
+    };
+  });
+  const jobPhoto = document.getElementById("jobPhoto");
+  if (jobPhoto) {
+    jobPhoto.addEventListener("change", () => showJobPhotoPreview(jobPhoto.files?.[0]));
+  }
+  const jobPhotoClear = document.getElementById("jobPhotoClear");
+  if (jobPhotoClear) jobPhotoClear.onclick = clearJobPhoto;
+  document.querySelectorAll("[data-job-complete]").forEach((btn) => {
+    btn.onclick = () => {
+      jobCompleteChoice = btn.getAttribute("data-job-complete") || "";
+      setChoiceGroup("[data-job-complete]", "data-job-complete", jobCompleteChoice);
+    };
+  });
+  document.querySelectorAll("[data-job-outcome]").forEach((btn) => {
+    btn.onclick = () => {
+      jobOutcomeChoice = btn.getAttribute("data-job-outcome") || "";
+      setChoiceGroup("[data-job-outcome]", "data-job-outcome", jobOutcomeChoice);
+    };
+  });
+  const jobForm = document.getElementById("jobClosureForm");
+  if (jobForm) jobForm.addEventListener("submit", trySaveJobClosure);
+  document.querySelectorAll("[data-fleet]").forEach((btn) => {
+    btn.onclick = () => setVehicleFleet(btn.getAttribute("data-fleet"));
+  });
+  document.querySelectorAll("[data-location]").forEach((btn) => {
+    btn.onclick = () => setVehicleLocation(btn.getAttribute("data-location"));
+  });
+  const vehicleForm = document.getElementById("vehicleChargeForm");
+  if (vehicleForm) vehicleForm.addEventListener("submit", trySaveVehicleCharge);
+  const refreshLog = document.getElementById("refreshVehicleLog");
+  if (refreshLog) refreshLog.onclick = loadVehicleCharges;
+  const logSearch = document.getElementById("vehicleLogSearch");
+  if (logSearch) logSearch.addEventListener("input", renderVehicleChargeLog);
   document.getElementById("refreshRoutes").onclick = refreshRouteData;
   document.getElementById("sortNearest").onclick = () => setSortMode("nearest");
   document.getElementById("sortRecommended").onclick = () => setSortMode("route");
+  const signOutBtn = document.getElementById("signOutBtn");
+  if (signOutBtn) signOutBtn.onclick = signOut;
+  const openChange = document.getElementById("openChangePassword");
+  if (openChange) openChange.onclick = showChangePassword;
+  const openAdd = document.getElementById("openAddOfficer");
+  if (openAdd) openAdd.onclick = showAddOfficer;
+  const addForm = document.getElementById("addOfficerForm");
+  if (addForm) addForm.addEventListener("submit", tryAddOfficer);
+  document.querySelectorAll("[data-new-role]").forEach((btn) => {
+    btn.onclick = () => {
+      newOfficerRole = btn.getAttribute("data-new-role") || "officer";
+      setChoiceGroup("[data-new-role]", "data-new-role", newOfficerRole);
+    };
+  });
+  const changeForm = document.getElementById("changePasswordForm");
+  if (changeForm) changeForm.addEventListener("submit", tryChangePassword);
 }
 
 async function startApp() {
@@ -1354,15 +2299,23 @@ async function startApp() {
   }
 }
 
-bindLockUi();
-if (isUnlockedToday()) {
-  unlockApp();
-  startApp();
-} else {
-  localStorage.removeItem(ACCESS_SESSION_KEY);
-  const pinBox = document.getElementById("accessPin");
-  if (pinBox) pinBox.focus();
+async function bootAuth() {
+  bindLockUi();
+  const sb = getSupabase();
+  if (!sb) {
+    showLockError("Login is not configured yet. Add the Supabase URL and anon key.");
+    return;
+  }
+  const { data } = await sb.auth.getSession();
+  if (data.session) {
+    await enterApp(data.session);
+    return;
+  }
+  const email = document.getElementById("accessEmail");
+  if (email) email.focus();
 }
+
+bootAuth();
 
 setInterval(() => {
   if (currentId && !document.getElementById("dash").classList.contains("hidden")) {
