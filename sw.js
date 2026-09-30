@@ -1,9 +1,9 @@
-const CACHE = "peak-route-runner-v1.1az";
+const CACHE = "peak-route-runner-v1.1bc";
 const CORE = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
-  "./icon.svg",
+  "./icon.jpg",
   "./css/app.css",
   "./js/app.js",
   "./js/supabase-config.js",

@@ -33,11 +33,29 @@ header {
   z-index: 5;
   background: linear-gradient(180deg, var(--blue-dark), var(--blue));
   color: #fff;
-  padding: calc(14px + var(--safe-top)) 16px 14px;
+  padding: calc(10px + var(--safe-top)) 16px 10px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-header b { font-size: 1.25rem; letter-spacing: -0.02em; }
+.header-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+header b { font-size: 1.05rem; letter-spacing: -0.02em; }
+
+.lock-card h1 s,
+header b s,
+#appVersionLabel s {
+  text-decoration: line-through;
+  text-decoration-thickness: 0.12em;
+}
 
 body.locked header,
 body.locked main,
@@ -60,6 +78,15 @@ body.locked .lock-screen { display: flex; }
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 22px 18px;
+  text-align: center;
+}
+.lock-logo {
+  display: block;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 14px;
+  border-radius: 22px;
+  object-fit: cover;
 }
 .lock-card h1 {
   margin: 0 0 8px;
