@@ -1249,8 +1249,8 @@ const ROUTES = [
         "query": "Stanley Street, East Brisbane QLD, Australia",
         "detail": "No Stopping (S11) 6am–9am Monday–Friday",
         "detailLong": "No Stopping (S11) 6am–9am Monday–Friday between Norman Street & Wellington Road",
-        "lat": null,
-        "lng": null,
+        "lat": -27.488033,
+        "lng": 153.045044,
         "photo": null,
       },
       {
@@ -1260,8 +1260,8 @@ const ROUTES = [
         "query": "Annerley Road, Woolloongabba QLD, Australia",
         "detail": "No Stopping (S11) 6am–9am Monday–Friday",
         "detailLong": "No Stopping (S11) 6am–9am Monday–Friday between Stephens Road & Stanley Street",
-        "lat": null,
-        "lng": null,
+        "lat": -27.489736,
+        "lng": 153.027238,
         "photo": null,
       },
       {
@@ -1271,8 +1271,8 @@ const ROUTES = [
         "query": "Ipswich Road, Woolloongabba QLD, Australia",
         "detail": "Clearway (C11) 7am–9am Monday–Friday between",
         "detailLong": "Clearway (C11) 7am–9am Monday–Friday between Stanley Street & Balaclava Street",
-        "lat": null,
-        "lng": null,
+        "lat": -27.489005,
+        "lng": 153.035792,
         "photo": null,
       },
       {
@@ -1282,8 +1282,8 @@ const ROUTES = [
         "query": "Balaclava Street, Woolloongabba QLD, Australia",
         "detail": "No Stopping (S11) 7am–9am Monday–Friday",
         "detailLong": "No Stopping (S11) 7am–9am Monday–Friday",
-        "lat": null,
-        "lng": null,
+        "lat": -27.490326,
+        "lng": 153.038124,
         "photo": null,
       },
       {
@@ -1293,8 +1293,8 @@ const ROUTES = [
         "query": "Logan Road, Woolloongabba QLD, Australia",
         "detail": "No Stopping (S11) 7am–9am Monday–Friday",
         "detailLong": "No Stopping (S11) 7am–9am Monday–Friday between Qualtrough Street & Balaclava Street",
-        "lat": null,
-        "lng": null,
+        "lat": -27.491332,
+        "lng": 153.040340,
         "photo": null,
       },
       {
@@ -1304,8 +1304,8 @@ const ROUTES = [
         "query": "Wellington Road, East Brisbane QLD, Australia",
         "detail": "Clearway (C11) 7am–10am Monday–Friday",
         "detailLong": "Clearway (C11) 7am–10am Monday–Friday between Vulture Street & Shafston Avenue",
-        "lat": null,
-        "lng": null,
+        "lat": -27.486908,
+        "lng": 153.039783,
         "photo": null,
       },
       {
@@ -1315,8 +1315,8 @@ const ROUTES = [
         "query": "Okeefe Street, Woolloongabba QLD, Australia",
         "detail": "No Stopping (S11) 7am–9am Monday–Friday",
         "detailLong": "No Stopping (S11) 7am–9am Monday–Friday after Ipswich Road intersection",
-        "lat": null,
-        "lng": null,
+        "lat": -27.496969,
+        "lng": 153.035704,
         "photo": null,
       }
     ]
@@ -1334,8 +1334,8 @@ const ROUTES = [
         "query": "Annerley Road, Woolloongabba QLD, Australia",
         "detail": "No Stopping (S11) 4pm–7pm Monday–Friday",
         "detailLong": "No Stopping (S11) 4pm–7pm Monday–Friday between Stephens Road & Stanley Street",
-        "lat": null,
-        "lng": null,
+        "lat": -27.489736,
+        "lng": 153.027238,
         "photo": null,
       },
       {
@@ -1442,8 +1442,8 @@ const ROUTES = [
         "query": "Okeefe Street, Woolloongabba QLD, Australia",
         "detail": "No Stopping (S11) 3pm–7pm Monday–Friday",
         "detailLong": "No Stopping (S11) 3pm–7pm Monday–Friday after Ipswich Road intersection",
-        "lat": null,
-        "lng": null,
+        "lat": -27.496969,
+        "lng": 153.035704,
         "photo": null,
       }
     ]
