@@ -978,7 +978,6 @@ function capitaliseYesNo(value) {
 function formatJobClosureText(row) {
   const r = row || {};
   return [
-    jobCopyLine("Reference Number:", r.reference_number),
     jobCopyLine("Date of Attendance (DD/MM/YYYY):", formatAttendanceDate(r.attendance_date)),
     jobCopyLine("Time of Attendance (HH:MM - 24-hour time):", formatAttendanceTime(r.attendance_time)),
     jobCopyLine("Location: (if different from DART location):", r.location_note),
@@ -1063,18 +1062,21 @@ function renderJobClosureLog() {
     return;
   }
   const rows = matched.map((row) => `<tr>
+      <td>${esc(row.reference_number)}</td>
       <td>${esc(formatLocalTimestamp(row.created_at))}</td>
       <td>${esc(officerDisplayName(row))}</td>
-      <td>${esc(row.reference_number)}</td>
       <td>${esc(attendanceStamp(row))}</td>
       <td>${esc(row.reporting)}</td>
-      <td>${esc(row.job_complete)}</td>
+      <td>${esc(capitaliseYesNo(row.job_complete))}</td>
       <td title="${esc(row.outcome)}">${esc(outcomeSnippet(row.outcome))}</td>
-      <td><button class="secondary small" type="button" data-copy-job="${esc(row.id)}">Copy</button></td>
+      <td class="job-copy-actions">
+        <button class="secondary small" type="button" data-copy-ref="${esc(row.reference_number)}">Copy ref</button>
+        <button class="secondary small" type="button" data-copy-job="${esc(row.id)}">Copy</button>
+      </td>
     </tr>`).join("");
   host.innerHTML = `<table class="charge-table">
     <thead><tr>
-      <th>When</th><th>Officer</th><th>Reference</th><th>Date / time</th><th>Reporting</th><th>Job complete</th><th>Outcome</th><th></th>
+      <th>Reference number</th><th>When</th><th>Officer</th><th>Date / time</th><th>Reporting</th><th>Job complete</th><th>Outcome</th><th></th>
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
@@ -1160,6 +1162,24 @@ function copyJobClosureFromButton(button) {
   copyJobClosureRows([row], button);
 }
 
+async function copyReferenceFromButton(button) {
+  const ref = button?.getAttribute("data-copy-ref") ?? "";
+  clearTimeout(jobLogCopyTimer);
+  const previous = button ? button.textContent : "";
+  try {
+    await writeClipboard(ref);
+  } catch (e) {
+    showJobLogCopyStatus("Could not copy.", "err");
+    return;
+  }
+  showJobLogCopyStatus("Copied", "ok");
+  if (button) button.textContent = "Copied";
+  jobLogCopyTimer = setTimeout(() => {
+    showJobLogCopyStatus("");
+    if (button && button.isConnected) button.textContent = previous;
+  }, 1500);
+}
+
 const CLOSED_JOBS_LIMIT = 200;
 let closedJobUserId = "";
 
@@ -1202,10 +1222,13 @@ function renderOfficerClosedJobs() {
       <td>${esc(attendanceStamp(row))}</td>
       <td>${esc(row.reporting)}</td>
       <td title="${esc(row.outcome)}">${esc(outcomeSnippet(row.outcome))}</td>
+      <td class="job-copy-actions">
+        <button class="secondary small" type="button" data-copy-ref="${esc(row.reference_number)}">Copy ref</button>
+      </td>
     </tr>`).join("");
   host.innerHTML = `<table class="charge-table">
     <thead><tr>
-      <th>Reference</th><th>Date / time</th><th>Reporting</th><th>Outcome</th>
+      <th>Reference number</th><th>Date / time</th><th>Reporting</th><th>Outcome</th><th></th>
     </tr></thead>
     <tbody>${body}</tbody>
   </table>`;
@@ -2584,9 +2607,22 @@ function bindUi() {
   const jobLogHost = document.getElementById("jobClosureLog");
   if (jobLogHost) {
     jobLogHost.addEventListener("click", (event) => {
+      const refBtn = event.target.closest("[data-copy-ref]");
+      if (refBtn && jobLogHost.contains(refBtn)) {
+        copyReferenceFromButton(refBtn);
+        return;
+      }
       const btn = event.target.closest("[data-copy-job]");
       if (!btn || !jobLogHost.contains(btn)) return;
       copyJobClosureFromButton(btn);
+    });
+  }
+  const officerClosedHost = document.getElementById("officerClosedLog");
+  if (officerClosedHost) {
+    officerClosedHost.addEventListener("click", (event) => {
+      const refBtn = event.target.closest("[data-copy-ref]");
+      if (!refBtn || !officerClosedHost.contains(refBtn)) return;
+      copyReferenceFromButton(refBtn);
     });
   }
   document.querySelectorAll("[data-fleet]").forEach((btn) => {
