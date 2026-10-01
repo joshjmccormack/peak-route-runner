@@ -1,4 +1,4 @@
-const CACHE = "peak-route-runner-v1.1bc";
+const CACHE = "peak-route-runner-v1.1bd";
 const CORE = [
   "./",
   "./index.html",
@@ -26,7 +26,6 @@ self.addEventListener("activate", (event) => {
 
 function isAppShell(url) {
   return (
-    url.pathname.endsWith("/routes.js") ||
     url.pathname.endsWith("/index.html") ||
     url.pathname.endsWith("/js/app.js") ||
     url.pathname.endsWith("/js/supabase-config.js") ||
@@ -52,7 +51,6 @@ self.addEventListener("fetch", (event) => {
       } catch (e) {
         const cached = await caches.match(req);
         if (cached) return cached;
-        if (url.pathname.endsWith("/routes.js")) throw e;
         return caches.match("./index.html");
       }
     })());

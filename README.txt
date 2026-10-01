@@ -4,7 +4,8 @@ Project folder: C:\Users\joshm\Projects\peak-route-runner
 
 ROUTE DATA (SUPABASE)
 ---------------------
-After sign-in, Route Runner loads the route list from Supabase, not from the public routes.js file.
+Route data lives only in Supabase. The old public routes.js file has been removed from the site.
+After sign-in, Route Runner loads the route list from Supabase.
 Project: Parking Project, ref uklqyddpntttrcwaimji (URL in js/supabase-config.js).
 
 Tables:
@@ -17,12 +18,14 @@ Access is enforced with Row Level Security and the existing public.current_role(
 - A request with no user JWT is denied. The anon role has no grant on these tables.
 
 How admins edit routes from now on:
-1. Apply supabase-routes.sql once, if the tables are not already there. That file creates the tables, policies, and a one-time seed of the current routes.js content.
-2. Edit rows in the Supabase Table Editor (public.routes and public.route_locations). group_name is the on-screen group. detail_long is the full restriction text the app uses for expiry (detailLong). "order" is the recommended sequence.
+1. Apply supabase-routes.sql once, if the tables are not already there. That file creates the tables, policies, and a one-time seed of the original peak catalogue.
+2. Edit rows in the Supabase Table Editor (public.routes and public.route_locations). group_name is the on-screen group. detail_long is the full restriction text the app uses for expiry (detailLong). "order" is the recommended sequence. lat and lng are the navigation pin; leave them empty to geocode from query.
 3. Officers tap Refresh route data, or open the app again while online. The latest list is cached on the phone for offline use.
-4. Leave routes.js in the site for now, but do not treat it as the live source. A direct request for routes.js can still succeed until that file is removed from Netlify.
+4. Do not add a public route file back to the site. A request for /routes.js should 404.
 
 Photos stay as files under photos/. Set route_locations.photo to a path such as photos/albert-st.jpg, then deploy the image.
+
+Older notes below that mention routes.js describe previous versions. That file is gone.
 
 This version contains the Peak routes extracted from the supplied "Peak Enforcement" document:
 - Peak 1 & 2 Morning / Afternoon
@@ -84,21 +87,19 @@ VERSION 6 CHANGES
 
 EDITING LOCATIONS LATER
 -----------------------
-Superseded for live data: edit public.routes and public.route_locations in Supabase (see ROUTE DATA at the top). The notes below describe the old routes.js fields.
-
-Open routes.js in a text editor. Each location has:
-  id      = unique internal identifier (best left unchanged)
-  name    = the label shown in Route Runner
-  query   = the address/location text used for geocoding
+Edit public.route_locations in Supabase (see ROUTE DATA at the top). Each stop has:
+  id          = unique internal identifier (best left unchanged)
+  name        = the label shown in Route Runner
+  query       = the address/location text used for geocoding
   detail      = short text shown on the location card
-  detailLong  = full restriction text shown in the photo popup (used for expiry times)
-  photo       = optional map screenshot path, e.g. "photos/albert-st.jpg"
+  detail_long = full restriction text shown in the photo popup (used for expiry times)
+  photo       = optional map screenshot path, e.g. photos/albert-st.jpg
 
-When shortening card text, edit detail only. Leave detailLong as the full restriction
+When shortening card text, edit detail only. Leave detail_long as the full restriction
 text so expiry still reads the times.
 
-For a simple correction, edit name, query, detail and/or detailLong in routes.js, save it,
-then upload the updated routes.js to your Netlify deployment.
+For a simple correction, edit name, query, detail and/or detail_long in the Supabase
+table. Officers then tap Refresh route data, or reopen the app while online.
 
 IMPORTANT: Route Runner caches geocoded coordinates in the phone browser. If you
 change a query for a location that has already been resolved on that phone, clear
@@ -119,24 +120,19 @@ VERSION 7 CHANGES
 
 HOW TO SET AN EXACT LOCATION
 ----------------------------
-In routes.js, find the location you want and change:
+In Supabase, open public.route_locations, find the stop, and set lat and lng.
+For example:
 
-  "lat": null,
-  "lng": null
-
-to, for example:
-
-  "lat": -27.469800,
-  "lng": 153.025100
+  lat = -27.469800
+  lng = 153.025100
 
 Do not put quotation marks around the coordinate numbers.
 
-You do NOT need to change "name" or "detail", so the location can continue to appear
+You do NOT need to change name or detail, so the location can continue to appear
 in the app exactly as it does now while navigation uses your precise chosen pin.
 
-Because exact coordinates are read directly from routes.js, changing lat/lng does not
-require clearing the old geocoding cache. After uploading the updated routes.js,
-reload the app so the new file is fetched.
+Changing lat/lng does not require clearing the old geocoding cache. After saving
+the row, reload the app online or tap Refresh route data.
 
 
 VERSION 9 CHANGES
@@ -175,11 +171,11 @@ VERSION 11.0 CHANGES
 
 ROUTE DATA UPDATE WORKFLOW
 --------------------------
-1. Edit routes.js.
-2. Redeploy the changed file to Netlify.
-3. The next time an installed Route Runner opens with internet access, it fetches the new routes.js.
-4. "Route data updated" shows the time of that successful fetch.
-5. If offline, the app uses the last successfully downloaded route data instead.
+1. Edit public.routes or public.route_locations in Supabase (admin only).
+2. The next time an installed Route Runner opens with internet access and a signed-in session, it loads the tables.
+3. "Route data updated" shows the time of that successful load.
+4. If offline, the app uses the last successfully downloaded route list from the phone.
+5. There is no public routes file to upload.
 
 APP UPDATE WORKFLOW
 -------------------
@@ -217,7 +213,7 @@ VERSION 13.0 CHANGES
   * 4pm–7pm -> expires 6:55pm
   * 7am–9am -> expires 8:55am
 - If a location has more than one time range, the latest ending time is used.
-- If you change a time in routes.js and redeploy, every installed app will fetch the updated route data and calculate the new expiry automatically.
+- If you change a time in detail_long in Supabase, every installed app loads the updated route data and calculates the new expiry automatically.
 - If a location detail contains no readable time range, that location will not auto-expire.
 
 
@@ -235,6 +231,6 @@ VERSION 14.0 CHANGES
 SUPABASE ROUTE TABLES
 ---------------------
 - Route lists load from public.routes and public.route_locations after sign-in.
-- The app no longer fetches ./routes.js. That file remains on the site until it is removed.
+- The public routes.js file has been removed. The app does not fetch it, and the service worker no longer caches it.
 - Offline use still reads the last successful route list from localStorage.
 - Macrossan Street on Peak 4 Afternoon had the same id as the Wharf Street stop (peak4-pm-10). It is now peak4-pm-10b so each stop can be stored and completed on its own. Both still share recommended order 10.
