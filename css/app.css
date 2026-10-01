@@ -220,11 +220,6 @@ body.locked .lock-screen { display: flex; }
   width: 100%;
   margin-top: 10px;
 }
-#jobClosureBtn .job-under-construction {
-  font-size: 0.75rem;
-  font-weight: 600;
-  opacity: 0.9;
-}
 .vehicle-log { margin-top: 22px; }
 .vehicle-log h3 { margin: 0; font-size: 1.05rem; }
 .vehicle-log-head {
@@ -235,7 +230,13 @@ body.locked .lock-screen { display: flex; }
   margin-bottom: 8px;
 }
 .vehicle-log-head button { margin: 0; width: auto; }
-#vehicleLogSearch {
+.log-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+#vehicleLogSearch,
+#jobLogSearch {
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 13px;

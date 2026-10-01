@@ -16,7 +16,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta property="og:title" content="PinAssistant">
 <title>PinAssistant</title>
-<link rel="stylesheet" href="css/app.css?v=1.1bc">
+<link rel="stylesheet" href="css/app.css?v=1.1be">
 </head>
 <body class="locked">
 <section id="lockScreen" class="lock-screen">
@@ -102,7 +102,7 @@
 
 <section id="jobClosures" class="card hidden">
   <h2>Job closures</h2>
-  <p class="muted">Fill in the attendance details. This saves the job; email send is not set up yet.</p>
+  <p class="muted">Fill in the attendance details. The job saves for ROC and Admin to copy.</p>
   <form id="jobClosureForm" class="job-closure-form">
     <label class="field-label" for="jobDate">Date of attendance (DD/MM/YYYY)</label>
     <input id="jobDate" name="jobDate" type="date" required>
@@ -179,9 +179,22 @@
       <button type="button" class="sort-opt" data-job-outcome="not_in_breach" aria-pressed="false">An officer attended and located subject vehicle however it was assessed not to be in breach.</button>
     </div>
 
-    <button id="jobClosureBtn" class="primary" type="submit" disabled>Finalise Job <span class="job-under-construction">(under construction)</span></button>
+    <button id="jobClosureBtn" class="primary" type="submit">Finalise Job</button>
     <p id="jobClosureStatus" class="change-password-status hidden"></p>
   </form>
+  <div id="jobLogSection" class="vehicle-log hidden">
+    <div class="vehicle-log-head">
+      <h3>Job closure log</h3>
+      <div class="log-head-actions">
+        <button id="copyJobLog" class="primary small" type="button">Copy all</button>
+        <button id="refreshJobLog" class="secondary small" type="button">Refresh</button>
+      </div>
+    </div>
+    <p id="jobLogCopyStatus" class="change-password-status hidden" aria-live="polite"></p>
+    <label class="hidden" for="jobLogSearch">Search job closure log</label>
+    <input id="jobLogSearch" type="search" placeholder="Search officer, reporting, outcome…">
+    <div id="jobClosureLog" class="vehicle-log-body muted">Loading…</div>
+  </div>
 </section>
 
 <section id="addOfficer" class="card hidden">
@@ -297,7 +310,7 @@
 <script src="js/vendor/supabase.js" defer></script>
 <script src="js/supabase-config.js" defer></script>
 <script src="js/vehicles.js" defer></script>
-<script src="js/app.js?v=1.1bc" defer></script>
+<script src="js/app.js?v=1.1be" defer></script>
 <div id="resetDialog" class="dialog-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="resetDialogMsg">
   <div class="dialog-card">
     <p id="resetDialogMsg">Reset all completed and skipped locations for this route?</p>
