@@ -3,6 +3,7 @@ create table if not exists public.job_closures (
   user_id uuid not null references auth.users (id),
   officer_email text,
   officer_name text,
+  reference_number text not null,
   attendance_date date not null,
   attendance_time time not null,
   location_note text,

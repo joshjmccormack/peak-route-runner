@@ -16,7 +16,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta property="og:title" content="PinAssistant">
 <title>PinAssistant</title>
-<link rel="stylesheet" href="css/app.css?v=1.1bf">
+<link rel="stylesheet" href="css/app.css?v=1.1bg">
 </head>
 <body class="locked">
 <section id="lockScreen" class="lock-screen">
@@ -104,6 +104,9 @@
   <h2>Job closures</h2>
   <p class="muted">Fill in the attendance details. The job saves for ROC and Admin to copy.</p>
   <form id="jobClosureForm" class="job-closure-form">
+    <label class="field-label" for="jobReference">Reference number</label>
+    <input id="jobReference" name="jobReference" type="text" maxlength="80" autocomplete="off" required>
+
     <label class="field-label" for="jobDate">Date of attendance (DD/MM/YYYY)</label>
     <input id="jobDate" name="jobDate" type="date" required>
 
@@ -185,15 +188,20 @@
   <div id="jobLogSection" class="vehicle-log hidden">
     <div class="vehicle-log-head">
       <h3>Job closure log</h3>
-      <div class="log-head-actions">
-        <button id="copyJobLog" class="primary small" type="button">Copy all</button>
-        <button id="refreshJobLog" class="secondary small" type="button">Refresh</button>
-      </div>
+      <button id="refreshJobLog" class="secondary small" type="button">Refresh</button>
     </div>
     <p id="jobLogCopyStatus" class="change-password-status hidden" aria-live="polite"></p>
     <label class="hidden" for="jobLogSearch">Search job closure log</label>
-    <input id="jobLogSearch" type="search" placeholder="Search officer, reporting, outcome…">
+    <input id="jobLogSearch" type="search" placeholder="Search reference, officer, reporting, outcome…">
     <div id="jobClosureLog" class="vehicle-log-body muted">Loading…</div>
+  </div>
+  <div id="officerClosedSection" class="vehicle-log hidden">
+    <div class="vehicle-log-head">
+      <h3>Your closed jobs</h3>
+      <button id="resetClosedJobs" class="secondary small" type="button">Reset</button>
+    </div>
+    <p class="muted">Jobs you closed on this device. Reset clears this list only and does not delete saved jobs.</p>
+    <div id="officerClosedLog" class="vehicle-log-body muted">No closed jobs on this device yet.</div>
   </div>
 </section>
 
@@ -310,7 +318,7 @@
 <script src="js/vendor/supabase.js" defer></script>
 <script src="js/supabase-config.js" defer></script>
 <script src="js/vehicles.js" defer></script>
-<script src="js/app.js?v=1.1bf" defer></script>
+<script src="js/app.js?v=1.1bg" defer></script>
 <div id="resetDialog" class="dialog-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="resetDialogMsg">
   <div class="dialog-card">
     <p id="resetDialogMsg">Reset all completed and skipped locations for this route?</p>

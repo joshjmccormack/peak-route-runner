@@ -173,6 +173,7 @@ body.locked .lock-screen { display: flex; }
   max-width: 50%;
 }
 .job-time-row select { margin: 0; }
+#jobReference,
 #jobDate,
 #jobHour,
 #jobMinute,
@@ -230,11 +231,6 @@ body.locked .lock-screen { display: flex; }
   margin-bottom: 8px;
 }
 .vehicle-log-head button { margin: 0; width: auto; }
-.log-head-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
 #vehicleLogSearch,
 #jobLogSearch {
   width: 100%;
