@@ -2,6 +2,28 @@ PEAK ROUTE RUNNER
 Current app version: v1.1
 Project folder: C:\Users\joshm\Projects\peak-route-runner
 
+ROUTE DATA (SUPABASE)
+---------------------
+After sign-in, Route Runner loads the route list from Supabase, not from the public routes.js file.
+Project: Parking Project, ref uklqyddpntttrcwaimji (URL in js/supabase-config.js).
+
+Tables:
+- public.routes (id, name, group_name, period, sort_index)
+- public.route_locations (id, route_id, "order", name, query, detail, detail_long, lat, lng, photo, sort_index)
+
+Access is enforced with Row Level Security and the existing public.current_role() function:
+- SELECT: any signed-in user (officer, ROC, or admin)
+- INSERT, UPDATE, DELETE: admin only
+- A request with no user JWT is denied. The anon role has no grant on these tables.
+
+How admins edit routes from now on:
+1. Apply supabase-routes.sql once, if the tables are not already there. That file creates the tables, policies, and a one-time seed of the current routes.js content.
+2. Edit rows in the Supabase Table Editor (public.routes and public.route_locations). group_name is the on-screen group. detail_long is the full restriction text the app uses for expiry (detailLong). "order" is the recommended sequence.
+3. Officers tap Refresh route data, or open the app again while online. The latest list is cached on the phone for offline use.
+4. Leave routes.js in the site for now, but do not treat it as the live source. A direct request for routes.js can still succeed until that file is removed from Netlify.
+
+Photos stay as files under photos/. Set route_locations.photo to a path such as photos/albert-st.jpg, then deploy the image.
+
 This version contains the Peak routes extracted from the supplied "Peak Enforcement" document:
 - Peak 1 & 2 Morning / Afternoon
 - Peak 3 Morning / Afternoon
@@ -62,6 +84,8 @@ VERSION 6 CHANGES
 
 EDITING LOCATIONS LATER
 -----------------------
+Superseded for live data: edit public.routes and public.route_locations in Supabase (see ROUTE DATA at the top). The notes below describe the old routes.js fields.
+
 Open routes.js in a text editor. Each location has:
   id      = unique internal identifier (best left unchanged)
   name    = the label shown in Route Runner
@@ -206,3 +230,11 @@ VERSION 14.0 CHANGES
 - Raw GPS coordinates are hidden unless you tap Show coordinates.
 - Added Refresh route data, status colour chips, safer headers, and PWA cache updates.
 - Version label is now v14.0.
+
+
+SUPABASE ROUTE TABLES
+---------------------
+- Route lists load from public.routes and public.route_locations after sign-in.
+- The app no longer fetches ./routes.js. That file remains on the site until it is removed.
+- Offline use still reads the last successful route list from localStorage.
+- Macrossan Street on Peak 4 Afternoon had the same id as the Wharf Street stop (peak4-pm-10). It is now peak4-pm-10b so each stop can be stored and completed on its own. Both still share recommended order 10.
