@@ -1,7 +1,7 @@
 {
-  "name": "Get a REAL! Job.. App!",
-  "short_name": "Get a REAL! Job.. App!",
-  "description": "Get a REAL! Job.. App!",
+  "name": "PinAssistant",
+  "short_name": "PinAssistant",
+  "description": "PinAssistant",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

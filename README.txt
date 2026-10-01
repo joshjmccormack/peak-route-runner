@@ -1,11 +1,11 @@
-PEAK ROUTE RUNNER
+PinAssistant
 Current app version: v1.1
 Project folder: C:\Users\joshm\Projects\peak-route-runner
 
 ROUTE DATA (SUPABASE)
 ---------------------
 Route data lives only in Supabase. The old public routes.js file has been removed from the site.
-After sign-in, Route Runner loads the route list from Supabase.
+After sign-in, PinAssistant loads the route list from Supabase.
 Project: Parking Project, ref uklqyddpntttrcwaimji (URL in js/supabase-config.js).
 
 Tables:
@@ -89,7 +89,7 @@ EDITING LOCATIONS LATER
 -----------------------
 Edit public.route_locations in Supabase (see ROUTE DATA at the top). Each stop has:
   id          = unique internal identifier (best left unchanged)
-  name        = the label shown in Route Runner
+  name        = the label shown in PinAssistant
   query       = the address/location text used for geocoding
   detail      = short text shown on the location card
   detail_long = full restriction text shown in the photo popup (used for expiry times)
@@ -101,7 +101,7 @@ text so expiry still reads the times.
 For a simple correction, edit name, query, detail and/or detail_long in the Supabase
 table. Officers then tap Refresh route data, or reopen the app while online.
 
-IMPORTANT: Route Runner caches geocoded coordinates in the phone browser. If you
+IMPORTANT: PinAssistant caches geocoded coordinates in the phone browser. If you
 change a query for a location that has already been resolved on that phone, clear
 site data once so the app geocodes the corrected location again. A future version
 can add an in-app "refresh location data" button if desired.
@@ -162,7 +162,7 @@ VERSION 11.0 CHANGES
 - Added automatic route-data updating.
 - routes.js is fetched fresh from Netlify whenever the app opens and internet is available.
 - Latest successful route data is saved locally for offline use.
-- Added visible app version: Route Runner v11.0.
+- Added visible app version: PinAssistant v11.0.
 - Added visible "Route data updated" timestamp.
 - Timestamp changes only after routes.js is successfully fetched.
 - Added automatic service-worker update checks on launch.
@@ -172,14 +172,14 @@ VERSION 11.0 CHANGES
 ROUTE DATA UPDATE WORKFLOW
 --------------------------
 1. Edit public.routes or public.route_locations in Supabase (admin only).
-2. The next time an installed Route Runner opens with internet access and a signed-in session, it loads the tables.
+2. The next time an installed PinAssistant opens with internet access and a signed-in session, it loads the tables.
 3. "Route data updated" shows the time of that successful load.
 4. If offline, the app uses the last successfully downloaded route list from the phone.
 5. There is no public routes file to upload.
 
 APP UPDATE WORKFLOW
 -------------------
-Deploy the new app files to Netlify. On launch, Route Runner checks for a newer service worker and reloads once if needed.
+Deploy the new app files to Netlify. On launch, PinAssistant checks for a newer service worker and reloads once if needed.
 
 
 VERSION 12.0 CHANGES
@@ -206,7 +206,7 @@ VERSION 13.0 CHANGES
 --------------------
 - Expiry times are now calculated automatically from each location's detail text.
 - Manual expireTime fields are no longer required in routes.js.
-- Route Runner finds all readable time ranges in a location's detail.
+- PinAssistant finds all readable time ranges in a location's detail.
 - It uses the latest ending time and expires the location 5 minutes before that time.
 - Examples:
   * 4pm–6pm -> expires 5:55pm
