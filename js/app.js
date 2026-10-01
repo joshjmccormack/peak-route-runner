@@ -793,6 +793,7 @@ function showJobClosures() {
   applyRoleUi();
   showScreen("jobClosures");
   if (canViewJobLog()) loadJobClosures();
+  else loadOfficerClosedJobs();
 }
 
 async function trySaveJobClosure(event) {
@@ -802,11 +803,16 @@ async function trySaveJobClosure(event) {
     showJobClosureStatus("Not signed in.", "err");
     return;
   }
+  const referenceNumber = document.getElementById("jobReference").value.trim();
   const attendanceDate = document.getElementById("jobDate").value;
   const attendanceTime = jobAttendanceTime();
   const officers = document.getElementById("jobOfficers").value.trim();
   const complainant = complainantContactedValue();
   const reporting = document.getElementById("jobReporting").value;
+  if (!referenceNumber) {
+    showJobClosureStatus("Enter the reference number.", "err");
+    return;
+  }
   if (!attendanceDate) {
     showJobClosureStatus("Enter the date of attendance.", "err");
     return;
@@ -874,6 +880,7 @@ async function trySaveJobClosure(event) {
       user_id: user.id,
       officer_email: user.email || "",
       officer_name: currentDisplayName || officerLabel(user.email || ""),
+      reference_number: referenceNumber,
       attendance_date: attendanceDate,
       attendance_time: attendanceTime,
       location_note: document.getElementById("jobLocation").value.trim() || null,
@@ -895,12 +902,27 @@ async function trySaveJobClosure(event) {
       error = retry.error;
     }
     if (error) {
-      showJobClosureStatus(error.message || "Could not save. Run the job-closures SQL first.", "err");
+      const missingReference = /reference_number/i.test(error.message || "");
+      showJobClosureStatus(error.message || (missingReference
+        ? "Could not save. Run the job-closure reference SQL first."
+        : "Could not save. Run the job-closures SQL first."), "err");
       return;
+    }
+    if (!canViewJobLog()) {
+      closedJobUserId = user.id;
+      rememberClosedJob(user.id, {
+        reference_number: referenceNumber,
+        attendance_date: attendanceDate,
+        attendance_time: attendanceTime,
+        reporting,
+        outcome,
+        created_at: new Date().toISOString()
+      });
     }
     resetJobClosureForm();
     showJobClosureStatus("Job closure saved.", "ok");
     if (canViewJobLog()) loadJobClosures();
+    else renderOfficerClosedJobs();
   } catch (e) {
     showJobClosureStatus("Could not save the job closure.", "err");
   } finally {
@@ -938,20 +960,36 @@ function jobCopyLine(label, value) {
   return text ? `${label} ${text}` : label;
 }
 
+function capitaliseYesNo(value) {
+  const text = blankToEmpty(value).trim();
+  if (!text) return "";
+  const key = text.toLowerCase();
+  if (key === "yes") return "Yes";
+  if (key === "no") return "No";
+  if (key === "left_message" || key === "yes, left message") return "Yes, left message";
+  if (key === "other") return "Other";
+  if (key.startsWith("other:")) {
+    const extra = text.slice(text.indexOf(":") + 1).trim();
+    return extra ? `Other: ${extra}` : "Other";
+  }
+  return text;
+}
+
 function formatJobClosureText(row) {
   const r = row || {};
   return [
+    jobCopyLine("Reference Number:", r.reference_number),
     jobCopyLine("Date of Attendance (DD/MM/YYYY):", formatAttendanceDate(r.attendance_date)),
     jobCopyLine("Time of Attendance (HH:MM - 24-hour time):", formatAttendanceTime(r.attendance_time)),
     jobCopyLine("Location: (if different from DART location):", r.location_note),
     jobCopyLine("Officer(s) Surname/ Officer code(s):", r.officers),
     jobCopyLine("Observations/ Actions:", r.observations),
-    jobCopyLine("Complainant Contacted:", r.complainant_contacted),
-    jobCopyLine("Ward Office Contact (If WO Complaint, email or phone contact must be made by officer):", r.ward_office_contact),
-    jobCopyLine("Picture/voice recording to be attached:", r.media_attached),
+    jobCopyLine("Complainant Contacted:", capitaliseYesNo(r.complainant_contacted)),
+    jobCopyLine("Ward Office Contact (If WO Complaint, email or phone contact must be made by officer):", capitaliseYesNo(r.ward_office_contact)),
+    jobCopyLine("Picture/voice recording to be attached:", capitaliseYesNo(r.media_attached)),
     jobCopyLine("Referral:", r.referral),
     jobCopyLine("Reporting:", r.reporting),
-    jobCopyLine("Job Complete:", r.job_complete),
+    jobCopyLine("Job Complete:", capitaliseYesNo(r.job_complete)),
     jobCopyLine("Outcome:", r.outcome)
   ].join("\n\n");
 }
@@ -974,6 +1012,7 @@ function rowMatchesJobQuery(row, q) {
   if (!q) return true;
   const hay = [
     formatLocalTimestamp(row.created_at),
+    row.reference_number,
     officerDisplayName(row),
     row.officer_name,
     row.officer_email,
@@ -1026,6 +1065,7 @@ function renderJobClosureLog() {
   const rows = matched.map((row) => `<tr>
       <td>${esc(formatLocalTimestamp(row.created_at))}</td>
       <td>${esc(officerDisplayName(row))}</td>
+      <td>${esc(row.reference_number)}</td>
       <td>${esc(attendanceStamp(row))}</td>
       <td>${esc(row.reporting)}</td>
       <td>${esc(row.job_complete)}</td>
@@ -1034,7 +1074,7 @@ function renderJobClosureLog() {
     </tr>`).join("");
   host.innerHTML = `<table class="charge-table">
     <thead><tr>
-      <th>When</th><th>Officer</th><th>Date / time</th><th>Reporting</th><th>Job complete</th><th>Outcome</th><th></th>
+      <th>When</th><th>Officer</th><th>Reference</th><th>Date / time</th><th>Reporting</th><th>Job complete</th><th>Outcome</th><th></th>
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
@@ -1052,7 +1092,7 @@ async function loadJobClosures() {
   host.textContent = "Loading…";
   const { data, error } = await sb
     .from("job_closures")
-    .select("id, created_at, officer_email, officer_name, attendance_date, attendance_time, location_note, officers, observations, complainant_contacted, ward_office_contact, media_attached, referral, reporting, job_complete, outcome")
+    .select("id, created_at, officer_email, officer_name, reference_number, attendance_date, attendance_time, location_note, officers, observations, complainant_contacted, ward_office_contact, media_attached, referral, reporting, job_complete, outcome")
     .order("created_at", { ascending: false })
     .limit(200);
   if (error) {
@@ -1113,15 +1153,87 @@ async function copyJobClosureRows(rows, button) {
   }, 1500);
 }
 
-function copyVisibleJobClosures() {
-  copyJobClosureRows(visibleJobClosureRows(), document.getElementById("copyJobLog"));
-}
-
 function copyJobClosureFromButton(button) {
   const id = button?.getAttribute("data-copy-job");
   const row = jobClosureRows.find((item) => String(item.id) === id);
   if (!row) return;
   copyJobClosureRows([row], button);
+}
+
+const CLOSED_JOBS_LIMIT = 200;
+let closedJobUserId = "";
+
+function closedJobsStorageKey(userId) {
+  return `peak_closed_jobs_${userId}`;
+}
+
+function readClosedJobs(userId) {
+  if (!userId) return [];
+  try {
+    const parsed = JSON.parse(localStorage.getItem(closedJobsStorageKey(userId)) || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function rememberClosedJob(userId, row) {
+  if (!userId) return;
+  const next = [row, ...readClosedJobs(userId)].slice(0, CLOSED_JOBS_LIMIT);
+  try {
+    localStorage.setItem(closedJobsStorageKey(userId), JSON.stringify(next));
+  } catch (e) {
+    /* The job is already saved. The on-device list is best effort. */
+  }
+}
+
+function renderOfficerClosedJobs() {
+  const host = document.getElementById("officerClosedLog");
+  if (!host) return;
+  const rows = readClosedJobs(closedJobUserId).slice().sort((a, b) =>
+    String(b.created_at || "").localeCompare(String(a.created_at || ""))
+  );
+  if (!rows.length) {
+    host.textContent = "No closed jobs on this device yet.";
+    return;
+  }
+  const body = rows.map((row) => `<tr>
+      <td>${esc(row.reference_number)}</td>
+      <td>${esc(attendanceStamp(row))}</td>
+      <td>${esc(row.reporting)}</td>
+      <td title="${esc(row.outcome)}">${esc(outcomeSnippet(row.outcome))}</td>
+    </tr>`).join("");
+  host.innerHTML = `<table class="charge-table">
+    <thead><tr>
+      <th>Reference</th><th>Date / time</th><th>Reporting</th><th>Outcome</th>
+    </tr></thead>
+    <tbody>${body}</tbody>
+  </table>`;
+}
+
+async function loadOfficerClosedJobs() {
+  const section = document.getElementById("officerClosedSection");
+  if (!section || canViewJobLog()) return;
+  const sb = getSupabase();
+  if (!sb) {
+    closedJobUserId = "";
+    renderOfficerClosedJobs();
+    return;
+  }
+  const { data } = await sb.auth.getSession();
+  closedJobUserId = data?.session?.user?.id || "";
+  renderOfficerClosedJobs();
+}
+
+async function resetOfficerClosedJobs() {
+  if (!closedJobUserId) await loadOfficerClosedJobs();
+  if (!closedJobUserId) return;
+  try {
+    localStorage.removeItem(closedJobsStorageKey(closedJobUserId));
+  } catch (e) {
+    return;
+  }
+  renderOfficerClosedJobs();
 }
 
 function officerLabel(email) {
@@ -2168,6 +2280,8 @@ function applyRoleUi() {
   if (log) log.classList.toggle("hidden", !canViewChargeLog());
   const jobLog = document.getElementById("jobLogSection");
   if (jobLog) jobLog.classList.toggle("hidden", !canViewJobLog());
+  const closed = document.getElementById("officerClosedSection");
+  if (closed) closed.classList.toggle("hidden", canViewJobLog());
 }
 
 function getSupabase() {
@@ -2226,6 +2340,9 @@ function lockApp() {
   newOfficerRole = "officer";
   setChoiceGroup("[data-new-role]", "data-new-role", "officer");
   showAddOfficerStatus("");
+  closedJobUserId = "";
+  const closedHost = document.getElementById("officerClosedLog");
+  if (closedHost) closedHost.textContent = "No closed jobs on this device yet.";
   resetJobClosureForm();
   currentRole = "officer";
   applyRoleUi();
@@ -2460,8 +2577,8 @@ function bindUi() {
   if (jobForm) jobForm.addEventListener("submit", trySaveJobClosure);
   const refreshJobLog = document.getElementById("refreshJobLog");
   if (refreshJobLog) refreshJobLog.onclick = loadJobClosures;
-  const copyJobLog = document.getElementById("copyJobLog");
-  if (copyJobLog) copyJobLog.onclick = copyVisibleJobClosures;
+  const resetClosed = document.getElementById("resetClosedJobs");
+  if (resetClosed) resetClosed.onclick = resetOfficerClosedJobs;
   const jobLogSearch = document.getElementById("jobLogSearch");
   if (jobLogSearch) jobLogSearch.addEventListener("input", renderJobClosureLog);
   const jobLogHost = document.getElementById("jobClosureLog");
