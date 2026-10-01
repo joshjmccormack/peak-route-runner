@@ -231,6 +231,11 @@ body.locked .lock-screen { display: flex; }
   margin-bottom: 8px;
 }
 .vehicle-log-head button { margin: 0; width: auto; }
+.job-copy-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
 #vehicleLogSearch,
 #jobLogSearch {
   width: 100%;
