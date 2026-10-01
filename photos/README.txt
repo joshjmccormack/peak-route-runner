@@ -5,11 +5,13 @@ LOCATION MAP SCREENSHOTS
 2. Take a screenshot and crop it to just the map (keep the file small).
 3. Save it in this photos/ folder as .jpg, .png, or .webp.
    Example: albert-st-mary-margaret.jpg
-4. In routes.js, add a photo field on that location:
+4. In Supabase, set public.route_locations.photo for that stop
+   (Table Editor, admin account only):
 
-   "photo": "photos/albert-st-mary-margaret.jpg",
+   photos/albert-st-mary-margaret.jpg
 
-5. Redeploy / refresh route data. Tap the red pin on the location card to view it.
+5. Redeploy the image, then tap Refresh route data in the app.
+   Tap the red pin on the location card to view it.
 
 Keep filenames simple: letters, numbers, hyphens, underscores. Aim under ~200 KB.
 

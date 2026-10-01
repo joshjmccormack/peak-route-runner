@@ -157,9 +157,68 @@ function insertMissingCommas(text) {
   return out + pending;
 }
 
+// Kept for the checked-in routes.js snapshot. Signed-in loads use Supabase.
 function parseRoutesJs(text) {
   const extracted = extractRoutesArray(stripJsComments(text));
   return JSON.parse(stripTrailingCommas(insertMissingCommas(extracted)));
+}
+
+function finiteOrNull(value) {
+  if (value == null || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function routesFromSupabaseRows(routeRows, locationRows) {
+  const byRoute = new Map();
+  (locationRows || []).forEach((row) => {
+    const list = byRoute.get(row.route_id) || [];
+    list.push(row);
+    byRoute.set(row.route_id, list);
+  });
+  const sortIndex = (row) => {
+    const n = Number(row && row.sort_index);
+    return Number.isFinite(n) ? n : Number.MAX_SAFE_INTEGER;
+  };
+  return (routeRows || []).slice().sort((a, b) => {
+    const diff = sortIndex(a) - sortIndex(b);
+    if (diff) return diff;
+    return String(a.id).localeCompare(String(b.id));
+  }).map((row) => ({
+    id: row.id,
+    name: row.name || "",
+    group: row.group_name || "",
+    period: row.period || "",
+    locations: (byRoute.get(row.id) || []).slice().sort((a, b) => {
+      const diff = sortIndex(a) - sortIndex(b);
+      if (diff) return diff;
+      return String(a.id).localeCompare(String(b.id));
+    }).map((loc) => ({
+      id: loc.id,
+      order: finiteOrNull(loc.order),
+      name: loc.name || "",
+      query: loc.query || "",
+      detail: loc.detail || "",
+      detailLong: loc.detail_long || "",
+      lat: finiteOrNull(loc.lat),
+      lng: finiteOrNull(loc.lng),
+      photo: loc.photo == null || String(loc.photo).trim() === "" ? null : String(loc.photo)
+    }))
+  }));
+}
+
+async function fetchAllTableRows(sb, table) {
+  const pageSize = 1000;
+  const rows = [];
+  for (let page = 0; page < 20; page++) {
+    const from = page * pageSize;
+    const { data, error } = await sb.from(table).select("*").order("id").range(from, from + pageSize - 1);
+    if (error) throw error;
+    const batch = data || [];
+    rows.push(...batch);
+    if (batch.length < pageSize) return rows;
+  }
+  throw new Error("Route data is larger than expected");
 }
 
 function locCardDetail(loc) {
@@ -218,11 +277,16 @@ async function loadLatestRoutes() {
     } catch (e) { /* ignore broken cache */ }
   }
   try {
-    const res = await fetch(`./routes.js?ts=${Date.now()}`, { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const text = await res.text();
-    const fresh = parseRoutesJs(text);
-    if (!Array.isArray(fresh) || !fresh.length) throw new Error("No route data");
+    const sb = getSupabase();
+    if (!sb) throw new Error("Supabase client unavailable");
+    const { data: sessionData, error: sessionError } = await sb.auth.getSession();
+    if (sessionError || !sessionData?.session) throw new Error("Not signed in");
+    const [routeRows, locationRows] = await Promise.all([
+      fetchAllTableRows(sb, "routes"),
+      fetchAllTableRows(sb, "route_locations")
+    ]);
+    const fresh = routesFromSupabaseRows(routeRows, locationRows);
+    if (!fresh.length) throw new Error("No route data");
     applyDerivedExpiry(fresh);
     ROUTES = fresh;
     const now = new Date().toISOString();

@@ -1,6 +1,7 @@
-// ROUTE DATA FILE
-// This file is fetched fresh whenever Route Runner opens and internet is available.
-// Edit coordinates, names, details or time ranges here, then redeploy to Netlify.
+// ROUTE DATA SNAPSHOT
+// Live route data now loads from Supabase after sign-in (public.routes and public.route_locations).
+// This file is kept temporarily so existing deploys still have a copy. The app no longer fetches it.
+// Admins should edit the Supabase tables, not this file. See README.txt.
 // detail = short text on the location card. detailLong = full restriction text in the photo popup.
 // Route Runner reads time ranges from detailLong if present, otherwise detail.
 // It calculates expiry as 5 minutes before the latest ending time found in that text.
@@ -796,7 +797,7 @@ const ROUTES = [
         "photo": null,
       },
       {
-        "id": "peak4-pm-10",
+        "id": "peak4-pm-10b",
         "order": 10,
         "name": "Macrossan Street, Brisbane",
         "query": "Macrossan Street, Brisbane, Australia",
