@@ -790,12 +790,13 @@ function showJobClosureStatus(message, tone) {
 
 function showJobClosures() {
   resetJobClosureForm();
+  applyRoleUi();
   showScreen("jobClosures");
+  if (canViewJobLog()) loadJobClosures();
 }
 
 async function trySaveJobClosure(event) {
   event.preventDefault();
-  return;
   const sb = getSupabase();
   if (!sb) {
     showJobClosureStatus("Not signed in.", "err");
@@ -899,11 +900,228 @@ async function trySaveJobClosure(event) {
     }
     resetJobClosureForm();
     showJobClosureStatus("Job closure saved.", "ok");
+    if (canViewJobLog()) loadJobClosures();
   } catch (e) {
     showJobClosureStatus("Could not save the job closure.", "err");
   } finally {
     if (btn) btn.disabled = false;
   }
+}
+
+function blankToEmpty(value) {
+  if (value == null) return "";
+  return String(value);
+}
+
+function formatAttendanceDate(value) {
+  const raw = blankToEmpty(value).trim();
+  if (!raw) return "";
+  const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) return raw;
+  return `${match[3]}/${match[2]}/${match[1]}`;
+}
+
+function formatAttendanceTime(value) {
+  const raw = blankToEmpty(value).trim();
+  if (!raw) return "";
+  const match = raw.match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return raw;
+  return `${pad2(match[1])}:${match[2]}`;
+}
+
+function attendanceStamp(row) {
+  return [formatAttendanceDate(row?.attendance_date), formatAttendanceTime(row?.attendance_time)].filter(Boolean).join(" ");
+}
+
+function jobCopyLine(label, value) {
+  const text = blankToEmpty(value);
+  return text ? `${label} ${text}` : label;
+}
+
+function formatJobClosureText(row) {
+  const r = row || {};
+  return [
+    jobCopyLine("Date of Attendance (DD/MM/YYYY):", formatAttendanceDate(r.attendance_date)),
+    jobCopyLine("Time of Attendance (HH:MM - 24-hour time):", formatAttendanceTime(r.attendance_time)),
+    jobCopyLine("Location: (if different from DART location):", r.location_note),
+    jobCopyLine("Officer(s) Surname/ Officer code(s):", r.officers),
+    jobCopyLine("Observations/ Actions:", r.observations),
+    jobCopyLine("Complainant Contacted:", r.complainant_contacted),
+    jobCopyLine("Ward Office Contact (If WO Complaint, email or phone contact must be made by officer):", r.ward_office_contact),
+    jobCopyLine("Picture/voice recording to be attached:", r.media_attached),
+    jobCopyLine("Referral:", r.referral),
+    jobCopyLine("Reporting:", r.reporting),
+    jobCopyLine("Job Complete:", r.job_complete),
+    jobCopyLine("Outcome:", r.outcome)
+  ].join("\n\n");
+}
+
+function outcomeSnippet(value) {
+  const text = blankToEmpty(value).replace(/\s+/g, " ").trim();
+  if (text.length <= 48) return text;
+  return `${text.slice(0, 48).trimEnd()}…`;
+}
+
+let jobClosureRows = [];
+let jobLogCopyTimer = 0;
+
+function jobLogQuery() {
+  const box = document.getElementById("jobLogSearch");
+  return String(box?.value || "").trim().toLowerCase();
+}
+
+function rowMatchesJobQuery(row, q) {
+  if (!q) return true;
+  const hay = [
+    formatLocalTimestamp(row.created_at),
+    officerDisplayName(row),
+    row.officer_name,
+    row.officer_email,
+    attendanceStamp(row),
+    row.location_note,
+    row.officers,
+    row.observations,
+    row.complainant_contacted,
+    row.ward_office_contact,
+    row.media_attached,
+    row.referral,
+    row.reporting,
+    row.job_complete,
+    row.outcome
+  ].join(" ").toLowerCase();
+  return hay.includes(q);
+}
+
+function visibleJobClosureRows() {
+  const q = jobLogQuery();
+  return jobClosureRows.filter((row) => rowMatchesJobQuery(row, q));
+}
+
+function showJobLogCopyStatus(message, tone) {
+  const el = document.getElementById("jobLogCopyStatus");
+  if (!el) return;
+  el.classList.remove("ok", "err");
+  if (!message) {
+    el.textContent = "";
+    el.classList.add("hidden");
+    return;
+  }
+  el.textContent = message;
+  el.classList.remove("hidden");
+  if (tone) el.classList.add(tone);
+}
+
+function renderJobClosureLog() {
+  const host = document.getElementById("jobClosureLog");
+  if (!host) return;
+  if (!jobClosureRows.length) {
+    host.textContent = "No job closures yet.";
+    return;
+  }
+  const matched = visibleJobClosureRows();
+  if (!matched.length) {
+    host.textContent = "No matching job closures.";
+    return;
+  }
+  const rows = matched.map((row) => `<tr>
+      <td>${esc(formatLocalTimestamp(row.created_at))}</td>
+      <td>${esc(officerDisplayName(row))}</td>
+      <td>${esc(attendanceStamp(row))}</td>
+      <td>${esc(row.reporting)}</td>
+      <td>${esc(row.job_complete)}</td>
+      <td title="${esc(row.outcome)}">${esc(outcomeSnippet(row.outcome))}</td>
+      <td><button class="secondary small" type="button" data-copy-job="${esc(row.id)}">Copy</button></td>
+    </tr>`).join("");
+  host.innerHTML = `<table class="charge-table">
+    <thead><tr>
+      <th>When</th><th>Officer</th><th>Date / time</th><th>Reporting</th><th>Job complete</th><th>Outcome</th><th></th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+async function loadJobClosures() {
+  const host = document.getElementById("jobClosureLog");
+  if (!host || !canViewJobLog()) return;
+  const sb = getSupabase();
+  if (!sb) {
+    jobClosureRows = [];
+    host.textContent = "Not signed in.";
+    return;
+  }
+  host.textContent = "Loading…";
+  const { data, error } = await sb
+    .from("job_closures")
+    .select("id, created_at, officer_email, officer_name, attendance_date, attendance_time, location_note, officers, observations, complainant_contacted, ward_office_contact, media_attached, referral, reporting, job_complete, outcome")
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (error) {
+    jobClosureRows = [];
+    host.textContent = error.message || "Could not load the job closure log.";
+    return;
+  }
+  jobClosureRows = data || [];
+  renderJobClosureLog();
+}
+
+function copyWithTextarea(text) {
+  const area = document.createElement("textarea");
+  area.value = text;
+  area.setAttribute("readonly", "");
+  area.style.position = "fixed";
+  area.style.top = "0";
+  area.style.left = "0";
+  area.style.opacity = "0";
+  document.body.appendChild(area);
+  area.focus();
+  area.select();
+  const ok = document.execCommand("copy");
+  area.remove();
+  if (!ok) throw new Error("copy failed");
+}
+
+async function writeClipboard(text) {
+  if (navigator.clipboard && window.isSecureContext && navigator.clipboard.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch (e) {
+      /* Permission or focus can reject the async clipboard API. */
+    }
+  }
+  copyWithTextarea(text);
+}
+
+async function copyJobClosureRows(rows, button) {
+  clearTimeout(jobLogCopyTimer);
+  if (!rows || !rows.length) {
+    showJobLogCopyStatus("Nothing to copy.");
+    return;
+  }
+  const previous = button ? button.textContent : "";
+  try {
+    await writeClipboard(rows.map(formatJobClosureText).join("\n\n"));
+  } catch (e) {
+    showJobLogCopyStatus("Could not copy.", "err");
+    return;
+  }
+  showJobLogCopyStatus("Copied", "ok");
+  if (button) button.textContent = "Copied";
+  jobLogCopyTimer = setTimeout(() => {
+    showJobLogCopyStatus("");
+    if (button && button.isConnected) button.textContent = previous;
+  }, 1500);
+}
+
+function copyVisibleJobClosures() {
+  copyJobClosureRows(visibleJobClosureRows(), document.getElementById("copyJobLog"));
+}
+
+function copyJobClosureFromButton(button) {
+  const id = button?.getAttribute("data-copy-job");
+  const row = jobClosureRows.find((item) => String(item.id) === id);
+  if (!row) return;
+  copyJobClosureRows([row], button);
 }
 
 function officerLabel(email) {
@@ -1905,6 +2123,10 @@ function canViewChargeLog() {
   return currentRole === "roc" || currentRole === "admin";
 }
 
+function canViewJobLog() {
+  return currentRole === "roc" || currentRole === "admin";
+}
+
 function isAdmin() {
   return currentRole === "admin";
 }
@@ -1944,6 +2166,8 @@ function applyRoleUi() {
   if (addBtn) addBtn.classList.toggle("hidden", !isAdmin());
   const log = document.getElementById("vehicleLogSection");
   if (log) log.classList.toggle("hidden", !canViewChargeLog());
+  const jobLog = document.getElementById("jobLogSection");
+  if (jobLog) jobLog.classList.toggle("hidden", !canViewJobLog());
 }
 
 function getSupabase() {
@@ -2234,6 +2458,20 @@ function bindUi() {
   });
   const jobForm = document.getElementById("jobClosureForm");
   if (jobForm) jobForm.addEventListener("submit", trySaveJobClosure);
+  const refreshJobLog = document.getElementById("refreshJobLog");
+  if (refreshJobLog) refreshJobLog.onclick = loadJobClosures;
+  const copyJobLog = document.getElementById("copyJobLog");
+  if (copyJobLog) copyJobLog.onclick = copyVisibleJobClosures;
+  const jobLogSearch = document.getElementById("jobLogSearch");
+  if (jobLogSearch) jobLogSearch.addEventListener("input", renderJobClosureLog);
+  const jobLogHost = document.getElementById("jobClosureLog");
+  if (jobLogHost) {
+    jobLogHost.addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-copy-job]");
+      if (!btn || !jobLogHost.contains(btn)) return;
+      copyJobClosureFromButton(btn);
+    });
+  }
   document.querySelectorAll("[data-fleet]").forEach((btn) => {
     btn.onclick = () => setVehicleFleet(btn.getAttribute("data-fleet"));
   });
