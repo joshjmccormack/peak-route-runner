@@ -1,4 +1,4 @@
-const CACHE = "peak-route-runner-v1.1bd";
+const CACHE = "pinassistant-v1.1bd";
 const CORE = [
   "./",
   "./index.html",

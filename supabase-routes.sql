@@ -1,4 +1,4 @@
--- Peak Route Runner route catalogue.
+-- PinAssistant route catalogue.
 -- Project: Parking Project (uklqyddpntttrcwaimji).
 -- Apply once in the Supabase SQL editor. Safe to re-run: existing ids are left unchanged.
 --
