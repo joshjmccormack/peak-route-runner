@@ -12,7 +12,7 @@ window.PEAK_CHARGE_BANDS = [
   { id: "31-40", label: "31%–40%", store: 35, min: 31, max: 40, tone: "orange" },
   { id: "41-50", label: "41%–50%", store: 45, min: 41, max: 50, tone: "orange" },
   { id: "51-60", label: "51%–60%", store: 55, min: 51, max: 60, tone: "orange" },
-  { id: "61-70", label: "61%–70%", store: 65, min: 61, max: 70, tone: "orange" },
+  { id: "61-70", label: "61%–70%", store: 65, min: 61, max: 70, tone: "green" },
   { id: "71-80", label: "71%–80%", store: 75, min: 71, max: 80, tone: "green" },
   { id: "81-90", label: "81%–90%", store: 85, min: 81, max: 90, tone: "green" },
   { id: "91-100", label: "91%–100%", store: 95, min: 91, max: 100, tone: "green" }
