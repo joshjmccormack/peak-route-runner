@@ -288,6 +288,9 @@ body.locked .lock-screen { display: flex; }
   gap: 6px;
   align-items: center;
 }
+.job-attachment {
+  min-width: 4.5rem;
+}
 .ref-with-copy {
   display: inline-flex;
   align-items: center;
