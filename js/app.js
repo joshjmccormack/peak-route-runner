@@ -2661,7 +2661,7 @@ function bindUi() {
 async function startApp() {
   bindUi();
   const versionEl = document.getElementById("appVersionLabel");
-  if (versionEl) versionEl.textContent = `PinAssistant ${APP_VERSION}`;
+  if (versionEl) versionEl.textContent = `PinAssist ${APP_VERSION}`;
   try {
     await loadLatestRoutes();
   } catch (e) {
