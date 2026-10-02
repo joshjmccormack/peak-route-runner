@@ -11,6 +11,7 @@
   --red: #b3261e;
   --shadow: 0 8px 24px rgba(16, 38, 72, 0.08);
   --radius: 16px;
+  --shell-max: 760px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
@@ -271,7 +272,7 @@ body.locked .lock-screen { display: flex; }
 .charge-table th { color: var(--muted); font-weight: 700; }
 
 main {
-  max-width: 760px;
+  max-width: var(--shell-max);
   margin: auto;
   padding: 14px 14px calc(96px + var(--safe-bottom));
 }
@@ -799,7 +800,7 @@ footer {
   backdrop-filter: blur(8px);
 }
 footer div {
-  max-width: 760px;
+  max-width: var(--shell-max);
   margin: auto;
   display: grid;
   grid-template-columns: 1fr;
@@ -843,4 +844,11 @@ button.small {
 
 @media (max-width: 480px) {
   .routegrid { grid-template-columns: 1fr 1fr; }
+}
+
+/* Tablet and desktop. Phone stays at 760px. 1440px fits the job closure
+   log (nowrap columns are about 1260px, plus card and page padding) and
+   still leaves side margins on ultrawide screens. */
+@media (min-width: 768px) {
+  :root { --shell-max: 1440px; }
 }
