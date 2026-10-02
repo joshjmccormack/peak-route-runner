@@ -236,6 +236,11 @@ body.locked .lock-screen { display: flex; }
   gap: 6px;
   align-items: center;
 }
+.ref-with-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 #vehicleLogSearch,
 #jobLogSearch {
   width: 100%;

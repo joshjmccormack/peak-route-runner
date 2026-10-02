@@ -1062,7 +1062,7 @@ function renderJobClosureLog() {
     return;
   }
   const rows = matched.map((row) => `<tr>
-      <td>${esc(row.reference_number)}</td>
+      <td><span class="ref-with-copy">${esc(row.reference_number)}<button class="secondary small" type="button" data-copy-ref="${esc(row.reference_number)}">Copy</button></span></td>
       <td>${esc(formatLocalTimestamp(row.created_at))}</td>
       <td>${esc(officerDisplayName(row))}</td>
       <td>${esc(attendanceStamp(row))}</td>
@@ -1070,7 +1070,6 @@ function renderJobClosureLog() {
       <td>${esc(capitaliseYesNo(row.job_complete))}</td>
       <td title="${esc(row.outcome)}">${esc(outcomeSnippet(row.outcome))}</td>
       <td class="job-copy-actions">
-        <button class="secondary small" type="button" data-copy-ref="${esc(row.reference_number)}">Copy ref</button>
         <button class="secondary small" type="button" data-copy-job="${esc(row.id)}">Copy</button>
       </td>
     </tr>`).join("");
@@ -1218,17 +1217,14 @@ function renderOfficerClosedJobs() {
     return;
   }
   const body = rows.map((row) => `<tr>
-      <td>${esc(row.reference_number)}</td>
+      <td><span class="ref-with-copy">${esc(row.reference_number)}<button class="secondary small" type="button" data-copy-ref="${esc(row.reference_number)}">Copy</button></span></td>
       <td>${esc(attendanceStamp(row))}</td>
       <td>${esc(row.reporting)}</td>
       <td title="${esc(row.outcome)}">${esc(outcomeSnippet(row.outcome))}</td>
-      <td class="job-copy-actions">
-        <button class="secondary small" type="button" data-copy-ref="${esc(row.reference_number)}">Copy ref</button>
-      </td>
     </tr>`).join("");
   host.innerHTML = `<table class="charge-table">
     <thead><tr>
-      <th>Reference number</th><th>Date / time</th><th>Reporting</th><th>Outcome</th><th></th>
+      <th>Reference number</th><th>Date / time</th><th>Reporting</th><th>Outcome</th>
     </tr></thead>
     <tbody>${body}</tbody>
   </table>`;
