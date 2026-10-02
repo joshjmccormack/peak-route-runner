@@ -6,6 +6,8 @@ create table if not exists public.vehicle_charges (
   fleet text not null check (fleet in ('TACT', 'MET')),
   vehicle text not null,
   charge_percent integer not null check (charge_percent >= 0 and charge_percent <= 100),
+  -- New logs store the midpoint of a 10% band: 5, 15, 25, 35, 45, 55, 65, 75, 85, or 95.
+  -- Older exact percentages stay valid and still fall into those same bands.
   location text not null check (location in ('OCT', 'GSQ')),
   created_at timestamptz not null default now()
 );

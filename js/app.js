@@ -481,6 +481,49 @@ function showChangePassword() {
 
 let vehicleFleet = "";
 let vehicleLocation = "";
+let vehicleChargePercent = null;
+
+function chargeBandList() {
+  const list = window.PEAK_CHARGE_BANDS;
+  return Array.isArray(list) ? list : [];
+}
+
+function chargeBandByStore(store) {
+  const n = Number(store);
+  if (!Number.isFinite(n)) return null;
+  return chargeBandList().find((band) => band.store === n) || null;
+}
+
+function chargeBandForPercent(percent) {
+  const n = Number(percent);
+  const bands = chargeBandList();
+  if (!Number.isFinite(n) || !bands.length) return null;
+  if (n <= bands[0].max) return bands[0];
+  const last = bands[bands.length - 1];
+  if (n >= last.min) return last;
+  return bands.find((band) => n >= band.min && n <= band.max) || null;
+}
+
+function chargeBandLabel(percent) {
+  const band = chargeBandForPercent(percent);
+  if (band) return band.label;
+  return Number.isFinite(Number(percent)) ? `${percent}%` : "—";
+}
+
+function renderChargeBandButtons() {
+  const host = document.getElementById("chargeBands");
+  if (!host || host.dataset.ready === "1") return;
+  host.dataset.ready = "1";
+  host.innerHTML = chargeBandList().map((band) =>
+    `<button type="button" class="charge-band charge-band-${esc(band.tone)}" data-charge-band="${esc(band.store)}" aria-pressed="false">${esc(band.label)}</button>`
+  ).join("");
+}
+
+function setVehicleChargeBand(store) {
+  const band = chargeBandByStore(store);
+  vehicleChargePercent = band ? band.store : null;
+  setChoiceGroup("[data-charge-band]", "data-charge-band", band ? String(band.store) : "");
+}
 
 function vehiclesForFleet(fleet) {
   const lists = window.PEAK_VEHICLES || {};
@@ -539,14 +582,21 @@ function showVehicleStatus(message, tone) {
   if (tone) el.classList.add(tone);
 }
 
-function showVehicles() {
+function resetVehicleChargeForm() {
   const form = document.getElementById("vehicleChargeForm");
   if (form) form.reset();
   vehicleFleet = "";
   vehicleLocation = "";
+  vehicleChargePercent = null;
   setChoiceGroup("[data-fleet]", "data-fleet", "");
   setChoiceGroup("[data-location]", "data-location", "");
+  setChoiceGroup("[data-charge-band]", "data-charge-band", "");
   fillVehicleSelect();
+}
+
+function showVehicles() {
+  renderChargeBandButtons();
+  resetVehicleChargeForm();
   showVehicleStatus("");
   applyRoleUi();
   showScreen("vehicles");
@@ -1270,11 +1320,10 @@ function officerDisplayName(row) {
 let vehicleChargeRows = [];
 
 function chargePctClass(percent) {
-  const n = Number(percent);
-  if (!Number.isFinite(n)) return "charge-pct";
-  if (n >= 75) return "charge-pct charge-pct-high";
-  if (n >= 50) return "charge-pct charge-pct-mid";
-  if (n >= 25) return "charge-pct charge-pct-low";
+  const band = chargeBandForPercent(percent);
+  if (!band) return "charge-pct";
+  if (band.tone === "green") return "charge-pct charge-pct-high";
+  if (band.tone === "orange") return "charge-pct charge-pct-low";
   return "charge-pct charge-pct-crit";
 }
 
@@ -1294,9 +1343,43 @@ function rowMatchesLogQuery(row, q) {
     row.fleet,
     row.vehicle,
     row.location,
+    chargeBandLabel(row.charge_percent),
+    chargeBandForPercent(row.charge_percent)?.id,
     String(row.charge_percent)
   ].join(" ").toLowerCase();
   return hay.includes(q);
+}
+
+let expandedVehicleKeys = new Set();
+let lastVehicleLogQuery = null;
+
+function vehicleChargeKey(row) {
+  return `${row.fleet}|${row.vehicle}`;
+}
+
+function groupVehicleCharges(rows) {
+  const groups = new Map();
+  rows.forEach((row) => {
+    const key = vehicleChargeKey(row);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(row);
+  });
+  const grouped = [];
+  groups.forEach((items, key) => {
+    const ordered = items.slice().sort((a, b) => (Date.parse(b.created_at) || 0) - (Date.parse(a.created_at) || 0));
+    grouped.push({ key, latest: ordered[0], history: ordered.slice(1) });
+  });
+  grouped.sort((a, b) => (Date.parse(b.latest.created_at) || 0) - (Date.parse(a.latest.created_at) || 0));
+  return grouped;
+}
+
+function chargeRowCells(row) {
+  return `<td>${esc(formatLocalTimestamp(row.created_at))}</td>
+      <td>${esc(officerDisplayName(row))}</td>
+      <td>${esc(row.fleet)}</td>
+      <td>${esc(row.vehicle)}</td>
+      <td class="${chargePctClass(row.charge_percent)}">${esc(chargeBandLabel(row.charge_percent))}</td>
+      <td>${esc(row.location)}</td>`;
 }
 
 function renderVehicleChargeLog() {
@@ -1307,24 +1390,47 @@ function renderVehicleChargeLog() {
     return;
   }
   const q = vehicleLogQuery();
-  const matched = vehicleChargeRows.filter((row) => rowMatchesLogQuery(row, q));
-  if (!matched.length) {
+  const grouped = groupVehicleCharges(vehicleChargeRows);
+  if (q !== lastVehicleLogQuery) {
+    if (q) {
+      grouped.forEach((group) => {
+        if (group.history.some((row) => rowMatchesLogQuery(row, q))) expandedVehicleKeys.add(group.key);
+      });
+    }
+    lastVehicleLogQuery = q;
+  }
+  const groups = grouped.filter((group) => {
+    if (!q) return true;
+    if (rowMatchesLogQuery(group.latest, q)) return true;
+    return group.history.some((row) => rowMatchesLogQuery(row, q));
+  });
+  if (!groups.length) {
     host.textContent = "No matching updates.";
     return;
   }
-  const rows = matched.map((row) => `<tr>
-      <td>${esc(formatLocalTimestamp(row.created_at))}</td>
-      <td>${esc(officerDisplayName(row))}</td>
-      <td>${esc(row.fleet)}</td>
-      <td>${esc(row.vehicle)}</td>
-      <td class="${chargePctClass(row.charge_percent)}">${esc(row.charge_percent)}%</td>
-      <td>${esc(row.location)}</td>
-    </tr>`).join("");
+  const body = groups.map((group) => {
+    const open = expandedVehicleKeys.has(group.key);
+    const vehicleName = group.latest.vehicle || "vehicle";
+    const count = group.history.length;
+    const label = open ? "Hide" : "Show";
+    const aria = open
+      ? `Hide earlier charges for ${vehicleName}`
+      : `Show earlier charges for ${vehicleName}${count ? `, ${count} earlier` : ""}`;
+    const historyHtml = open
+      ? (count
+        ? group.history.map((row) => `<tr class="charge-history">${chargeRowCells(row)}<td></td></tr>`).join("")
+        : `<tr class="charge-history"><td class="charge-history-empty" colspan="7">No earlier charges for this vehicle.</td></tr>`)
+      : "";
+    return `<tr class="charge-latest">
+      ${chargeRowCells(group.latest)}
+      <td><button type="button" class="charge-history-btn" data-vehicle-history="${esc(group.key)}" aria-expanded="${open ? "true" : "false"}" aria-label="${esc(aria)}">${label}${count && !open ? ` (${count})` : ""}</button></td>
+    </tr>${historyHtml}`;
+  }).join("");
   host.innerHTML = `<table class="charge-table">
     <thead><tr>
-      <th>When</th><th>Who</th><th>Fleet</th><th>Vehicle</th><th>Charge</th><th>Location</th>
+      <th>When</th><th>Who</th><th>Fleet</th><th>Vehicle</th><th>Charge</th><th>Location</th><th>Earlier</th>
     </tr></thead>
-    <tbody>${rows}</tbody>
+    <tbody>${body}</tbody>
   </table>`;
 }
 
@@ -1342,13 +1448,13 @@ async function loadVehicleCharges() {
     .from("vehicle_charges")
     .select("created_at, officer_email, officer_name, fleet, vehicle, charge_percent, location")
     .order("created_at", { ascending: false })
-    .limit(200);
+    .limit(1000);
   if (error) {
     const retry = await sb
       .from("vehicle_charges")
       .select("created_at, officer_email, fleet, vehicle, charge_percent, location")
       .order("created_at", { ascending: false })
-      .limit(200);
+      .limit(1000);
     data = retry.data;
     error = retry.error;
   }
@@ -1369,7 +1475,7 @@ async function trySaveVehicleCharge(event) {
     return;
   }
   const vehicle = document.getElementById("vehicleSelect").value;
-  const percent = Number(document.getElementById("chargePercent").value);
+  const band = chargeBandByStore(vehicleChargePercent);
   if (!vehicleFleet) {
     showVehicleStatus("Pick TACT or MET.", "err");
     return;
@@ -1378,8 +1484,8 @@ async function trySaveVehicleCharge(event) {
     showVehicleStatus("Pick a vehicle.", "err");
     return;
   }
-  if (!Number.isInteger(percent) || percent < 0 || percent > 100) {
-    showVehicleStatus("Charge must be a whole number from 0 to 100.", "err");
+  if (!band) {
+    showVehicleStatus("Pick a charge band.", "err");
     return;
   }
   if (!vehicleLocation) {
@@ -1402,19 +1508,14 @@ async function trySaveVehicleCharge(event) {
       officer_name: currentDisplayName || officerLabel(user.email || ""),
       fleet: vehicleFleet,
       vehicle,
-      charge_percent: percent,
+      charge_percent: band.store,
       location: vehicleLocation
     });
     if (error) {
       showVehicleStatus(error.message || "Could not save. Check the database is set up.", "err");
       return;
     }
-    document.getElementById("vehicleChargeForm").reset();
-    vehicleFleet = "";
-    vehicleLocation = "";
-    setChoiceGroup("[data-fleet]", "data-fleet", "");
-    setChoiceGroup("[data-location]", "data-location", "");
-    fillVehicleSelect();
+    resetVehicleChargeForm();
     showVehicleStatus("Charge saved.", "ok");
     loadVehicleCharges();
   } catch (e) {
@@ -2621,6 +2722,10 @@ function bindUi() {
       copyReferenceFromButton(refBtn);
     });
   }
+  renderChargeBandButtons();
+  document.querySelectorAll("[data-charge-band]").forEach((btn) => {
+    btn.onclick = () => setVehicleChargeBand(btn.getAttribute("data-charge-band"));
+  });
   document.querySelectorAll("[data-fleet]").forEach((btn) => {
     btn.onclick = () => setVehicleFleet(btn.getAttribute("data-fleet"));
   });
@@ -2633,6 +2738,18 @@ function bindUi() {
   if (refreshLog) refreshLog.onclick = loadVehicleCharges;
   const logSearch = document.getElementById("vehicleLogSearch");
   if (logSearch) logSearch.addEventListener("input", renderVehicleChargeLog);
+  const vehicleLogHost = document.getElementById("vehicleChargeLog");
+  if (vehicleLogHost) {
+    vehicleLogHost.addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-vehicle-history]");
+      if (!btn || !vehicleLogHost.contains(btn)) return;
+      const key = btn.getAttribute("data-vehicle-history");
+      if (!key) return;
+      if (expandedVehicleKeys.has(key)) expandedVehicleKeys.delete(key);
+      else expandedVehicleKeys.add(key);
+      renderVehicleChargeLog();
+    });
+  }
   document.getElementById("refreshRoutes").onclick = refreshRouteData;
   document.getElementById("sortNearest").onclick = () => setSortMode("nearest");
   document.getElementById("sortRecommended").onclick = () => setSortMode("route");

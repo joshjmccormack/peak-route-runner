@@ -19,7 +19,7 @@
 <meta property="og:description" content="PinAssist">
 <meta property="og:url" content="https://pinassist.app/">
 <title>PinAssist</title>
-<link rel="stylesheet" href="css/app.css?v=1.3">
+<link rel="stylesheet" href="css/app.css?v=1.5">
 </head>
 <body class="locked">
 <section id="lockScreen" class="lock-screen">
@@ -55,7 +55,7 @@
   </button>
   <button id="openVehicles" class="secondary home-choice home-vehicles" type="button">
     <strong>Vehicles</strong>
-    <span>Log charge percentage and locations of TACT or MET vehicles</span>
+    <span>Log a charge band and location for TACT or MET vehicles</span>
   </button>
   <button id="openJobClosures" class="secondary home-choice home-job-closures" type="button">
     <strong>Job closures</strong>
@@ -71,7 +71,7 @@
 
 <section id="vehicles" class="card hidden">
   <h2>Vehicles</h2>
-  <p class="muted">Log a charge for TACT or MET. ROC and Admin also see the charge log.</p>
+  <p class="muted">Log a charge band for TACT or MET. ROC and Admin also see the charge log.</p>
   <form id="vehicleChargeForm">
     <div class="field-label">Fleet</div>
     <div class="sort-toggle" role="group" aria-label="Fleet">
@@ -82,8 +82,8 @@
     <select id="vehicleSelect" required>
       <option value="">Select fleet first</option>
     </select>
-    <label class="field-label" for="chargePercent">Charge %</label>
-    <input id="chargePercent" name="chargePercent" type="number" inputmode="numeric" min="0" max="100" step="1" required>
+    <div class="field-label" id="chargeBandLabel">Charge</div>
+    <div id="chargeBands" class="charge-bands" role="group" aria-labelledby="chargeBandLabel"></div>
     <div class="field-label">Location</div>
     <div class="sort-toggle" role="group" aria-label="Location">
       <button type="button" id="locOct" class="sort-opt" data-location="OCT" aria-pressed="false">OCT</button>
@@ -320,8 +320,8 @@
 </footer>
 <script src="js/vendor/supabase.js" defer></script>
 <script src="js/supabase-config.js" defer></script>
-<script src="js/vehicles.js" defer></script>
-<script src="js/app.js?v=1.3" defer></script>
+<script src="js/vehicles.js?v=1.5" defer></script>
+<script src="js/app.js?v=1.5" defer></script>
 <div id="resetDialog" class="dialog-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="resetDialogMsg">
   <div class="dialog-card">
     <p id="resetDialogMsg">Reset all completed and skipped locations for this route?</p>
