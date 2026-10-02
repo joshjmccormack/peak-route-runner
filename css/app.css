@@ -139,7 +139,6 @@ body.locked .lock-screen { display: flex; }
   padding: 6px 12px;
   flex: none;
 }
-.role-toggle { grid-template-columns: 1fr 1fr 1fr; }
 .change-password {
   margin-top: 8px;
 }
@@ -597,6 +596,10 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   padding: 4px;
   background: #edf1f7;
   border-radius: 14px;
+}
+.sort-toggle.role-toggle { grid-template-columns: 1fr 1fr; }
+@media (min-width: 640px) {
+  .sort-toggle.role-toggle { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 .sort-opt {
   margin: 0;

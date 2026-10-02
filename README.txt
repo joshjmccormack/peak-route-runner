@@ -16,7 +16,7 @@ Tables:
 - public.route_locations (id, route_id, "order", name, query, detail, detail_long, lat, lng, photo, sort_index)
 
 Access is enforced with Row Level Security and the existing public.current_role() function:
-- SELECT: any signed-in user (officer, ROC, or admin)
+- SELECT: any signed-in user (officer, ROC, SLG, or admin)
 - INSERT, UPDATE, DELETE: admin only
 - A request with no user JWT is denied. The anon role has no grant on these tables.
 

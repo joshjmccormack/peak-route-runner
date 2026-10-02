@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
   if (!officerCode) return json(400, { error: "Enter an officer code." });
   if (!email || !email.includes("@")) return json(400, { error: "Enter a valid email." });
   if (password.length < 8) return json(400, { error: "Password must be at least 8 characters." });
-  if (!["officer", "roc", "admin"].includes(role)) return json(400, { error: "Pick Officer, ROC, or Admin." });
+  if (!["officer", "roc", "slg", "admin"].includes(role)) return json(400, { error: "Pick Officer, ROC, SLG, or Admin." });
 
   const { data: created, error: createError } = await admin.auth.admin.createUser({
     email,

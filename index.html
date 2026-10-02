@@ -19,7 +19,7 @@
 <meta property="og:description" content="PinAssist">
 <meta property="og:url" content="https://pinassist.app/">
 <title>PinAssist</title>
-<link rel="stylesheet" href="css/app.css?v=1.11">
+<link rel="stylesheet" href="css/app.css?v=1.12">
 </head>
 <body class="locked">
 <section id="lockScreen" class="lock-screen">
@@ -238,6 +238,7 @@
     <div class="sort-toggle role-toggle" role="group" aria-label="Role">
       <button type="button" class="sort-opt" data-new-role="officer" aria-pressed="true">Officer</button>
       <button type="button" class="sort-opt" data-new-role="roc" aria-pressed="false">ROC</button>
+      <button type="button" class="sort-opt" data-new-role="slg" aria-pressed="false">SLG</button>
       <button type="button" class="sort-opt" data-new-role="admin" aria-pressed="false">Admin</button>
     </div>
     <button id="addOfficerBtn" class="primary" type="submit">Create login</button>
@@ -264,6 +265,7 @@
     <div class="sort-toggle role-toggle" role="group" aria-label="Role">
       <button type="button" class="sort-opt" data-edit-role="officer" aria-pressed="true">Officer</button>
       <button type="button" class="sort-opt" data-edit-role="roc" aria-pressed="false">ROC</button>
+      <button type="button" class="sort-opt" data-edit-role="slg" aria-pressed="false">SLG</button>
       <button type="button" class="sort-opt" data-edit-role="admin" aria-pressed="false">Admin</button>
     </div>
     <button id="editUserBtn" class="primary" type="submit">Save changes</button>
@@ -359,8 +361,8 @@
 </footer>
 <script src="js/vendor/supabase.js" defer></script>
 <script src="js/supabase-config.js" defer></script>
-<script src="js/vehicles.js?v=1.11" defer></script>
-<script src="js/app.js?v=1.11" defer></script>
+<script src="js/vehicles.js?v=1.12" defer></script>
+<script src="js/app.js?v=1.12" defer></script>
 <div id="resetDialog" class="dialog-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="resetDialogMsg">
   <div class="dialog-card">
     <p id="resetDialogMsg">Reset all completed and skipped locations for this route?</p>
