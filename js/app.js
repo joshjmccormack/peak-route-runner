@@ -767,7 +767,10 @@ function renderChargeBandButtons() {
   const host = document.getElementById("chargeBands");
   if (!host || host.dataset.ready === "1") return;
   host.dataset.ready = "1";
-  host.innerHTML = chargeBandList().map((band) =>
+  // Source list stays low→high so chargeBandForPercent can treat the ends as bounds.
+  // Buttons render high→low: highest percent on the top row, lowest on the bottom.
+  const bands = chargeBandList().slice().reverse();
+  host.innerHTML = bands.map((band) =>
     `<button type="button" class="charge-band charge-band-${esc(band.tone)}" data-charge-band="${esc(band.store)}" aria-pressed="false">${esc(band.label)}</button>`
   ).join("");
 }
@@ -1645,6 +1648,7 @@ function chargePctClass(percent) {
   const band = chargeBandForPercent(percent);
   if (!band) return "charge-pct";
   if (band.tone === "green") return "charge-pct charge-pct-high";
+  if (band.tone === "yellow") return "charge-pct charge-pct-mid";
   if (band.tone === "orange") return "charge-pct charge-pct-low";
   return "charge-pct charge-pct-crit";
 }

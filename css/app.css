@@ -192,9 +192,11 @@ body.locked .lock-screen { display: flex; }
 }
 .charge-band-red { background: #b3261e; }
 .charge-band-orange { background: #e07000; }
+.charge-band-yellow { background: #f0c400; color: #1a1400; }
 .charge-band-green { background: #0f7a38; }
 .charge-band-red:hover { background: #8f1e18; }
 .charge-band-orange:hover { background: #c46200; }
+.charge-band-yellow:hover { background: #d4ad00; }
 .charge-band-green:hover { background: #0c632e; }
 .charge-band[aria-pressed="true"] {
   border-color: #122033;

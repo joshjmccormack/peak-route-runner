@@ -1,4 +1,4 @@
-const CACHE = "pinassist-v1.13";
+const CACHE = "pinassist-v1.14";
 const CORE = [
   "./",
   "./index.html",
