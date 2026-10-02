@@ -19,7 +19,7 @@
 <meta property="og:description" content="PinAssist">
 <meta property="og:url" content="https://pinassist.app/">
 <title>PinAssist</title>
-<link rel="stylesheet" href="css/app.css?v=1.10">
+<link rel="stylesheet" href="css/app.css?v=1.11">
 </head>
 <body class="locked">
 <section id="lockScreen" class="lock-screen">
@@ -46,20 +46,32 @@
   <h2>Home</h2>
   <p class="muted">Choose Peak Routes, Run Maps, Vehicles, or Job closures.</p>
   <button id="openPeakRoutes" class="primary home-choice" type="button">
-    <strong>Peak Routes</strong>
-    <span>Peak 1&amp;2 through Peak 7, morning and afternoon</span>
+    <img class="home-choice-icon" src="icons/peak-routes.png?v=1.11" alt="" aria-hidden="true" width="72" height="72">
+    <span class="home-choice-copy">
+      <strong>Peak Routes</strong>
+      <span>Peak 1&amp;2 through Peak 7, morning and afternoon</span>
+    </span>
   </button>
   <button id="openRunMaps" class="secondary home-choice" type="button">
-    <strong>Run Maps</strong>
-    <span>Open Google My Maps for each run group</span>
+    <img class="home-choice-icon" src="icons/run-maps.png?v=1.11" alt="" aria-hidden="true" width="72" height="72">
+    <span class="home-choice-copy">
+      <strong>Run Maps</strong>
+      <span>Open Google My Maps for each run group</span>
+    </span>
   </button>
   <button id="openVehicles" class="secondary home-choice home-vehicles" type="button">
-    <strong>Vehicles</strong>
-    <span>Record a vehicle charge percentage and location</span>
+    <img class="home-choice-icon" src="icons/vehicles.png?v=1.11" alt="" aria-hidden="true" width="72" height="72">
+    <span class="home-choice-copy">
+      <strong>Vehicles</strong>
+      <span>Record a vehicle charge percentage and location</span>
+    </span>
   </button>
   <button id="openJobClosures" class="secondary home-choice home-job-closures" type="button">
-    <strong>Job closures</strong>
-    <span>Record attendance and close a job</span>
+    <img class="home-choice-icon" src="icons/job-closures.png?v=1.11" alt="" aria-hidden="true" width="72" height="72">
+    <span class="home-choice-copy">
+      <strong>Job closures</strong>
+      <span>Record attendance and close a job</span>
+    </span>
   </button>
   <p id="signedInAs" class="muted signed-in-line"></p>
   <button id="openAddOfficer" class="secondary hidden" type="button">Add User</button>
@@ -347,8 +359,8 @@
 </footer>
 <script src="js/vendor/supabase.js" defer></script>
 <script src="js/supabase-config.js" defer></script>
-<script src="js/vehicles.js?v=1.10" defer></script>
-<script src="js/app.js?v=1.10" defer></script>
+<script src="js/vehicles.js?v=1.11" defer></script>
+<script src="js/app.js?v=1.11" defer></script>
 <div id="resetDialog" class="dialog-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="resetDialogMsg">
   <div class="dialog-card">
     <p id="resetDialogMsg">Reset all completed and skipped locations for this route?</p>
