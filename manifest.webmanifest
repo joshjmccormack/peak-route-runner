@@ -1,8 +1,9 @@
 {
-  "name": "PinAssistant",
-  "short_name": "PinAssistant",
-  "description": "PinAssistant",
-  "start_url": "./index.html",
+  "name": "PinAssist",
+  "short_name": "PinAssist",
+  "description": "PinAssist",
+  "id": "./",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#eef2f7",
