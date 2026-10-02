@@ -88,6 +88,8 @@ function routesFromSupabaseRows(routeRows, locationRows) {
     name: row.name || "",
     group: row.group_name || "",
     period: row.period || "",
+    // Missing column (before the migration, or an older cache) stays under construction.
+    recommendedUnderConstruction: row.recommended_under_construction !== false,
     locations: (byRoute.get(row.id) || []).slice().sort((a, b) => {
       const diff = sortIndex(a) - sortIndex(b);
       if (diff) return diff;
@@ -315,13 +317,27 @@ function setSortMode(mode) {
   if (currentId) calcNearest();
 }
 
+function recommendedUnderConstructionForCurrent() {
+  if (!currentId || isRunMapId(currentId)) return false;
+  const parts = currentId.split("+").filter(Boolean);
+  if (!parts.length || !ROUTES.length) return true;
+  return parts.some((id) => {
+    const row = ROUTES.find((r) => r.id === id);
+    if (!row) return true;
+    return row.recommendedUnderConstruction !== false;
+  });
+}
+
 function updateSortToggle() {
   const nearestBtn = document.getElementById("sortNearest");
   const recommendedBtn = document.getElementById("sortRecommended");
+  const note = document.getElementById("sortRecommendedNote");
   const hint = document.getElementById("sortHint");
   const routeOrder = isRouteSort();
+  const underConstruction = recommendedUnderConstructionForCurrent();
   if (nearestBtn) nearestBtn.setAttribute("aria-pressed", String(!routeOrder));
   if (recommendedBtn) recommendedBtn.setAttribute("aria-pressed", String(routeOrder));
+  if (note) note.classList.toggle("hidden", !underConstruction);
   if (hint) {
     hint.textContent = routeOrder
       ? "Remaining stops follow the recommended order"

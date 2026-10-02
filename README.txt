@@ -12,7 +12,7 @@ After sign-in, PinAssist loads the route list from Supabase.
 Project: Parking Project, ref uklqyddpntttrcwaimji (URL in js/supabase-config.js).
 
 Tables:
-- public.routes (id, name, group_name, period, sort_index)
+- public.routes (id, name, group_name, period, sort_index, recommended_under_construction)
 - public.route_locations (id, route_id, "order", name, query, detail, detail_long, lat, lng, photo, sort_index)
 
 Access is enforced with Row Level Security and the existing public.current_role() function:
@@ -22,7 +22,7 @@ Access is enforced with Row Level Security and the existing public.current_role(
 
 How admins edit routes from now on:
 1. Apply supabase-routes.sql once, if the tables are not already there. That file creates the tables, policies, and a one-time seed of the original peak catalogue.
-2. Edit rows in the Supabase Table Editor (public.routes and public.route_locations). group_name is the on-screen group. detail_long is the full restriction text the app uses for expiry (detailLong). "order" is the recommended sequence. lat and lng are the navigation pin; leave them empty to geocode from query.
+2. Edit rows in the Supabase Table Editor (public.routes and public.route_locations). group_name is the on-screen group. detail_long is the full restriction text the app uses for expiry (detailLong). "order" is the recommended sequence. lat and lng are the navigation pin; leave them empty to geocode from query. recommended_under_construction starts true, so the Recommended sort button shows Under Construction. Set that column to false on one route when its recommended stop order is finished (see supabase-recommended-under-construction.sql). Recommended sorting still works.
 3. Officers tap Refresh route data, or open the app again while online. The latest list is cached on the phone for offline use.
 4. Do not add a public route file back to the site. A request for /routes.js should 404.
 
