@@ -40,15 +40,16 @@ Deno.serve(async (req) => {
   const password = String(body.password || "");
   const role = String(body.role || "");
   const displayName = String(body.display_name || "").trim().slice(0, 40);
-  const officerCode = String(body.officer_code || "").trim().slice(0, 20);
+  const officerCodeInput = String(body.officer_code ?? "").trim().slice(0, 20);
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
     return json(400, { error: "That user was not found." });
   }
   if (!displayName) return json(400, { error: "Enter a display name." });
-  if (!officerCode) return json(400, { error: "Enter an officer code." });
   if (!email || !email.includes("@")) return json(400, { error: "Enter a valid email." });
   if (password && password.length < 8) return json(400, { error: "Password must be at least 8 characters." });
   if (!["officer", "roc", "slg", "admin"].includes(role)) return json(400, { error: "Pick Officer, ROC, SLG, or Admin." });
+  if (role !== "roc" && !officerCodeInput) return json(400, { error: "Enter an officer code." });
+  const officerCode = officerCodeInput || null;
 
   const { data: existing, error: existingError } = await admin
     .from("profiles")

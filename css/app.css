@@ -164,6 +164,7 @@ body.locked .lock-screen { display: flex; }
   color: var(--muted);
   margin: 12px 0 6px;
 }
+.field-hint { margin: -2px 0 8px; }
 #vehicleSelect {
   width: 100%;
   border: 1px solid var(--line);
