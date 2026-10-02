@@ -390,7 +390,9 @@ function showAddOfficer() {
   newOfficerRole = "officer";
   setChoiceGroup("[data-new-role]", "data-new-role", "officer");
   showAddOfficerStatus("");
+  closeEditUser();
   showScreen("addOfficer");
+  loadUserList();
 }
 
 function showAddOfficerStatus(message, tone) {
@@ -463,8 +465,227 @@ async function tryAddOfficer(event) {
     newOfficerRole = "officer";
     setChoiceGroup("[data-new-role]", "data-new-role", "officer");
     showAddOfficerStatus(`Created ${data?.display_name || displayName} (${data?.email || email}) as ${roleLabel(data?.role || newOfficerRole)}.`, "ok");
+    loadUserList();
   } catch (e) {
     showAddOfficerStatus("Could not create the login. Deploy the create-user function if it is missing.", "err");
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+let userRows = [];
+let editingUserId = "";
+let editUserRole = "officer";
+
+function showUserListStatus(message, tone) {
+  const el = document.getElementById("userListStatus");
+  if (!el) return;
+  el.classList.remove("ok", "err");
+  if (!message) {
+    el.textContent = "";
+    el.classList.add("hidden");
+    return;
+  }
+  el.textContent = message;
+  el.classList.remove("hidden");
+  if (tone) el.classList.add(tone);
+}
+
+function showEditUserStatus(message, tone) {
+  const el = document.getElementById("editUserStatus");
+  if (!el) return;
+  el.classList.remove("ok", "err");
+  if (!message) {
+    el.textContent = "";
+    el.classList.add("hidden");
+    return;
+  }
+  el.textContent = message;
+  el.classList.remove("hidden");
+  if (tone) el.classList.add(tone);
+}
+
+function closeEditUser() {
+  editingUserId = "";
+  const form = document.getElementById("editUserForm");
+  if (form) {
+    form.reset();
+    form.classList.add("hidden");
+  }
+  editUserRole = "officer";
+  setChoiceGroup("[data-edit-role]", "data-edit-role", "officer");
+  showEditUserStatus("");
+}
+
+function userSortKey(row) {
+  return `${String(row?.display_name || "").toLowerCase()}|${String(row?.email || "").toLowerCase()}`;
+}
+
+function renderUserList() {
+  const host = document.getElementById("userList");
+  if (!host) return;
+  if (!isAdmin()) {
+    host.textContent = "";
+    return;
+  }
+  if (!userRows.length) {
+    host.textContent = "No users yet.";
+    return;
+  }
+  const rows = userRows.slice().sort((a, b) => userSortKey(a).localeCompare(userSortKey(b)));
+  host.innerHTML = rows.map((row) => {
+    const name = String(row.display_name || "").trim() || "—";
+    const email = String(row.email || "").trim() || "—";
+    const code = String(row.officer_code || "").trim() || "—";
+    return `<div class="user-card">
+      <div>
+        <strong>${esc(name)}</strong>
+        <span>${esc(email)} · ${esc(code)} · ${esc(roleLabel(row.role))}</span>
+      </div>
+      <button type="button" class="secondary" data-edit-user="${esc(row.id)}">Edit</button>
+    </div>`;
+  }).join("");
+}
+
+async function loadUserList() {
+  const host = document.getElementById("userList");
+  if (!host) return;
+  if (!isAdmin()) {
+    userRows = [];
+    closeEditUser();
+    host.textContent = "";
+    return;
+  }
+  const sb = getSupabase();
+  if (!sb) {
+    userRows = [];
+    host.textContent = "Not signed in.";
+    return;
+  }
+  host.textContent = "Loading…";
+  const { data, error } = await sb
+    .from("profiles")
+    .select("id, email, display_name, officer_code, role");
+  if (error) {
+    userRows = [];
+    host.textContent = error.message || "Could not load users.";
+    return;
+  }
+  userRows = data || [];
+  renderUserList();
+}
+
+function beginEditUser(id) {
+  if (!isAdmin()) return;
+  const row = userRows.find((item) => item.id === id);
+  if (!row) return;
+  editingUserId = id;
+  const form = document.getElementById("editUserForm");
+  if (!form) return;
+  document.getElementById("editUserName").value = row.display_name || "";
+  document.getElementById("editUserCode").value = row.officer_code || "";
+  document.getElementById("editUserEmail").value = row.email || "";
+  document.getElementById("editUserPassword").value = "";
+  document.getElementById("editUserPasswordConfirm").value = "";
+  editUserRole = ["officer", "roc", "admin"].includes(row.role) ? row.role : "officer";
+  setChoiceGroup("[data-edit-role]", "data-edit-role", editUserRole);
+  form.classList.remove("hidden");
+  showEditUserStatus("");
+  showUserListStatus("");
+  form.scrollIntoView({ block: "nearest" });
+}
+
+async function functionErrorMessage(error, fallback) {
+  let extra = error?.message || fallback;
+  try {
+    const body = await error?.context?.json?.();
+    if (body?.error) extra = body.error;
+  } catch (e) {
+    /* keep extra */
+  }
+  return extra;
+}
+
+async function tryEditUser(event) {
+  event.preventDefault();
+  if (!isAdmin()) {
+    showEditUserStatus("Only an admin can edit users.", "err");
+    return;
+  }
+  if (!editingUserId) return;
+  const sb = getSupabase();
+  if (!sb) {
+    showEditUserStatus("Not signed in.", "err");
+    return;
+  }
+  const displayName = document.getElementById("editUserName").value.trim();
+  const officerCode = document.getElementById("editUserCode").value.trim();
+  const email = document.getElementById("editUserEmail").value.trim();
+  const password = document.getElementById("editUserPassword").value;
+  const confirm = document.getElementById("editUserPasswordConfirm").value;
+  if (!displayName) {
+    showEditUserStatus("Enter a display name.", "err");
+    return;
+  }
+  if (!officerCode) {
+    showEditUserStatus("Enter an officer code.", "err");
+    return;
+  }
+  if (!email || !email.includes("@")) {
+    showEditUserStatus("Enter a valid email.", "err");
+    return;
+  }
+  if (password || confirm) {
+    if (password.length < 8) {
+      showEditUserStatus("Password must be at least 8 characters.", "err");
+      return;
+    }
+    if (password !== confirm) {
+      showEditUserStatus("Passwords do not match.", "err");
+      return;
+    }
+  }
+  const btn = document.getElementById("editUserBtn");
+  if (btn) btn.disabled = true;
+  showEditUserStatus("");
+  try {
+    const { data, error } = await sb.functions.invoke("update-user", {
+      body: {
+        id: editingUserId,
+        email,
+        password,
+        role: editUserRole,
+        display_name: displayName,
+        officer_code: officerCode
+      }
+    });
+    if (error) {
+      showEditUserStatus(await functionErrorMessage(error, "Could not save the user."), "err");
+      return;
+    }
+    if (data?.error) {
+      showEditUserStatus(data.error, "err");
+      return;
+    }
+    const session = await sb.auth.getSession();
+    const selfId = session.data?.session?.user?.id || "";
+    if (selfId && selfId === editingUserId) {
+      currentDisplayName = data?.display_name || displayName;
+      currentOfficerCode = data?.officer_code || officerCode;
+      currentRole = data?.role || editUserRole;
+      signedInEmail = data?.email || email;
+      renderSignedIn();
+      applyRoleUi();
+    }
+    closeEditUser();
+    showUserListStatus(`Updated ${data?.display_name || displayName}.`, "ok");
+    if (!isAdmin()) {
+      showHome();
+      return;
+    }
+    await loadUserList();
+  } catch (e) {
+    showEditUserStatus("Could not save the user. Deploy the update-user function if it is missing.", "err");
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -2840,6 +3061,24 @@ function bindUi() {
       setChoiceGroup("[data-new-role]", "data-new-role", newOfficerRole);
     };
   });
+  document.querySelectorAll("[data-edit-role]").forEach((btn) => {
+    btn.onclick = () => {
+      editUserRole = btn.getAttribute("data-edit-role") || "officer";
+      setChoiceGroup("[data-edit-role]", "data-edit-role", editUserRole);
+    };
+  });
+  const editForm = document.getElementById("editUserForm");
+  if (editForm) editForm.addEventListener("submit", tryEditUser);
+  const cancelEdit = document.getElementById("cancelEditUser");
+  if (cancelEdit) cancelEdit.onclick = closeEditUser;
+  const userListHost = document.getElementById("userList");
+  if (userListHost) {
+    userListHost.addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-edit-user]");
+      if (!btn || !userListHost.contains(btn)) return;
+      beginEditUser(btn.getAttribute("data-edit-user"));
+    });
+  }
   const changeForm = document.getElementById("changePasswordForm");
   if (changeForm) changeForm.addEventListener("submit", tryChangePassword);
 }
