@@ -1,4 +1,4 @@
-const CACHE = "pinassist-v1.10";
+const CACHE = "pinassist-v1.11";
 const CORE = [
   "./",
   "./index.html",
@@ -8,7 +8,11 @@ const CORE = [
   "./js/app.js",
   "./js/supabase-config.js",
   "./js/vehicles.js",
-  "./js/vendor/supabase.js"
+  "./js/vendor/supabase.js",
+  "./icons/peak-routes.png?v=1.11",
+  "./icons/run-maps.png?v=1.11",
+  "./icons/vehicles.png?v=1.11",
+  "./icons/job-closures.png?v=1.11"
 ];
 
 self.addEventListener("install", (event) => {
