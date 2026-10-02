@@ -2,7 +2,7 @@
 -- Project: Parking Project (uklqyddpntttrcwaimji).
 -- Apply once in the Supabase SQL editor. Safe to re-run: existing ids are left unchanged.
 --
--- Read: any signed-in user (officer, roc, admin).
+-- Read: any signed-in user (officer, roc, slg, admin).
 -- Write: public.current_role() = 'admin' only.
 -- Anonymous and publishable-key requests have no table grant and no RLS policy.
 --

@@ -603,7 +603,7 @@ function beginEditUser(id) {
   document.getElementById("editUserEmail").value = row.email || "";
   document.getElementById("editUserPassword").value = "";
   document.getElementById("editUserPasswordConfirm").value = "";
-  editUserRole = ["officer", "roc", "admin"].includes(row.role) ? row.role : "officer";
+  editUserRole = USER_ROLES.includes(row.role) ? row.role : "officer";
   setChoiceGroup("[data-edit-role]", "data-edit-role", editUserRole);
   form.classList.remove("hidden");
   showEditUserStatus("");
@@ -2650,12 +2650,14 @@ async function refreshRouteData() {
 let authClient = null;
 let uiBound = false;
 let appStarted = false;
+const USER_ROLES = ["officer", "roc", "slg", "admin"];
 let currentRole = "officer";
 let currentDisplayName = "";
 let currentOfficerCode = "";
 let signedInEmail = "";
 let newOfficerRole = "officer";
 
+// SLG uses the same PinAssist screens as Officer. Charge and job logs stay ROC/Admin.
 function canViewChargeLog() {
   return currentRole === "roc" || currentRole === "admin";
 }
@@ -2671,6 +2673,7 @@ function isAdmin() {
 function roleLabel(role) {
   if (role === "admin") return "Admin";
   if (role === "roc") return "ROC";
+  if (role === "slg") return "SLG";
   return "Officer";
 }
 
@@ -2686,7 +2689,7 @@ async function loadProfile(userId) {
       const retry = await sb.from("profiles").select("role, display_name").eq("id", userId).maybeSingle();
       data = retry.data;
     }
-    if (data?.role === "officer" || data?.role === "roc" || data?.role === "admin") {
+    if (USER_ROLES.includes(data?.role)) {
       currentRole = data.role;
     }
     currentDisplayName = String(data?.display_name || "").trim();

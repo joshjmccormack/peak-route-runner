@@ -3,7 +3,7 @@ create table if not exists public.profiles (
   email text,
   display_name text,
   officer_code text,
-  role text not null default 'officer' check (role in ('officer', 'roc', 'admin'))
+  role text not null default 'officer' constraint profiles_role_check check (role in ('officer', 'roc', 'slg', 'admin'))
 );
 
 alter table public.profiles enable row level security;
