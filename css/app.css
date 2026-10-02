@@ -587,6 +587,32 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   border-radius: 11px;
   -webkit-tap-highlight-color: transparent;
 }
+#dashListControls .sort-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 8px;
+  line-height: 1.15;
+  text-align: center;
+}
+.sort-opt-note {
+  display: inline-block;
+  max-width: 100%;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #fff4df;
+  color: var(--amber);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+}
+#dashListControls .sort-opt[aria-pressed="true"] .sort-opt-note {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
 .sort-opt[aria-pressed="true"] {
   background: var(--blue);
   color: #fff;

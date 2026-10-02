@@ -12,6 +12,9 @@
 -- Column map back to the in-app ROUTES shape:
 --   routes.group_name -> group
 --   routes.sort_index -> array order of routes (group headings follow first appearance)
+--   routes.recommended_under_construction -> recommendedUnderConstruction
+--     true shows "Under Construction" on the Recommended sort button.
+--     Set false for one route when its recommended order is finished.
 --   route_locations."order" -> order (recommended sort; null sorts last)
 --   route_locations.detail_long -> detailLong
 --   route_locations.sort_index -> array order within the route (tie-break when order matches)
@@ -24,6 +27,7 @@ create table if not exists public.routes (
   group_name text not null,
   period text not null,
   sort_index integer not null,
+  recommended_under_construction boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -58,6 +62,8 @@ comment on column public.routes.group_name is
   'Shown as the route group heading. Mapped to ROUTES[].group.';
 comment on column public.routes.sort_index is
   'Display order. Lower values come first so group headings match the original list.';
+comment on column public.routes.recommended_under_construction is
+  'When true, the Recommended sort button shows Under Construction. Set false when that route recommended order is finished. Recommended sorting is unchanged.';
 comment on column public.route_locations."order" is
   'Recommended-route sequence. Null sorts after numbered stops.';
 comment on column public.route_locations.detail_long is
