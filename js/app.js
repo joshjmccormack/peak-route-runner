@@ -768,8 +768,14 @@ function renderChargeBandButtons() {
   if (!host || host.dataset.ready === "1") return;
   host.dataset.ready = "1";
   // Source list stays low→high so chargeBandForPercent can treat the ends as bounds.
-  // Buttons render high→low: highest percent on the top row, lowest on the bottom.
-  const bands = chargeBandList().slice().reverse();
+  // Two-column grid, rows high→low, and each row swapped so the higher band is on the right:
+  // top-right is the highest percent, bottom-left is the lowest.
+  const highToLow = chargeBandList().slice().reverse();
+  const bands = [];
+  for (let i = 0; i < highToLow.length; i += 2) {
+    if (highToLow[i + 1]) bands.push(highToLow[i + 1]);
+    bands.push(highToLow[i]);
+  }
   host.innerHTML = bands.map((band) =>
     `<button type="button" class="charge-band charge-band-${esc(band.tone)}" data-charge-band="${esc(band.store)}" aria-pressed="false">${esc(band.label)}</button>`
   ).join("");
