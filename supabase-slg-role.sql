@@ -5,8 +5,9 @@
 -- Other allowed values are kept. Production already allows
 -- officer, roc, dispatch, slg, and admin, so this is a no-op there.
 --
--- This does not change RLS. In PinAssist, SLG is an Officer for app
--- access: not the charge log, not the job-closure log, and not Admin.
+-- This file only extends profiles_role_check. It does not change RLS.
+-- SLG charge-log and job-closure-log reads are in supabase-slg-log-access.sql.
+-- SLG cannot add or edit users. That stays admin only.
 
 do $$
 declare

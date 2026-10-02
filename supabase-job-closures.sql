@@ -38,6 +38,6 @@ create policy "roc and admin read job closures"
   on public.job_closures
   for select
   to authenticated
-  using (public.current_role() in ('roc', 'admin'));
+  using (public.current_role() in ('roc', 'slg', 'admin'));
 
 grant select, insert on public.job_closures to authenticated;

@@ -79,7 +79,7 @@ begin
         on public.vehicle_charges
         for select
         to authenticated
-        using (public.current_role() in ('roc', 'admin'))
+        using (public.current_role() in ('roc', 'slg', 'admin'))
     $p$;
   end if;
 end $$;

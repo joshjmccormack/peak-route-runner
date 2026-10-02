@@ -396,6 +396,18 @@ function showHome() {
   showScreen("home");
 }
 
+function officerCodeRequired(role) {
+  return role !== "roc";
+}
+
+function syncOfficerCodeField(inputId, hintId, role) {
+  const input = document.getElementById(inputId);
+  const hint = document.getElementById(hintId);
+  const required = officerCodeRequired(role);
+  if (input) input.required = required;
+  if (hint) hint.classList.toggle("hidden", required);
+}
+
 function showAddOfficer() {
   if (!isAdmin()) {
     showHome();
@@ -405,6 +417,7 @@ function showAddOfficer() {
   if (form) form.reset();
   newOfficerRole = "officer";
   setChoiceGroup("[data-new-role]", "data-new-role", "officer");
+  syncOfficerCodeField("newOfficerCode", "newOfficerCodeHint", newOfficerRole);
   showAddOfficerStatus("");
   closeEditUser();
   showScreen("addOfficer");
@@ -445,7 +458,7 @@ async function tryAddOfficer(event) {
     showAddOfficerStatus("Enter a display name.", "err");
     return;
   }
-  if (!officerCode) {
+  if (officerCodeRequired(newOfficerRole) && !officerCode) {
     showAddOfficerStatus("Enter an officer code.", "err");
     return;
   }
@@ -480,6 +493,7 @@ async function tryAddOfficer(event) {
     document.getElementById("addOfficerForm").reset();
     newOfficerRole = "officer";
     setChoiceGroup("[data-new-role]", "data-new-role", "officer");
+    syncOfficerCodeField("newOfficerCode", "newOfficerCodeHint", newOfficerRole);
     showAddOfficerStatus(`Created ${data?.display_name || displayName} (${data?.email || email}) as ${roleLabel(data?.role || newOfficerRole)}.`, "ok");
     loadUserList();
   } catch (e) {
@@ -530,6 +544,7 @@ function closeEditUser() {
   }
   editUserRole = "officer";
   setChoiceGroup("[data-edit-role]", "data-edit-role", "officer");
+  syncOfficerCodeField("editUserCode", "editUserCodeHint", editUserRole);
   showEditUserStatus("");
 }
 
@@ -605,6 +620,7 @@ function beginEditUser(id) {
   document.getElementById("editUserPasswordConfirm").value = "";
   editUserRole = USER_ROLES.includes(row.role) ? row.role : "officer";
   setChoiceGroup("[data-edit-role]", "data-edit-role", editUserRole);
+  syncOfficerCodeField("editUserCode", "editUserCodeHint", editUserRole);
   form.classList.remove("hidden");
   showEditUserStatus("");
   showUserListStatus("");
@@ -643,7 +659,7 @@ async function tryEditUser(event) {
     showEditUserStatus("Enter a display name.", "err");
     return;
   }
-  if (!officerCode) {
+  if (officerCodeRequired(editUserRole) && !officerCode) {
     showEditUserStatus("Enter an officer code.", "err");
     return;
   }
@@ -1085,6 +1101,7 @@ function showJobClosures() {
 
 async function trySaveJobClosure(event) {
   event.preventDefault();
+  if (!canSubmitJobClosure()) return;
   const sb = getSupabase();
   if (!sb) {
     showJobClosureStatus("Not signed in.", "err");
@@ -2657,13 +2674,18 @@ let currentOfficerCode = "";
 let signedInEmail = "";
 let newOfficerRole = "officer";
 
-// SLG uses the same PinAssist screens as Officer. Charge and job logs stay ROC/Admin.
+// Charge log: ROC, SLG, and Admin. Job-closure log: ROC, SLG, and Admin.
+// Finalise Job stays with Officer and Admin. ROC and SLG see the log only.
 function canViewChargeLog() {
-  return currentRole === "roc" || currentRole === "admin";
+  return currentRole === "roc" || currentRole === "slg" || currentRole === "admin";
 }
 
 function canViewJobLog() {
-  return currentRole === "roc" || currentRole === "admin";
+  return currentRole === "roc" || currentRole === "slg" || currentRole === "admin";
+}
+
+function canSubmitJobClosure() {
+  return currentRole !== "roc" && currentRole !== "slg";
 }
 
 function isAdmin() {
@@ -2710,6 +2732,17 @@ function applyRoleUi() {
   if (jobLog) jobLog.classList.toggle("hidden", !canViewJobLog());
   const closed = document.getElementById("officerClosedSection");
   if (closed) closed.classList.toggle("hidden", canViewJobLog());
+  const submitJob = canSubmitJobClosure();
+  const jobForm = document.getElementById("jobClosureForm");
+  if (jobForm) jobForm.classList.toggle("hidden", !submitJob);
+  const jobIntro = document.getElementById("jobClosureIntro");
+  if (jobIntro) jobIntro.classList.toggle("hidden", !submitJob);
+  const jobHint = document.getElementById("jobClosuresHomeHint");
+  if (jobHint) {
+    jobHint.textContent = submitJob
+      ? "Record attendance and close a job"
+      : "View the job closure log";
+  }
 }
 
 function getSupabase() {
@@ -2767,6 +2800,8 @@ function lockApp() {
   if (addForm) addForm.reset();
   newOfficerRole = "officer";
   setChoiceGroup("[data-new-role]", "data-new-role", "officer");
+  syncOfficerCodeField("newOfficerCode", "newOfficerCodeHint", newOfficerRole);
+  syncOfficerCodeField("editUserCode", "editUserCodeHint", "officer");
   showAddOfficerStatus("");
   closedJobUserId = "";
   const closedHost = document.getElementById("officerClosedLog");
@@ -3078,12 +3113,14 @@ function bindUi() {
     btn.onclick = () => {
       newOfficerRole = btn.getAttribute("data-new-role") || "officer";
       setChoiceGroup("[data-new-role]", "data-new-role", newOfficerRole);
+      syncOfficerCodeField("newOfficerCode", "newOfficerCodeHint", newOfficerRole);
     };
   });
   document.querySelectorAll("[data-edit-role]").forEach((btn) => {
     btn.onclick = () => {
       editUserRole = btn.getAttribute("data-edit-role") || "officer";
       setChoiceGroup("[data-edit-role]", "data-edit-role", editUserRole);
+      syncOfficerCodeField("editUserCode", "editUserCodeHint", editUserRole);
     };
   });
   const editForm = document.getElementById("editUserForm");

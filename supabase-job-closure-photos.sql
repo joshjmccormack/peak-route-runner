@@ -24,6 +24,6 @@ create policy "job closure photos select"
     bucket_id = 'job-closures'
     and (
       split_part(name, '/', 1) = auth.uid()::text
-      or public.current_role() in ('roc', 'admin')
+      or public.current_role() in ('roc', 'slg', 'admin')
     )
   );
