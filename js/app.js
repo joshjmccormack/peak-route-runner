@@ -1442,12 +1442,12 @@ function groupVehicleCharges(rows) {
 }
 
 function chargeRowCells(row) {
-  return `<td>${esc(formatLocalTimestamp(row.created_at))}</td>
-      <td>${esc(officerDisplayName(row))}</td>
-      <td>${esc(row.fleet)}</td>
-      <td>${esc(row.vehicle)}</td>
+  return `<td class="charge-vehicle">${esc(row.vehicle)}</td>
       <td class="${chargePctClass(row.charge_percent)}">${esc(chargeBandLabel(row.charge_percent))}</td>
-      <td>${esc(row.location)}</td>`;
+      <td>${esc(row.fleet)}</td>
+      <td>${esc(row.location)}</td>
+      <td>${esc(formatLocalTimestamp(row.created_at))}</td>
+      <td>${esc(officerDisplayName(row))}</td>`;
 }
 
 function renderVehicleChargeLog() {
@@ -1496,7 +1496,7 @@ function renderVehicleChargeLog() {
   }).join("");
   host.innerHTML = `<table class="charge-table">
     <thead><tr>
-      <th>When</th><th>Who</th><th>Fleet</th><th>Vehicle</th><th>Charge</th><th>Location</th><th>Earlier</th>
+      <th>Vehicle</th><th>Charge</th><th>Fleet</th><th>Location</th><th>When</th><th>Who</th><th>Earlier</th>
     </tr></thead>
     <tbody>${body}</tbody>
   </table>`;

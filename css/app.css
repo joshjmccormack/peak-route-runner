@@ -305,6 +305,7 @@ body.locked .lock-screen { display: flex; }
   margin: 0 0 10px;
   font-size: 1rem;
 }
+.charge-vehicle { font-weight: 700; }
 .charge-pct { font-weight: 800; }
 .charge-pct-high { color: var(--green); }
 .charge-pct-mid { color: #c4a000; }
