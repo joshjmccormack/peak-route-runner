@@ -1119,16 +1119,84 @@ function renderJobClosureLog() {
       <td>${esc(row.reporting)}</td>
       <td>${esc(capitaliseYesNo(row.job_complete))}</td>
       <td title="${esc(row.outcome)}">${esc(outcomeSnippet(row.outcome))}</td>
+      <td class="job-attachment">${jobAttachmentControl(row)}</td>
       <td class="job-copy-actions">
         <button class="secondary small" type="button" data-copy-job="${esc(row.id)}">Copy</button>
       </td>
     </tr>`).join("");
   host.innerHTML = `<table class="charge-table">
     <thead><tr>
-      <th>Reference number</th><th>When</th><th>Officer</th><th>Date / time</th><th>Reporting</th><th>Job complete</th><th>Outcome</th><th></th>
+      <th>Reference number</th><th>When</th><th>Officer</th><th>Date / time</th><th>Reporting</th><th>Job complete</th><th>Outcome</th><th>Attachment</th><th></th>
     </tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
+}
+
+function jobClosurePhotoPath(row) {
+  const path = blankToEmpty(row?.photo_path).trim();
+  const media = blankToEmpty(row?.media_attached).trim().toLowerCase();
+  if (!path || media !== "yes") return "";
+  if (path.includes("..") || path.startsWith("/") || path.includes("\\")) return "";
+  return path;
+}
+
+function jobPhotoFilename(row) {
+  const ref = blankToEmpty(row?.reference_number).trim()
+    .replace(/[^\w.-]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 80);
+  const path = jobClosurePhotoPath(row);
+  const ext = (path.match(/\.([a-z0-9]{1,8})$/i) || [, "jpg"])[1].toLowerCase();
+  return `${ref || "job-closure"}.${ext}`;
+}
+
+function jobAttachmentControl(row) {
+  if (!jobClosurePhotoPath(row)) return "";
+  const label = `Download picture for ${blankToEmpty(row.reference_number).trim() || "job"}`;
+  return `<button class="secondary small" type="button" data-download-photo="${esc(row.id)}" aria-label="${esc(label)}">Download</button>`;
+}
+
+function saveBlobDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.rel = "noopener";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+async function downloadJobClosurePhoto(button) {
+  const id = button?.getAttribute("data-download-photo");
+  const row = jobClosureRows.find((item) => String(item.id) === String(id));
+  const path = jobClosurePhotoPath(row);
+  if (!row || !path) return;
+  const sb = getSupabase();
+  if (!sb) {
+    showJobLogCopyStatus("Not signed in.", "err");
+    return;
+  }
+  const filename = jobPhotoFilename(row);
+  const previous = button.textContent;
+  button.disabled = true;
+  button.textContent = "Downloading…";
+  try {
+    const { data, error } = await sb.storage.from("job-closures").download(path);
+    if (error || !data) {
+      showJobLogCopyStatus(error?.message || "Could not download the picture.", "err");
+      return;
+    }
+    saveBlobDownload(data, filename);
+  } catch (e) {
+    showJobLogCopyStatus("Could not download the picture.", "err");
+  } finally {
+    if (button.isConnected) {
+      button.disabled = false;
+      button.textContent = previous || "Download";
+    }
+  }
 }
 
 async function loadJobClosures() {
@@ -1143,7 +1211,7 @@ async function loadJobClosures() {
   host.textContent = "Loading…";
   const { data, error } = await sb
     .from("job_closures")
-    .select("id, created_at, officer_email, officer_name, reference_number, attendance_date, attendance_time, location_note, officers, observations, complainant_contacted, ward_office_contact, media_attached, referral, reporting, job_complete, outcome")
+    .select("id, created_at, officer_email, officer_name, reference_number, attendance_date, attendance_time, location_note, officers, observations, complainant_contacted, ward_office_contact, media_attached, referral, reporting, job_complete, outcome, photo_path")
     .order("created_at", { ascending: false })
     .limit(200);
   if (error) {
@@ -2704,6 +2772,11 @@ function bindUi() {
   const jobLogHost = document.getElementById("jobClosureLog");
   if (jobLogHost) {
     jobLogHost.addEventListener("click", (event) => {
+      const photoBtn = event.target.closest("[data-download-photo]");
+      if (photoBtn && jobLogHost.contains(photoBtn)) {
+        downloadJobClosurePhoto(photoBtn);
+        return;
+      }
       const refBtn = event.target.closest("[data-copy-ref]");
       if (refBtn && jobLogHost.contains(refBtn)) {
         copyReferenceFromButton(refBtn);
