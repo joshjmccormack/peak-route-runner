@@ -974,13 +974,64 @@ function chargeToneColor(percent) {
   return "#d7dbe2";
 }
 
+function hexToRgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+function mixHex(from, to, t) {
+  const a = hexToRgb(from);
+  const b = hexToRgb(to);
+  const ch = (x, y) => Math.round(x + (y - x) * t).toString(16).padStart(2, "0");
+  return `#${ch(a.r, b.r)}${ch(a.g, b.g)}${ch(a.b, b.b)}`;
+}
+
+// Same tone changes as the centre text and the charge log:
+// red through 20, orange through 60, yellow through 80, then green.
+// The blend sits in the one percent after each of those ticks, along the arc.
+function chargeArcColor(percent) {
+  const p = Math.max(0, Math.min(100, percent));
+  const edges = [20, 60, 80];
+  for (const edge of edges) {
+    if (p > edge && p < edge + 1) {
+      return mixHex(chargeToneColor(edge), chargeToneColor(edge + 1), p - edge);
+    }
+  }
+  const sample = p >= 100 ? 100 : Math.floor(p);
+  return chargeToneColor(sample);
+}
+
+function chargeArcMarkup(radius, width) {
+  const step = 0.5;
+  let html = "";
+  for (let from = 0; from < 100; from += step) {
+    const to = Math.min(100, from + step);
+    const drawFrom = from === 0 ? 0 : from - 0.2;
+    const d = gaugeArcPath(radius, drawFrom, to);
+    const color = chargeArcColor(from + step / 2);
+    html += `<path d="${d}" fill="none" stroke="${color}" stroke-width="${width}" stroke-linecap="butt"></path>`;
+  }
+  const caps = [
+    { at: 0, color: chargeToneColor(0) },
+    { at: 100, color: chargeToneColor(100) }
+  ];
+  caps.forEach((cap) => {
+    const tip = gaugePoint(cap.at, radius);
+    const inner = gaugePoint(cap.at === 0 ? 0.8 : 99.2, radius);
+    const fmt = (n) => n.toFixed(2);
+    html += `<line x1="${fmt(inner.x)}" y1="${fmt(inner.y)}" x2="${fmt(tip.x)}" y2="${fmt(tip.y)}" stroke="${cap.color}" stroke-width="${width}" stroke-linecap="round"></line>`;
+  });
+  return html;
+}
+
 function renderChargeGauge() {
   const host = document.getElementById("chargeGauge");
   if (!host || host.dataset.ready === "1") return;
   host.dataset.ready = "1";
   const g = CHARGE_GAUGE;
-  const arc = gaugeArcPath(g.arcR, 0, 100);
   const bezel = gaugeArcPath(g.bezelR, 0, 100);
+  const arcGlow = chargeArcMarkup(g.arcR, g.arcWidth + 12);
+  const arcSolid = chargeArcMarkup(g.arcR, g.arcWidth);
   const ticks = [0, 20, 40, 60, 80, 100].map((percent) => {
     const inner = gaugePoint(percent, g.tickInner);
     const outer = gaugePoint(percent, g.tickOuter);
@@ -990,27 +1041,15 @@ function renderChargeGauge() {
     return `<line x1="${fmt(inner.x)}" y1="${fmt(inner.y)}" x2="${fmt(outer.x)}" y2="${fmt(outer.y)}" stroke="#fff" stroke-width="4" stroke-linecap="round"></line>
       <text x="${fmt(label.x)}" y="${fmt(label.y)}" text-anchor="${anchor}" dominant-baseline="middle" fill="#ffffff" font-size="22" font-weight="700" stroke="#050608" stroke-width="4" paint-order="stroke">${percent}%</text>`;
   }).join("");
-  const arcStartX = (g.cx - g.arcR).toFixed(2);
-  const arcEndX = (g.cx + g.arcR).toFixed(2);
   host.innerHTML = `<svg id="chargeGaugeSvg" viewBox="0 0 ${g.width} ${g.height}" font-family="Segoe UI, system-ui, sans-serif" aria-hidden="true">
     <defs>
-      <linearGradient id="chargeArcGrad" gradientUnits="userSpaceOnUse" x1="${arcStartX}" y1="0" x2="${arcEndX}" y2="0">
-        <stop offset="0%" stop-color="#ff3b30"></stop>
-        <stop offset="20%" stop-color="#d32a22"></stop>
-        <stop offset="24%" stop-color="#e07000"></stop>
-        <stop offset="57%" stop-color="#ff8c1a"></stop>
-        <stop offset="62%" stop-color="#f0c400"></stop>
-        <stop offset="80%" stop-color="#ffe14a"></stop>
-        <stop offset="84%" stop-color="#149444"></stop>
-        <stop offset="100%" stop-color="#1db954"></stop>
-      </linearGradient>
       <filter id="chargeArcGlow" x="-25%" y="-80%" width="150%" height="240%">
-        <feGaussianBlur stdDeviation="6"></feGaussianBlur>
+        <feGaussianBlur stdDeviation="5"></feGaussianBlur>
       </filter>
     </defs>
     <path d="${bezel}" fill="none" stroke="#2c2f36" stroke-width="18" stroke-linecap="round"></path>
-    <path d="${arc}" fill="none" stroke="url(#chargeArcGrad)" stroke-width="${g.arcWidth + 12}" stroke-linecap="round" opacity="0.7" filter="url(#chargeArcGlow)"></path>
-    <path d="${arc}" fill="none" stroke="url(#chargeArcGrad)" stroke-width="${g.arcWidth}" stroke-linecap="round"></path>
+    <g opacity="0.65" filter="url(#chargeArcGlow)">${arcGlow}</g>
+    ${arcSolid}
     ${ticks}
     <g id="chargeNeedle" visibility="hidden">
       <line x1="${g.cx + g.needleInner}" y1="${g.cy}" x2="${g.cx + g.needleOuter}" y2="${g.cy}" stroke="#f4f6f8" stroke-width="8" stroke-linecap="round"></line>
