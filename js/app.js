@@ -3040,16 +3040,31 @@ function lockApp() {
   applyRoleUi();
 }
 
-async function enterApp(session) {
+function forgetStoredPeak() {
+  selected = null;
+  selectedManual = false;
+  nearest = null;
+  currentId = null;
+  resetStreetExpand();
+  combineMode = false;
+  combineSelection = [];
+  try { localStorage.removeItem("peak_current"); } catch (e) { /* still land on home */ }
+}
+
+// restorePeak is only for a session already valid at boot.
+// Signing in from the login form drops the stored Peak and opens home.
+async function enterApp(session, options) {
+  const restorePeak = !!(options && options.restorePeak);
   await loadProfile(session?.user?.id);
   applyRoleUi();
   unlockApp();
   renderSignedIn(session?.user?.email || "");
   if (!appStarted) {
     appStarted = true;
-    await startApp();
+    await startApp({ restorePeak });
     return;
   }
+  if (!restorePeak) forgetStoredPeak();
   showHome();
 }
 
@@ -3373,7 +3388,8 @@ function bindUi() {
   if (changeForm) changeForm.addEventListener("submit", tryChangePassword);
 }
 
-async function startApp() {
+async function startApp(options) {
+  const restorePeak = !!(options && options.restorePeak);
   bindUi();
   const versionEl = document.getElementById("appVersionLabel");
   if (versionEl) versionEl.textContent = `PinAssist ${APP_VERSION}`;
@@ -3386,6 +3402,11 @@ async function startApp() {
   updateSortToggle();
   renderRoutes();
   renderRunMaps();
+  if (!restorePeak) {
+    forgetStoredPeak();
+    showHome();
+    return;
+  }
   if (currentId && !isRunMapId(currentId) && !homeButtonOn("show_peak_routes")) {
     currentId = null;
     localStorage.removeItem("peak_current");
@@ -3412,7 +3433,7 @@ async function bootAuth() {
   }
   const { data } = await sb.auth.getSession();
   if (data.session) {
-    await enterApp(data.session);
+    await enterApp(data.session, { restorePeak: true });
     return;
   }
   const email = document.getElementById("accessEmail");
