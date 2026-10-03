@@ -19,7 +19,7 @@
 <meta property="og:description" content="PinAssist">
 <meta property="og:url" content="https://pinassist.app/">
 <title>PinAssist</title>
-<link rel="stylesheet" href="css/app.css?v=1.15">
+<link rel="stylesheet" href="css/app.css?v=1.16">
 </head>
 <body class="locked">
 <section id="lockScreen" class="lock-screen">
@@ -44,7 +44,7 @@
 <main>
 <section id="home" class="card">
   <h2>Home</h2>
-  <p class="muted">Choose Peak Routes, Run Maps, Vehicles, or Job closures.</p>
+  <p id="homeIntro" class="muted">Choose Peak Routes, Run Maps, Vehicles, or Job closures.</p>
   <button id="openPeakRoutes" class="primary home-choice" type="button">
     <img class="home-choice-icon" src="icons/peak-routes.png?v=1.11" alt="" aria-hidden="true" width="72" height="72">
     <span class="home-choice-copy">
@@ -247,6 +247,7 @@
   </form>
   <div class="user-admin-list">
     <h3>Current users</h3>
+    <p class="muted">Tick a home button to show it for that user. Untick to hide it. Role access does not change.</p>
     <p id="userListStatus" class="change-password-status hidden"></p>
     <div id="userList" class="muted">Loading…</div>
   </div>
@@ -363,8 +364,8 @@
 </footer>
 <script src="js/vendor/supabase.js" defer></script>
 <script src="js/supabase-config.js" defer></script>
-<script src="js/vehicles.js?v=1.15" defer></script>
-<script src="js/app.js?v=1.15" defer></script>
+<script src="js/vehicles.js?v=1.16" defer></script>
+<script src="js/app.js?v=1.16" defer></script>
 <div id="resetDialog" class="dialog-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="resetDialogMsg">
   <div class="dialog-card">
     <p id="resetDialogMsg">Reset all completed and skipped locations for this route?</p>

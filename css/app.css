@@ -114,30 +114,58 @@ body.locked .lock-screen { display: flex; }
 .user-admin-list { margin-top: 22px; }
 .user-admin-list h3,
 #editUserForm h3 { margin: 0 0 8px; font-size: 1.05rem; }
+.user-admin-list > .muted { margin: 0 0 8px; }
 #editUserForm { margin-top: 16px; }
-.user-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+.user-table-scroll {
+  overflow: auto;
+  max-height: 320px;
+  overscroll-behavior: contain;
   border: 1px solid var(--line);
   border-radius: 12px;
-  padding: 10px 12px;
-  margin: 0 0 8px;
   background: #fff;
 }
-.user-card strong { display: block; }
-.user-card span {
-  display: block;
-  color: var(--muted);
-  font-size: 0.8125rem;
+table.user-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  color: var(--txt);
 }
-.user-card button {
-  width: auto;
+.user-table th,
+.user-table td { background: #fff; }
+.user-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f6f8fb;
+}
+.user-table th:first-child,
+.user-table td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  box-shadow: 1px 0 0 var(--line);
+}
+.user-table thead th:first-child,
+.user-table thead th:last-child {
+  z-index: 3;
+  background: #f6f8fb;
+}
+.user-table .user-name { font-weight: 700; }
+.user-flag-col,
+.user-flag-cell { text-align: center; }
+.user-flag-hit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 28px;
   margin: 0;
-  min-height: 36px;
-  padding: 6px 12px;
-  flex: none;
+}
+.user-flag {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--blue);
+  vertical-align: middle;
 }
 .change-password {
   margin-top: 8px;
@@ -520,6 +548,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .primary.home-choice .home-choice-copy > span { color: rgba(255, 255, 255, 0.9); }
 .secondary.home-choice .home-choice-copy > span { color: var(--muted); }
 .home-vehicles { margin-top: 56px; }
+.home-vehicles.home-vehicles-tight { margin-top: 10px; }
 .home-job-closures { margin-top: 10px; }
 
 .runmap-all { grid-column: 1 / -1; }
