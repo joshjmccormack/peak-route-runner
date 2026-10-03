@@ -503,6 +503,69 @@ async function tryAddOfficer(event) {
   }
 }
 
+const HOME_FLAGS = [
+  { key: "show_peak_routes", label: "Peak Routes", short: "Peak", buttonId: "openPeakRoutes", screens: ["select", "dash"] },
+  { key: "show_run_maps", label: "Run Maps", short: "Maps", buttonId: "openRunMaps", screens: ["runMaps"] },
+  { key: "show_vehicles", label: "Vehicles", short: "Vehicles", buttonId: "openVehicles", screens: ["vehicles"] },
+  { key: "show_job_closures", label: "Job closures", short: "Jobs", buttonId: "openJobClosures", screens: ["jobClosures"] }
+];
+
+function defaultHomeButtons() {
+  return {
+    show_peak_routes: true,
+    show_run_maps: true,
+    show_vehicles: true,
+    show_job_closures: true
+  };
+}
+
+let homeButtons = defaultHomeButtons();
+
+function resetHomeButtons() {
+  homeButtons = defaultHomeButtons();
+}
+
+function homeButtonOn(key) {
+  return homeButtons[key] !== false;
+}
+
+function readHomeButtons(row) {
+  const next = defaultHomeButtons();
+  HOME_FLAGS.forEach((flag) => {
+    if (row && row[flag.key] === false) next[flag.key] = false;
+  });
+  return next;
+}
+
+function homeChoiceSentence() {
+  const labels = HOME_FLAGS.filter((flag) => homeButtonOn(flag.key)).map((flag) => flag.label);
+  if (!labels.length) return "No home buttons are turned on for this login.";
+  if (labels.length === 1) return `Choose ${labels[0]}.`;
+  if (labels.length === 2) return `Choose ${labels[0]} or ${labels[1]}.`;
+  return `Choose ${labels.slice(0, -1).join(", ")}, or ${labels[labels.length - 1]}.`;
+}
+
+function screenIsOpen(id) {
+  const el = document.getElementById(id);
+  return !!(el && !el.classList.contains("hidden"));
+}
+
+function leaveHiddenHomeScreen() {
+  const blocked = HOME_FLAGS.find((flag) => !homeButtonOn(flag.key) && flag.screens.some(screenIsOpen));
+  if (!blocked) return;
+  if (blocked.key === "show_peak_routes") {
+    selected = null;
+    selectedManual = false;
+    nearest = null;
+    currentId = null;
+    resetStreetExpand();
+    combineMode = false;
+    combineSelection = [];
+    try { localStorage.removeItem("peak_current"); } catch (e) { /* keep going home */ }
+  }
+  showHome();
+}
+
 let userRows = [];
 let editingUserId = "";
 let editUserRole = "officer";
@@ -552,30 +615,115 @@ function userSortKey(row) {
   return `${String(row?.display_name || "").toLowerCase()}|${String(row?.email || "").toLowerCase()}`;
 }
 
+function setUserTableMode(host, tabular) {
+  if (host) host.classList.toggle("user-table-scroll", tabular);
+}
+
 function renderUserList() {
   const host = document.getElementById("userList");
   if (!host) return;
   if (!isAdmin()) {
+    setUserTableMode(host, false);
     host.textContent = "";
     return;
   }
   if (!userRows.length) {
+    setUserTableMode(host, false);
     host.textContent = "No users yet.";
     return;
   }
   const rows = userRows.slice().sort((a, b) => userSortKey(a).localeCompare(userSortKey(b)));
-  host.innerHTML = rows.map((row) => {
+  const headFlags = HOME_FLAGS.map((flag) =>
+    `<th class="user-flag-col" scope="col" title="${esc(flag.label)}">${esc(flag.short)}</th>`
+  ).join("");
+  const body = rows.map((row) => {
     const name = String(row.display_name || "").trim() || "—";
     const email = String(row.email || "").trim() || "—";
     const code = String(row.officer_code || "").trim() || "—";
-    return `<div class="user-card">
-      <div>
-        <strong>${esc(name)}</strong>
-        <span>${esc(email)} · ${esc(code)} · ${esc(roleLabel(row.role))}</span>
-      </div>
-      <button type="button" class="secondary" data-edit-user="${esc(row.id)}">Edit</button>
-    </div>`;
+    const flags = HOME_FLAGS.map((flag) => {
+      const checked = row[flag.key] === false ? "" : " checked";
+      const label = `${flag.label} for ${name}`;
+      return `<td class="user-flag-cell"><label class="user-flag-hit"><input class="user-flag" type="checkbox" data-home-flag="${esc(flag.key)}" data-user-id="${esc(row.id)}"${checked} aria-label="${esc(label)}"></label></td>`;
+    }).join("");
+    return `<tr>
+      <td class="user-name">${esc(name)}</td>
+      <td>${esc(email)}</td>
+      <td>${esc(code)}</td>
+      <td>${esc(roleLabel(row.role))}</td>
+      ${flags}
+      <td><button type="button" class="secondary small" data-edit-user="${esc(row.id)}">Edit</button></td>
+    </tr>`;
   }).join("");
+  setUserTableMode(host, true);
+  host.innerHTML = `<table class="charge-table user-table">
+    <thead><tr>
+      <th scope="col">Name</th><th scope="col">Email</th><th scope="col">Code</th><th scope="col">Role</th>
+      ${headFlags}
+      <th scope="col"></th>
+    </tr></thead>
+    <tbody>${body}</tbody>
+  </table>`;
+}
+
+function homeFlagSaveError(error) {
+  const message = String(error?.message || "");
+  if (/show_peak_routes|show_run_maps|show_vehicles|show_job_closures|schema cache|column/i.test(message)) {
+    return "Could not save that tick. Run the home buttons SQL on Supabase first.";
+  }
+  if (/Only an admin can change home buttons/i.test(message)) {
+    return "Only an admin can change home buttons.";
+  }
+  return message || "Could not save that tick.";
+}
+
+function userFlagInput(userId, key) {
+  const id = window.CSS && CSS.escape ? CSS.escape(userId) : String(userId).replace(/"/g, "");
+  return document.querySelector(`#userList input[data-home-flag="${key}"][data-user-id="${id}"]`);
+}
+
+async function setUserHomeFlag(input) {
+  if (!isAdmin() || !input) return;
+  const userId = input.getAttribute("data-user-id") || "";
+  const key = input.getAttribute("data-home-flag") || "";
+  if (!userId || !HOME_FLAGS.some((flag) => flag.key === key)) return;
+  const visible = input.checked;
+  const row = userRows.find((item) => item.id === userId);
+  const previous = row ? row[key] !== false : true;
+  input.disabled = true;
+  const sb = getSupabase();
+  if (!sb) {
+    input.checked = previous;
+    input.disabled = false;
+    showUserListStatus("Not signed in.", "err");
+    return;
+  }
+  const { data, error } = await sb
+    .from("profiles")
+    .update({ [key]: visible })
+    .eq("id", userId)
+    .select("id");
+  const live = userFlagInput(userId, key);
+  if (error || !Array.isArray(data) || data.length !== 1) {
+    if (row) row[key] = previous;
+    if (live) {
+      live.checked = previous;
+      live.disabled = false;
+    }
+    showUserListStatus(homeFlagSaveError(error), "err");
+    return;
+  }
+  if (row) row[key] = visible;
+  if (live) {
+    live.checked = visible;
+    live.disabled = false;
+  }
+  const { data: sessionData } = await sb.auth.getSession();
+  const selfId = sessionData?.session?.user?.id || "";
+  if (selfId === userId) {
+    homeButtons[key] = visible;
+    applyRoleUi();
+  }
+  showUserListStatus("");
 }
 
 async function loadUserList() {
@@ -584,26 +732,43 @@ async function loadUserList() {
   if (!isAdmin()) {
     userRows = [];
     closeEditUser();
+    setUserTableMode(host, false);
     host.textContent = "";
     return;
   }
   const sb = getSupabase();
   if (!sb) {
     userRows = [];
+    setUserTableMode(host, false);
     host.textContent = "Not signed in.";
     return;
   }
+  setUserTableMode(host, false);
   host.textContent = "Loading…";
-  const { data, error } = await sb
+  const flagColumns = HOME_FLAGS.map((flag) => flag.key).join(", ");
+  let flagsReady = true;
+  let { data, error } = await sb
     .from("profiles")
-    .select("id, email, display_name, officer_code, role");
+    .select(`id, email, display_name, officer_code, role, ${flagColumns}`);
+  if (error) {
+    flagsReady = false;
+    const retry = await sb
+      .from("profiles")
+      .select("id, email, display_name, officer_code, role");
+    data = retry.data;
+    error = retry.error;
+  }
   if (error) {
     userRows = [];
+    setUserTableMode(host, false);
     host.textContent = error.message || "Could not load users.";
     return;
   }
   userRows = data || [];
   renderUserList();
+  if (!flagsReady) {
+    showUserListStatus("Home button ticks need the home buttons SQL on Supabase before they can be saved. Existing buttons stay visible.", "err");
+  }
 }
 
 function beginEditUser(id) {
@@ -857,6 +1022,10 @@ function resetVehicleChargeForm() {
 }
 
 function showVehicles() {
+  if (!homeButtonOn("show_vehicles")) {
+    showHome();
+    return;
+  }
   renderChargeBandButtons();
   resetVehicleChargeForm();
   showVehicleStatus("");
@@ -1101,6 +1270,10 @@ function showJobClosureStatus(message, tone) {
 }
 
 function showJobClosures() {
+  if (!homeButtonOn("show_job_closures")) {
+    showHome();
+    return;
+  }
   resetJobClosureForm();
   applyRoleUi();
   showScreen("jobClosures");
@@ -1858,6 +2031,18 @@ async function trySaveVehicleCharge(event) {
 }
 
 function showPeakPicker(abandon) {
+  if (!homeButtonOn("show_peak_routes")) {
+    if (abandon) {
+      selected = null;
+      selectedManual = false;
+      nearest = null;
+      currentId = null;
+      resetStreetExpand();
+      localStorage.removeItem("peak_current");
+    }
+    showHome();
+    return;
+  }
   if (abandon) {
     selected = null;
     selectedManual = false;
@@ -1874,6 +2059,10 @@ function showPeakPicker(abandon) {
 }
 
 function showRunMaps() {
+  if (!homeButtonOn("show_run_maps")) {
+    showHome();
+    return;
+  }
   if (isRunMapId(currentId)) {
     selected = null;
     selectedManual = false;
@@ -1977,6 +2166,10 @@ function startCombinedRoutes() {
 }
 
 function openRoute(id) {
+  if (!homeButtonOn("show_peak_routes")) {
+    showHome();
+    return;
+  }
   selected = null;
   selectedManual = false;
   nearest = null;
@@ -2019,6 +2212,10 @@ function openInGoogleMapsApp(url) {
 }
 
 function openRunMap(id) {
+  if (!homeButtonOn("show_run_maps")) {
+    showHome();
+    return;
+  }
   const map = RUN_MAPS.find((m) => m.id === id);
   if (!map || !map.mapsUrl) return;
   openInGoogleMapsApp(map.mapsUrl);
@@ -2713,23 +2910,32 @@ async function loadProfile(userId) {
   currentRole = "officer";
   currentDisplayName = "";
   currentOfficerCode = "";
+  resetHomeButtons();
   const sb = getSupabase();
   if (!sb || !userId) return;
   try {
-    let { data, error } = await sb.from("profiles").select("role, display_name, officer_code").eq("id", userId).maybeSingle();
+    const flagColumns = HOME_FLAGS.map((flag) => flag.key).join(", ");
+    let { data, error } = await sb.from("profiles").select(`role, display_name, officer_code, ${flagColumns}`).eq("id", userId).maybeSingle();
     if (error) {
-      const retry = await sb.from("profiles").select("role, display_name").eq("id", userId).maybeSingle();
-      data = retry.data;
+      const retry = await sb.from("profiles").select("role, display_name, officer_code").eq("id", userId).maybeSingle();
+      if (retry.error) {
+        const again = await sb.from("profiles").select("role, display_name").eq("id", userId).maybeSingle();
+        data = again.data;
+      } else {
+        data = retry.data;
+      }
     }
     if (USER_ROLES.includes(data?.role)) {
       currentRole = data.role;
     }
     currentDisplayName = String(data?.display_name || "").trim();
     currentOfficerCode = String(data?.officer_code || "").trim();
+    homeButtons = readHomeButtons(data);
   } catch (e) {
     currentRole = "officer";
     currentDisplayName = "";
     currentOfficerCode = "";
+    resetHomeButtons();
   }
 }
 
@@ -2753,6 +2959,18 @@ function applyRoleUi() {
       ? "Record attendance and close a job"
       : "View the job closure log";
   }
+  HOME_FLAGS.forEach((flag) => {
+    const button = document.getElementById(flag.buttonId);
+    if (button) button.classList.toggle("hidden", !homeButtonOn(flag.key));
+  });
+  const vehiclesBtn = document.getElementById("openVehicles");
+  if (vehiclesBtn) {
+    const routesHidden = !homeButtonOn("show_peak_routes") && !homeButtonOn("show_run_maps");
+    vehiclesBtn.classList.toggle("home-vehicles-tight", routesHidden && homeButtonOn("show_vehicles"));
+  }
+  const intro = document.getElementById("homeIntro");
+  if (intro) intro.textContent = homeChoiceSentence();
+  leaveHiddenHomeScreen();
 }
 
 function getSupabase() {
@@ -2818,6 +3036,7 @@ function lockApp() {
   if (closedHost) closedHost.textContent = "No closed jobs on this device yet.";
   resetJobClosureForm();
   currentRole = "officer";
+  resetHomeButtons();
   applyRoleUi();
 }
 
@@ -3144,6 +3363,11 @@ function bindUi() {
       if (!btn || !userListHost.contains(btn)) return;
       beginEditUser(btn.getAttribute("data-edit-user"));
     });
+    userListHost.addEventListener("change", (event) => {
+      const input = event.target.closest("[data-home-flag]");
+      if (!input || !userListHost.contains(input)) return;
+      setUserHomeFlag(input);
+    });
   }
   const changeForm = document.getElementById("changePasswordForm");
   if (changeForm) changeForm.addEventListener("submit", tryChangePassword);
@@ -3162,7 +3386,11 @@ async function startApp() {
   updateSortToggle();
   renderRoutes();
   renderRunMaps();
-  if (currentId && !isRunMapId(currentId)) {
+  if (currentId && !isRunMapId(currentId) && !homeButtonOn("show_peak_routes")) {
+    currentId = null;
+    localStorage.removeItem("peak_current");
+    showHome();
+  } else if (currentId && !isRunMapId(currentId)) {
     const ids = currentId.split("+");
     if (ids.every((id) => ROUTES.some((r) => r.id === id))) openRoute(currentId);
     else {
