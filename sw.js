@@ -1,4 +1,4 @@
-const CACHE = "pinassist-v1.17";
+const CACHE = "pinassist-v1.18";
 const CORE = [
   "./",
   "./index.html",
@@ -11,7 +11,7 @@ const CORE = [
   "./js/vendor/supabase.js",
   "./icons/peak-routes.png?v=1.11",
   "./icons/run-maps.png?v=1.11",
-  "./icons/vehicles.png?v=1.11",
+  "./icons/vehicles.png?v=1.18",
   "./icons/job-closures.png?v=1.11"
 ];
 
