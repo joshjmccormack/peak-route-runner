@@ -906,12 +906,6 @@ function chargeBandList() {
   return Array.isArray(list) ? list : [];
 }
 
-function chargeBandByStore(store) {
-  const n = Number(store);
-  if (!Number.isFinite(n)) return null;
-  return chargeBandList().find((band) => band.store === n) || null;
-}
-
 function chargeBandForPercent(percent) {
   const n = Number(percent);
   const bands = chargeBandList();
@@ -928,28 +922,222 @@ function chargeBandLabel(percent) {
   return Number.isFinite(Number(percent)) ? `${percent}%` : "—";
 }
 
-function renderChargeBandButtons() {
-  const host = document.getElementById("chargeBands");
-  if (!host || host.dataset.ready === "1") return;
-  host.dataset.ready = "1";
-  // Source list stays low→high so chargeBandForPercent can treat the ends as bounds.
-  // Two-column grid, rows high→low, and each row swapped so the higher band is on the right:
-  // top-right is the highest percent, bottom-left is the lowest.
-  const highToLow = chargeBandList().slice().reverse();
-  const bands = [];
-  for (let i = 0; i < highToLow.length; i += 2) {
-    if (highToLow[i + 1]) bands.push(highToLow[i + 1]);
-    bands.push(highToLow[i]);
-  }
-  host.innerHTML = bands.map((band) =>
-    `<button type="button" class="charge-band charge-band-${esc(band.tone)}" data-charge-band="${esc(band.store)}" aria-pressed="false">${esc(band.label)}</button>`
-  ).join("");
+function chargePercentLabel(percent) {
+  const n = Number(percent);
+  return Number.isFinite(n) ? `${Math.round(n)}%` : "—";
 }
 
-function setVehicleChargeBand(store) {
-  const band = chargeBandByStore(store);
-  vehicleChargePercent = band ? band.store : null;
-  setChoiceGroup("[data-charge-band]", "data-charge-band", band ? String(band.store) : "");
+// Semicircle opens upward. 0% is left (180°), 100% is right (360°).
+const CHARGE_GAUGE = {
+  width: 500,
+  height: 312,
+  cx: 250,
+  cy: 248,
+  bezelR: 202,
+  labelR: 172,
+  arcR: 122,
+  arcWidth: 36,
+  tickInner: 106,
+  tickOuter: 142,
+  needleInner: 30,
+  needleOuter: 128,
+  hubR: 22
+};
+
+function gaugeAngle(percent) {
+  return 180 + (percent * 1.8);
+}
+
+function gaugePoint(percent, radius) {
+  const rad = (gaugeAngle(percent) * Math.PI) / 180;
+  return {
+    x: CHARGE_GAUGE.cx + (radius * Math.cos(rad)),
+    y: CHARGE_GAUGE.cy + (radius * Math.sin(rad))
+  };
+}
+
+function gaugeArcPath(radius, from, to) {
+  const start = gaugePoint(from, radius);
+  const end = gaugePoint(to, radius);
+  const sweep = Math.abs(gaugeAngle(to) - gaugeAngle(from));
+  const large = sweep > 180 ? 1 : 0;
+  const fmt = (n) => n.toFixed(2);
+  return `M ${fmt(start.x)} ${fmt(start.y)} A ${radius} ${radius} 0 ${large} 1 ${fmt(end.x)} ${fmt(end.y)}`;
+}
+
+function chargeToneColor(percent) {
+  const tone = chargeBandForPercent(percent)?.tone;
+  if (tone === "green") return "#1db954";
+  if (tone === "yellow") return "#f0c400";
+  if (tone === "orange") return "#e07000";
+  if (tone === "red") return "#ff3b30";
+  return "#d7dbe2";
+}
+
+function renderChargeGauge() {
+  const host = document.getElementById("chargeGauge");
+  if (!host || host.dataset.ready === "1") return;
+  host.dataset.ready = "1";
+  const g = CHARGE_GAUGE;
+  const arc = gaugeArcPath(g.arcR, 0, 100);
+  const bezel = gaugeArcPath(g.bezelR, 0, 100);
+  const ticks = [0, 20, 40, 60, 80, 100].map((percent) => {
+    const inner = gaugePoint(percent, g.tickInner);
+    const outer = gaugePoint(percent, g.tickOuter);
+    const label = gaugePoint(percent, g.labelR);
+    const anchor = percent < 50 ? "end" : "start";
+    const fmt = (n) => n.toFixed(2);
+    return `<line x1="${fmt(inner.x)}" y1="${fmt(inner.y)}" x2="${fmt(outer.x)}" y2="${fmt(outer.y)}" stroke="#fff" stroke-width="4" stroke-linecap="round"></line>
+      <text x="${fmt(label.x)}" y="${fmt(label.y)}" text-anchor="${anchor}" dominant-baseline="middle" fill="#ffffff" font-size="22" font-weight="700" stroke="#050608" stroke-width="4" paint-order="stroke">${percent}%</text>`;
+  }).join("");
+  const arcStartX = (g.cx - g.arcR).toFixed(2);
+  const arcEndX = (g.cx + g.arcR).toFixed(2);
+  host.innerHTML = `<svg id="chargeGaugeSvg" viewBox="0 0 ${g.width} ${g.height}" font-family="Segoe UI, system-ui, sans-serif" aria-hidden="true">
+    <defs>
+      <linearGradient id="chargeArcGrad" gradientUnits="userSpaceOnUse" x1="${arcStartX}" y1="0" x2="${arcEndX}" y2="0">
+        <stop offset="0%" stop-color="#ff3b30"></stop>
+        <stop offset="20%" stop-color="#d32a22"></stop>
+        <stop offset="24%" stop-color="#e07000"></stop>
+        <stop offset="57%" stop-color="#ff8c1a"></stop>
+        <stop offset="62%" stop-color="#f0c400"></stop>
+        <stop offset="80%" stop-color="#ffe14a"></stop>
+        <stop offset="84%" stop-color="#149444"></stop>
+        <stop offset="100%" stop-color="#1db954"></stop>
+      </linearGradient>
+      <filter id="chargeArcGlow" x="-25%" y="-80%" width="150%" height="240%">
+        <feGaussianBlur stdDeviation="6"></feGaussianBlur>
+      </filter>
+    </defs>
+    <path d="${bezel}" fill="none" stroke="#2c2f36" stroke-width="18" stroke-linecap="round"></path>
+    <path d="${arc}" fill="none" stroke="url(#chargeArcGrad)" stroke-width="${g.arcWidth + 12}" stroke-linecap="round" opacity="0.7" filter="url(#chargeArcGlow)"></path>
+    <path d="${arc}" fill="none" stroke="url(#chargeArcGrad)" stroke-width="${g.arcWidth}" stroke-linecap="round"></path>
+    ${ticks}
+    <g id="chargeNeedle" visibility="hidden">
+      <line x1="${g.cx + g.needleInner}" y1="${g.cy}" x2="${g.cx + g.needleOuter}" y2="${g.cy}" stroke="#f4f6f8" stroke-width="8" stroke-linecap="round"></line>
+    </g>
+    <circle cx="${g.cx}" cy="${g.cy}" r="${g.hubR + 3}" fill="#101216" stroke="#e8e8e8" stroke-width="4"></circle>
+    <circle cx="${g.cx}" cy="${g.cy}" r="10" fill="#07080c"></circle>
+    <g transform="translate(${g.cx} ${g.cy - 108})">
+      <rect x="-40" y="-18" width="74" height="36" rx="6" fill="#07080c" stroke="#f2f2f2" stroke-width="2.6"></rect>
+      <rect x="34" y="-8" width="7" height="16" rx="2" fill="#f2f2f2"></rect>
+      <rect id="chargeBar0" x="-33" y="-11" width="13" height="22" rx="2" fill="#24262b"></rect>
+      <rect id="chargeBar1" x="-16" y="-11" width="13" height="22" rx="2" fill="#24262b"></rect>
+      <rect id="chargeBar2" x="1" y="-11" width="13" height="22" rx="2" fill="#24262b"></rect>
+      <rect id="chargeBar3" x="18" y="-11" width="13" height="22" rx="2" fill="#24262b"></rect>
+    </g>
+    <text id="chargeGaugeReadout" x="${g.cx}" y="${g.cy - 42}" text-anchor="middle" fill="#d7dbe2" font-size="18" font-weight="800" stroke="#050608" stroke-width="5" paint-order="stroke">Tap to set</text>
+  </svg>`;
+}
+
+function paintChargeGauge() {
+  const g = CHARGE_GAUGE;
+  const needle = document.getElementById("chargeNeedle");
+  const readout = document.getElementById("chargeGaugeReadout");
+  const host = document.getElementById("chargeGauge");
+  const n = vehicleChargePercent;
+  const set = Number.isInteger(n) && n >= 0 && n <= 100;
+  if (needle) {
+    if (!set) needle.setAttribute("visibility", "hidden");
+    else {
+      needle.setAttribute("visibility", "visible");
+      needle.setAttribute("transform", `rotate(${gaugeAngle(n).toFixed(2)} ${g.cx} ${g.cy})`);
+    }
+  }
+  if (readout) {
+    readout.textContent = set ? `${n}%` : "Tap to set";
+    readout.setAttribute("fill", set ? chargeToneColor(n) : "#d7dbe2");
+    readout.setAttribute("font-size", set ? "36" : "18");
+  }
+  const bars = set ? Math.ceil(n / 25) : 0;
+  const color = set ? chargeToneColor(n) : "#24262b";
+  for (let i = 0; i < 4; i += 1) {
+    const bar = document.getElementById(`chargeBar${i}`);
+    if (bar) bar.setAttribute("fill", i < bars ? color : "#24262b");
+  }
+  if (!host) return;
+  if (set) {
+    host.setAttribute("aria-valuenow", String(n));
+    host.setAttribute("aria-valuetext", `${n} percent`);
+  } else {
+    host.removeAttribute("aria-valuenow");
+    host.setAttribute("aria-valuetext", "Not set");
+  }
+}
+
+function chargePercentFromPointer(event) {
+  const svg = document.getElementById("chargeGaugeSvg");
+  if (!svg || !svg.createSVGPoint) return null;
+  const pt = svg.createSVGPoint();
+  pt.x = event.clientX;
+  pt.y = event.clientY;
+  const ctm = svg.getScreenCTM();
+  if (!ctm) return null;
+  const p = pt.matrixTransform(ctm.inverse());
+  const dx = p.x - CHARGE_GAUGE.cx;
+  const dy = p.y - CHARGE_GAUGE.cy;
+  if (Math.hypot(dx, dy) < 10) return null;
+  let rad = Math.atan2(dy, dx);
+  if (rad < 0) rad += Math.PI * 2;
+  const percent = rad <= Math.PI
+    ? (rad < Math.PI / 2 ? 100 : 0)
+    : ((rad - Math.PI) / Math.PI) * 100;
+  return Math.max(0, Math.min(100, Math.round(percent)));
+}
+
+function setVehicleChargePercent(percent) {
+  if (percent == null || percent === "") {
+    vehicleChargePercent = null;
+  } else {
+    const n = Number(percent);
+    vehicleChargePercent = Number.isInteger(n) && n >= 0 && n <= 100 ? n : null;
+  }
+  paintChargeGauge();
+}
+
+let chargeGaugePointer = null;
+
+function bindChargeGauge() {
+  renderChargeGauge();
+  paintChargeGauge();
+  const host = document.getElementById("chargeGauge");
+  if (!host || host.dataset.bound === "1") return;
+  host.dataset.bound = "1";
+  host.addEventListener("pointerdown", (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    chargeGaugePointer = event.pointerId;
+    if (host.setPointerCapture) host.setPointerCapture(event.pointerId);
+    host.focus();
+    const n = chargePercentFromPointer(event);
+    if (n != null) setVehicleChargePercent(n);
+  });
+  host.addEventListener("pointermove", (event) => {
+    if (chargeGaugePointer !== event.pointerId) return;
+    const n = chargePercentFromPointer(event);
+    if (n != null) setVehicleChargePercent(n);
+  });
+  const endPointer = (event) => {
+    if (chargeGaugePointer !== event.pointerId) return;
+    chargeGaugePointer = null;
+  };
+  host.addEventListener("pointerup", endPointer);
+  host.addEventListener("pointercancel", endPointer);
+  host.addEventListener("keydown", (event) => {
+    if (event.key === " " || event.key === "Spacebar") {
+      event.preventDefault();
+      return;
+    }
+    const current = Number.isInteger(vehicleChargePercent) ? vehicleChargePercent : null;
+    let next = null;
+    if (event.key === "ArrowRight" || event.key === "ArrowUp") next = current == null ? 1 : Math.min(100, current + 1);
+    else if (event.key === "ArrowLeft" || event.key === "ArrowDown") next = current == null ? 0 : Math.max(0, current - 1);
+    else if (event.key === "PageUp") next = current == null ? 10 : Math.min(100, current + 10);
+    else if (event.key === "PageDown") next = current == null ? 0 : Math.max(0, current - 10);
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = 100;
+    else return;
+    event.preventDefault();
+    setVehicleChargePercent(next);
+  });
 }
 
 function vehiclesForFleet(fleet) {
@@ -1017,8 +1205,8 @@ function resetVehicleChargeForm() {
   vehicleChargePercent = null;
   setChoiceGroup("[data-fleet]", "data-fleet", "");
   setChoiceGroup("[data-location]", "data-location", "");
-  setChoiceGroup("[data-charge-band]", "data-charge-band", "");
   fillVehicleSelect();
+  paintChargeGauge();
 }
 
 function showVehicles() {
@@ -1026,7 +1214,6 @@ function showVehicles() {
     showHome();
     return;
   }
-  renderChargeBandButtons();
   resetVehicleChargeForm();
   showVehicleStatus("");
   applyRoleUi();
@@ -1848,6 +2035,7 @@ function rowMatchesLogQuery(row, q) {
     row.fleet,
     row.vehicle,
     row.location,
+    chargePercentLabel(row.charge_percent),
     chargeBandLabel(row.charge_percent),
     chargeBandForPercent(row.charge_percent)?.id,
     String(row.charge_percent)
@@ -1880,7 +2068,7 @@ function groupVehicleCharges(rows) {
 
 function chargeRowCells(row) {
   return `<td class="charge-vehicle">${esc(row.vehicle)}</td>
-      <td class="${chargePctClass(row.charge_percent)}">${esc(chargeBandLabel(row.charge_percent))}</td>
+      <td class="${chargePctClass(row.charge_percent)}">${esc(chargePercentLabel(row.charge_percent))}</td>
       <td>${esc(row.fleet)}</td>
       <td>${esc(row.location)}</td>
       <td>${esc(formatLocalTimestamp(row.created_at))}</td>
@@ -1980,7 +2168,7 @@ async function trySaveVehicleCharge(event) {
     return;
   }
   const vehicle = document.getElementById("vehicleSelect").value;
-  const band = chargeBandByStore(vehicleChargePercent);
+  const percent = vehicleChargePercent;
   if (!vehicleFleet) {
     showVehicleStatus("Pick TACT or MET.", "err");
     return;
@@ -1989,8 +2177,8 @@ async function trySaveVehicleCharge(event) {
     showVehicleStatus("Pick a vehicle.", "err");
     return;
   }
-  if (!band) {
-    showVehicleStatus("Pick a charge band.", "err");
+  if (!Number.isInteger(percent) || percent < 0 || percent > 100) {
+    showVehicleStatus("Set a charge on the gauge.", "err");
     return;
   }
   if (!vehicleLocation) {
@@ -2013,7 +2201,7 @@ async function trySaveVehicleCharge(event) {
       officer_name: currentDisplayName || officerLabel(user.email || ""),
       fleet: vehicleFleet,
       vehicle,
-      charge_percent: band.store,
+      charge_percent: percent,
       location: vehicleLocation
     });
     if (error) {
@@ -3314,10 +3502,7 @@ function bindUi() {
       copyReferenceFromButton(refBtn);
     });
   }
-  renderChargeBandButtons();
-  document.querySelectorAll("[data-charge-band]").forEach((btn) => {
-    btn.onclick = () => setVehicleChargeBand(btn.getAttribute("data-charge-band"));
-  });
+  bindChargeGauge();
   document.querySelectorAll("[data-fleet]").forEach((btn) => {
     btn.onclick = () => setVehicleFleet(btn.getAttribute("data-fleet"));
   });
