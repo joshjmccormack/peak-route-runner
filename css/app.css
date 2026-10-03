@@ -202,33 +202,27 @@ table.user-table {
   font-size: 1rem;
   background: #fff;
 }
-.charge-bands {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  margin: 0 0 8px;
+.charge-gauge {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto 4px;
+  background: radial-gradient(circle at 50% 78%, #16181d 0, #050608 64%);
+  border-radius: 22px;
+  padding: 2px 2px 0;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px #2a2d34, 0 10px 22px rgba(8, 16, 32, 0.16);
 }
-.charge-band {
-  margin: 0;
-  min-height: 46px;
-  padding: 10px 8px;
-  border-radius: 11px;
-  border: 3px solid transparent;
-  color: #fff;
-  font-weight: 800;
-  font-size: 0.95rem;
+.charge-gauge svg {
+  display: block;
+  width: 100%;
+  height: auto;
 }
-.charge-band-red { background: #b3261e; }
-.charge-band-orange { background: #e07000; }
-.charge-band-yellow { background: #f0c400; color: #1a1400; }
-.charge-band-green { background: #0f7a38; }
-.charge-band-red:hover { background: #8f1e18; }
-.charge-band-orange:hover { background: #c46200; }
-.charge-band-yellow:hover { background: #d4ad00; }
-.charge-band-green:hover { background: #0c632e; }
-.charge-band[aria-pressed="true"] {
-  border-color: #122033;
-  box-shadow: inset 0 0 0 2px #fff;
+.charge-gauge:focus-visible {
+  outline: 3px solid #8ab4f8;
+  outline-offset: 3px;
 }
 .charge-history-btn {
   width: auto;

@@ -1,10 +1,11 @@
 window.PEAK_VEHICLES = {
   TACT: ["CP10", "CP20", "CP53", "CP57"],
-  MET: ["CP69", "CP03", "CP21", "CP09"]
+  MET: ["CP69", "CP03", "CP21", "CP09", "CP98", "CP115"]
 };
 
-// charge_percent is an integer 0–100. New logs store the midpoint of the band
-// (5, 15, … 95) so older exact percentages still map into the same bands.
+// charge_percent is an integer 0–100. The gauge stores the exact percent.
+// Bands are the colour scale only: low red, mid-low orange, 61–80 yellow,
+// high green. Older rows may still be a band midpoint (5, 15, … 95).
 window.PEAK_CHARGE_BANDS = [
   { id: "1-10", label: "1%–10%", store: 5, min: 1, max: 10, tone: "red" },
   { id: "11-20", label: "11%–20%", store: 15, min: 11, max: 20, tone: "red" },
