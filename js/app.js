@@ -36,11 +36,14 @@ const geocache = JSON.parse(localStorage.getItem("peak_geocache") || "{}");
 const ROUTE_DATA_CACHE_KEY = "peak_routes_cache_v12";
 const ROUTE_DATA_UPDATED_KEY = "peak_routes_updated_v12";
 
+const DISPLAY_TIME_ZONE = "Australia/Brisbane";
+
 function formatLocalTimestamp(iso) {
   try {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return iso;
     return new Intl.DateTimeFormat("en-AU", {
+      timeZone: DISPLAY_TIME_ZONE,
       day: "2-digit", month: "short", year: "numeric",
       hour: "2-digit", minute: "2-digit", second: "2-digit"
     }).format(d);
@@ -907,6 +910,7 @@ function chargeBandList() {
 }
 
 function chargeBandForPercent(percent) {
+  if (percent == null || percent === "") return null;
   const n = Number(percent);
   const bands = chargeBandList();
   if (!Number.isFinite(n) || !bands.length) return null;
@@ -923,6 +927,7 @@ function chargeBandLabel(percent) {
 }
 
 function chargePercentLabel(percent) {
+  if (percent == null || percent === "") return "—";
   const n = Number(percent);
   return Number.isFinite(n) ? `${Math.round(n)}%` : "—";
 }
@@ -1226,10 +1231,15 @@ function setVehicleFleet(fleet) {
 }
 
 // Keep in step with private.gsq_auto_charge_delays.
-// TODO: 21–79 has no delay until the owner supplies one. Add a row here and in that table.
 const GSQ_AUTO_CHARGE_DELAYS = [
-  { min: 0, max: 20, hours: 7 },
-  { min: 80, max: 100, hours: 2 }
+  { min: 0, max: 20, hours: 9 },
+  { min: 21, max: 30, hours: 8 },
+  { min: 31, max: 40, hours: 7 },
+  { min: 41, max: 50, hours: 6 },
+  { min: 51, max: 60, hours: 5 },
+  { min: 61, max: 70, hours: 4 },
+  { min: 71, max: 80, hours: 3 },
+  { min: 81, max: 100, hours: 2 }
 ];
 
 function gsqAutoChargeDelayHours(percent) {
@@ -1252,18 +1262,55 @@ function refreshGsqAutoChargeNote() {
   }
   const hours = gsqAutoChargeDelayHours(vehicleChargePercent);
   if (!Number.isInteger(vehicleChargePercent)) {
-    el.textContent = "GSQ at 20% or below is logged again at 100% after 7 hours. At 80% or above, after 2 hours. A newer charge for this vehicle cancels that update.";
+    el.textContent = "GSQ is logged again at 100% after 9 hours at 0–20%, stepping down to 2 hours at 81–100%. A newer charge for this vehicle cancels that update.";
   } else if (hours) {
     el.textContent = `This GSQ charge will be logged again at 100% after ${hoursLabel(hours)}, unless a newer charge is saved for this vehicle.`;
   } else {
-    el.textContent = "No automatic 100% update for a GSQ charge between 21% and 79%.";
+    el.textContent = "No automatic 100% update for this GSQ charge.";
   }
   el.classList.remove("hidden");
 }
 
+function canSetServiceLocation() {
+  return currentRole === "roc" || currentRole === "slg" || currentRole === "admin";
+}
+
+function refreshChargeGaugeForLocation() {
+  const block = document.getElementById("chargeGaugeBlock");
+  const gauge = document.getElementById("chargeGauge");
+  const service = vehicleLocation === "SERVICE";
+  if (block) block.classList.toggle("hidden", service);
+  if (!gauge) return;
+  if (service) {
+    gauge.setAttribute("aria-disabled", "true");
+    gauge.setAttribute("aria-valuetext", "Not used for service");
+  } else {
+    gauge.removeAttribute("aria-disabled");
+  }
+}
+
+function applyServiceLocationUi() {
+  const btn = document.getElementById("locService");
+  const group = document.getElementById("vehicleLocationToggle");
+  const allowed = canSetServiceLocation();
+  if (btn) btn.classList.toggle("hidden", !allowed);
+  if (group) group.classList.toggle("has-service", allowed);
+  if (!allowed && vehicleLocation === "SERVICE") {
+    setVehicleLocation("");
+    return;
+  }
+  refreshChargeGaugeForLocation();
+}
+
 function setVehicleLocation(location) {
+  if (location === "SERVICE" && !canSetServiceLocation()) return;
   vehicleLocation = location;
   setChoiceGroup("[data-location]", "data-location", location);
+  if (location === "SERVICE") {
+    vehicleChargePercent = null;
+    paintChargeGauge();
+  }
+  refreshChargeGaugeForLocation();
   refreshGsqAutoChargeNote();
 }
 
@@ -2199,7 +2246,8 @@ function renderVehicleChargeLog() {
         ? group.history.map((row) => `<tr class="charge-history">${chargeRowCells(row)}<td></td></tr>`).join("")
         : `<tr class="charge-history"><td class="charge-history-empty" colspan="7">No earlier charges for this vehicle.</td></tr>`)
       : "";
-    return `<tr class="charge-latest">
+    const serviceVehicle = String(group.latest.location || "").trim().toUpperCase() === "SERVICE";
+    return `<tr class="charge-latest${serviceVehicle ? " charge-service" : ""}">
       ${chargeRowCells(group.latest)}
       <td><button type="button" class="charge-history-btn" data-vehicle-history="${esc(group.key)}" aria-expanded="${open ? "true" : "false"}" aria-label="${esc(aria)}">${label}${count && !open ? ` (${count})` : ""}</button></td>
     </tr>${historyHtml}`;
@@ -2253,7 +2301,8 @@ async function trySaveVehicleCharge(event) {
     return;
   }
   const vehicle = document.getElementById("vehicleSelect").value;
-  const percent = vehicleChargePercent;
+  const service = vehicleLocation === "SERVICE";
+  const percent = service ? null : vehicleChargePercent;
   if (!vehicleFleet) {
     showVehicleStatus("Pick TACT or MET.", "err");
     return;
@@ -2262,12 +2311,16 @@ async function trySaveVehicleCharge(event) {
     showVehicleStatus("Pick a vehicle.", "err");
     return;
   }
-  if (!Number.isInteger(percent) || percent < 0 || percent > 100) {
+  if (service && !canSetServiceLocation()) {
+    showVehicleStatus("SERVICE is for ROC, SLG, and Admin.", "err");
+    return;
+  }
+  if (!service && (!Number.isInteger(percent) || percent < 0 || percent > 100)) {
     showVehicleStatus("Set a charge on the gauge.", "err");
     return;
   }
   if (!vehicleLocation) {
-    showVehicleStatus("Pick OCT or GSQ.", "err");
+    showVehicleStatus(canSetServiceLocation() ? "Pick OCT, GSQ, or SERVICE." : "Pick OCT or GSQ.", "err");
     return;
   }
   const btn = document.getElementById("vehicleChargeBtn");
@@ -2293,12 +2346,14 @@ async function trySaveVehicleCharge(event) {
       showVehicleStatus(error.message || "Could not save. Check the database is set up.", "err");
       return;
     }
-    const autoHours = vehicleLocation === "GSQ" ? gsqAutoChargeDelayHours(percent) : null;
+    const autoHours = !service && vehicleLocation === "GSQ" ? gsqAutoChargeDelayHours(percent) : null;
     resetVehicleChargeForm();
     showVehicleStatus(
-      autoHours
-        ? `Charge saved. GSQ will be logged again at 100% after ${hoursLabel(autoHours)} unless a newer charge is saved for this vehicle.`
-        : "Charge saved.",
+      service
+        ? "Service location saved."
+        : autoHours
+          ? `Charge saved. GSQ will be logged again at 100% after ${hoursLabel(autoHours)} unless a newer charge is saved for this vehicle.`
+          : "Charge saved.",
       "ok"
     );
     loadVehicleCharges();
@@ -2557,7 +2612,7 @@ function formatDistance(m) {
 
 function brisbaneMinutesNow() {
   const parts = new Intl.DateTimeFormat("en-AU", {
-    timeZone: "Australia/Brisbane",
+    timeZone: DISPLAY_TIME_ZONE,
     hour: "2-digit", minute: "2-digit", hourCycle: "h23"
   }).formatToParts(new Date());
   const h = Number(parts.find((p) => p.type === "hour")?.value || 0);
@@ -3242,6 +3297,7 @@ function applyRoleUi() {
     const button = document.getElementById(flag.buttonId);
     if (button) button.classList.toggle("hidden", !homeButtonOn(flag.key));
   });
+  applyServiceLocationUi();
   const vehiclesBtn = document.getElementById("openVehicles");
   if (vehiclesBtn) {
     const routesHidden = !homeButtonOn("show_peak_routes") && !homeButtonOn("show_run_maps");

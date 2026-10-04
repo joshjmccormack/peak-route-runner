@@ -19,7 +19,7 @@
 <meta property="og:description" content="PinAssist">
 <meta property="og:url" content="https://pinassist.app/">
 <title>PinAssist</title>
-<link rel="stylesheet" href="css/app.css?v=1.24">
+<link rel="stylesheet" href="css/app.css?v=1.25">
 </head>
 <body class="locked">
 <section id="lockScreen" class="lock-screen">
@@ -94,12 +94,15 @@
     <select id="vehicleSelect" required>
       <option value="">Select fleet first</option>
     </select>
-    <div class="field-label" id="chargeGaugeLabel">Charge</div>
-    <div id="chargeGauge" class="charge-gauge" role="slider" tabindex="0" aria-labelledby="chargeGaugeLabel" aria-valuemin="0" aria-valuemax="100" aria-valuetext="Not set"></div>
+    <div id="chargeGaugeBlock">
+      <div class="field-label" id="chargeGaugeLabel">Charge</div>
+      <div id="chargeGauge" class="charge-gauge" role="slider" tabindex="0" aria-labelledby="chargeGaugeLabel" aria-valuemin="0" aria-valuemax="100" aria-valuetext="Not set"></div>
+    </div>
     <div class="field-label">Location</div>
-    <div class="sort-toggle" role="group" aria-label="Location">
+    <div id="vehicleLocationToggle" class="sort-toggle location-toggle" role="group" aria-label="Location">
       <button type="button" id="locOct" class="sort-opt" data-location="OCT" aria-pressed="false">OCT</button>
       <button type="button" id="locGsq" class="sort-opt" data-location="GSQ" aria-pressed="false">GSQ</button>
+      <button type="button" id="locService" class="sort-opt hidden" data-location="SERVICE" aria-pressed="false">SERVICE</button>
     </div>
     <p id="gsqAutoChargeNote" class="muted field-hint hidden" aria-live="polite"></p>
     <button id="vehicleChargeBtn" class="primary" type="submit">Save charge</button>
@@ -365,8 +368,8 @@
 </footer>
 <script src="js/vendor/supabase.js" defer></script>
 <script src="js/supabase-config.js" defer></script>
-<script src="js/vehicles.js?v=1.24" defer></script>
-<script src="js/app.js?v=1.24" defer></script>
+<script src="js/vehicles.js?v=1.25" defer></script>
+<script src="js/app.js?v=1.25" defer></script>
 <div id="resetDialog" class="dialog-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="resetDialogMsg">
   <div class="dialog-card">
     <p id="resetDialogMsg">Reset all completed and skipped locations for this route?</p>

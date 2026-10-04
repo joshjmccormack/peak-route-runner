@@ -5,8 +5,9 @@
 -- The tablet does not schedule this. An insert trigger queues a row in
 -- private.gsq_auto_charge_jobs, and pg_cron inserts the 100% charge when
 -- fire_at is reached. pg_cron runs as postgres, which bypasses RLS the same
--- way the service role does. The new row still stores the original officer's
--- user_id, officer_email, and officer_name. Officer insert/read policies are
+-- way the service role does. The new row keeps the original officer's
+-- user_id and officer_email. officer_name is the literal Auto Update, which
+-- is what the charge log Who column shows. Officer insert/read policies are
 -- not changed. No service role key and no Edge Function.
 
 create schema if not exists private;
@@ -17,12 +18,10 @@ comment on schema private is
 revoke all on schema private from public;
 grant usage on schema private to authenticated;
 
--- Delay map. A charge_percent that matches no row is not scheduled.
--- TODO: owner will supply times for 21–79 inclusive. Add one row per band, for example:
---   insert into private.gsq_auto_charge_delays (min_percent, max_percent, delay)
---   values (21, 40, interval '5 hours');
+-- Delay map. Every GSQ percent from 0 to 100 matches one band.
 -- Bands must not overlap. Rows already queued keep their existing fire_at.
--- 0–20 waits 7 hours. 80–100 waits 2 hours.
+-- 0–20 is 9 hours, then one hour less each 10% band, down to 2 hours at 81–100.
+-- A later migration replaces these rows if an older 7-hour map was already applied.
 create table if not exists private.gsq_auto_charge_delays (
   min_percent integer not null check (min_percent between 0 and 100),
   max_percent integer not null check (max_percent between 0 and 100),
@@ -32,7 +31,7 @@ create table if not exists private.gsq_auto_charge_delays (
 );
 
 comment on table private.gsq_auto_charge_delays is
-  'How long after a GSQ report to log 100% for that vehicle. Missing percents are not scheduled. TODO: add 21–79 when times are supplied.';
+  'How long after a GSQ report to log 100% for that vehicle. 0–20 is 9 hours, stepping down to 2 hours at 81–100.';
 
 create table if not exists private.gsq_auto_charge_jobs (
   id uuid primary key default gen_random_uuid(),
@@ -121,8 +120,14 @@ create trigger gsq_auto_charge_delays_no_overlap
 
 insert into private.gsq_auto_charge_delays (min_percent, max_percent, delay)
 values
-  (0, 20, interval '7 hours'),
-  (80, 100, interval '2 hours')
+  (0, 20, interval '9 hours'),
+  (21, 30, interval '8 hours'),
+  (31, 40, interval '7 hours'),
+  (41, 50, interval '6 hours'),
+  (51, 60, interval '5 hours'),
+  (61, 70, interval '4 hours'),
+  (71, 80, interval '3 hours'),
+  (81, 100, interval '2 hours')
 on conflict (min_percent, max_percent) do nothing;
 
 create or replace function private.gsq_auto_charge_delay(p_percent integer)
@@ -162,7 +167,7 @@ begin
     return new;
   end if;
   loc := upper(btrim(new.location));
-  if loc in ('GSQ', 'OCT') then
+  if loc in ('GSQ', 'OCT', 'SERVICE') then
     new.location := loc;
   end if;
   return new;
@@ -185,7 +190,7 @@ begin
   end if;
 
   -- Any newer charge for this fleet + vehicle replaces a pending auto-100.
-  -- A GSQ report in a configured band queues one new job below. 21–79 cancels only.
+  -- SERVICE and OCT cancel only. A GSQ report queues one new job from the delay map.
   update private.gsq_auto_charge_jobs
   set status = 'cancelled',
       cancel_reason = 'newer_charge',
@@ -194,7 +199,7 @@ begin
     and vehicle = new.vehicle
     and status = 'pending';
 
-  if new.location is distinct from 'GSQ' then
+  if new.location is distinct from 'GSQ' or new.charge_percent is null then
     return new;
   end if;
 
@@ -296,7 +301,7 @@ begin
       ) values (
         job.user_id,
         job.officer_email,
-        job.officer_name,
+        'Auto Update',
         job.fleet,
         job.vehicle,
         100,
@@ -337,7 +342,7 @@ end;
 $$;
 
 comment on function private.fire_due_gsq_auto_charges() is
-  'Insert due 100% GSQ charges. Called every minute by pg_cron. Skips vehicles that already have a newer charge.';
+  'Insert due 100% GSQ charges. Visible officer_name is Auto Update; user_id and officer_email stay the source officer. Called every minute by pg_cron. Skips vehicles that already have a newer charge.';
 
 revoke all on function private.assert_gsq_delay_bands_do_not_overlap() from public;
 revoke all on function private.gsq_auto_charge_delay(integer) from public;
