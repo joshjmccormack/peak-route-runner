@@ -377,6 +377,12 @@ table.user-table {
   white-space: nowrap;
 }
 .charge-table th { color: var(--muted); font-weight: 700; }
+.charge-table tr.charge-service td {
+  background: rgba(179, 38, 30, 0.12);
+}
+.location-toggle.has-service {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
 
 main {
   max-width: var(--shell-max);
