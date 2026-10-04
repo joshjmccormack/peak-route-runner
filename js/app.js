@@ -1131,6 +1131,7 @@ function setVehicleChargePercent(percent) {
     vehicleChargePercent = Number.isInteger(n) && n >= 0 && n <= 100 ? n : null;
   }
   paintChargeGauge();
+  refreshGsqAutoChargeNote();
 }
 
 let chargeGaugePointer = null;
@@ -1224,9 +1225,46 @@ function setVehicleFleet(fleet) {
   fillVehicleSelect();
 }
 
+// Keep in step with private.gsq_auto_charge_delays.
+// TODO: 21–79 has no delay until the owner supplies one. Add a row here and in that table.
+const GSQ_AUTO_CHARGE_DELAYS = [
+  { min: 0, max: 20, hours: 7 },
+  { min: 80, max: 100, hours: 2 }
+];
+
+function gsqAutoChargeDelayHours(percent) {
+  if (!Number.isInteger(percent)) return null;
+  const band = GSQ_AUTO_CHARGE_DELAYS.find((row) => percent >= row.min && percent <= row.max);
+  return band ? band.hours : null;
+}
+
+function hoursLabel(hours) {
+  return `${hours} hour${hours === 1 ? "" : "s"}`;
+}
+
+function refreshGsqAutoChargeNote() {
+  const el = document.getElementById("gsqAutoChargeNote");
+  if (!el) return;
+  if (vehicleLocation !== "GSQ") {
+    el.textContent = "";
+    el.classList.add("hidden");
+    return;
+  }
+  const hours = gsqAutoChargeDelayHours(vehicleChargePercent);
+  if (!Number.isInteger(vehicleChargePercent)) {
+    el.textContent = "GSQ at 20% or below is logged again at 100% after 7 hours. At 80% or above, after 2 hours. A newer charge for this vehicle cancels that update.";
+  } else if (hours) {
+    el.textContent = `This GSQ charge will be logged again at 100% after ${hoursLabel(hours)}, unless a newer charge is saved for this vehicle.`;
+  } else {
+    el.textContent = "No automatic 100% update for a GSQ charge between 21% and 79%.";
+  }
+  el.classList.remove("hidden");
+}
+
 function setVehicleLocation(location) {
   vehicleLocation = location;
   setChoiceGroup("[data-location]", "data-location", location);
+  refreshGsqAutoChargeNote();
 }
 
 function showVehicleStatus(message, tone) {
@@ -1253,6 +1291,7 @@ function resetVehicleChargeForm() {
   setChoiceGroup("[data-location]", "data-location", "");
   fillVehicleSelect();
   paintChargeGauge();
+  refreshGsqAutoChargeNote();
 }
 
 function showVehicles() {
@@ -2254,8 +2293,14 @@ async function trySaveVehicleCharge(event) {
       showVehicleStatus(error.message || "Could not save. Check the database is set up.", "err");
       return;
     }
+    const autoHours = vehicleLocation === "GSQ" ? gsqAutoChargeDelayHours(percent) : null;
     resetVehicleChargeForm();
-    showVehicleStatus("Charge saved.", "ok");
+    showVehicleStatus(
+      autoHours
+        ? `Charge saved. GSQ will be logged again at 100% after ${hoursLabel(autoHours)} unless a newer charge is saved for this vehicle.`
+        : "Charge saved.",
+      "ok"
+    );
     loadVehicleCharges();
   } catch (e) {
     showVehicleStatus("Could not save. Check your connection.", "err");
