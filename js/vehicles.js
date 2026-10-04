@@ -1,6 +1,6 @@
 window.PEAK_VEHICLES = {
   TACT: ["CP10", "CP20", "CP53", "CP57"],
-  MET: ["CP69", "CP03", "CP21", "CP09", "CP98", "CP115"]
+  MET: ["CP69", "CP03", "CP21", "CP09", "CP98", "CP115", "CP05"]
 };
 
 // charge_percent is an integer 0–100. The gauge stores the exact percent.
