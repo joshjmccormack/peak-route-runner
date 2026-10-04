@@ -1179,10 +1179,17 @@ function bindChargeGauge() {
   });
 }
 
+function vehicleCallsignNumber(id) {
+  const match = String(id).match(/\d+/);
+  return match ? Number(match[0]) : Number.POSITIVE_INFINITY;
+}
+
 function vehiclesForFleet(fleet) {
   const lists = window.PEAK_VEHICLES || {};
   const items = lists[fleet];
-  return Array.isArray(items) ? items : [];
+  if (!Array.isArray(items)) return [];
+  if (fleet !== "TACT" && fleet !== "MET") return items.slice();
+  return items.slice().sort((a, b) => vehicleCallsignNumber(a) - vehicleCallsignNumber(b));
 }
 
 function fillVehicleSelect() {
