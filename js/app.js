@@ -1265,11 +1265,11 @@ function gsqAutoRemainingParts(fireAt) {
 }
 
 function gsqAutoRemainingLabel(fireAt) {
-  const parts = gsqAutoRemainingParts(fireAt);
-  if (!parts) return "";
-  if (parts.hours >= 1 && parts.minutes === 0) return `${parts.hours}h`;
-  if (parts.hours >= 1) return `${parts.hours}h ${parts.minutes}m`;
-  return `${Math.max(1, parts.minutes)}m`;
+  const ms = Date.parse(fireAt) - Date.now();
+  if (!Number.isFinite(ms) || ms <= 0) return "";
+  // At or over an hour, whole hours only. Math.round is half up, so 90 minutes is 2h.
+  if (ms >= 3600000) return `${Math.round(ms / 3600000)}h`;
+  return `${Math.max(1, Math.ceil(ms / 60000))}m`;
 }
 
 function gsqAutoDurationPhrase(parts) {
