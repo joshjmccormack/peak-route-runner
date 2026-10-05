@@ -1252,6 +1252,39 @@ function hoursLabel(hours) {
   return `${hours} hour${hours === 1 ? "" : "s"}`;
 }
 
+// Remaining time uses the queued fire_at, not a fresh delay-band calculation.
+// A job keeps the fire_at it was given when the charge was logged.
+function gsqAutoRemainingParts(fireAt) {
+  const ms = Date.parse(fireAt) - Date.now();
+  if (!Number.isFinite(ms) || ms <= 0) return null;
+  const totalMinutes = Math.ceil(ms / 60000);
+  return {
+    hours: Math.floor(totalMinutes / 60),
+    minutes: totalMinutes % 60
+  };
+}
+
+function gsqAutoRemainingLabel(fireAt) {
+  const ms = Date.parse(fireAt) - Date.now();
+  if (!Number.isFinite(ms) || ms <= 0) return "";
+  // At or over an hour, whole hours only. Math.round is half up, so 90 minutes is 2h.
+  if (ms >= 3600000) return `${Math.round(ms / 3600000)}h`;
+  return `${Math.max(1, Math.ceil(ms / 60000))}m`;
+}
+
+function gsqAutoDurationPhrase(parts) {
+  const bits = [];
+  if (parts.hours) bits.push(`${parts.hours} hour${parts.hours === 1 ? "" : "s"}`);
+  if (parts.minutes) bits.push(`${parts.minutes} minute${parts.minutes === 1 ? "" : "s"}`);
+  return bits.join(" ");
+}
+
+function gsqAutoRemainingTitle(fireAt) {
+  const parts = gsqAutoRemainingParts(fireAt);
+  if (!parts) return "";
+  return `GSQ auto-update to 100% in ${gsqAutoDurationPhrase(parts)} (${formatLocalTimestamp(fireAt)})`;
+}
+
 function refreshGsqAutoChargeNote() {
   const el = document.getElementById("gsqAutoChargeNote");
   if (!el) return;
@@ -2141,6 +2174,10 @@ function officerDisplayName(row) {
 }
 
 let vehicleChargeRows = [];
+let pendingGsqAutoJobs = new Map();
+let vehicleChargesLoading = false;
+
+const GSQ_AUTO_ETA_ICON = `<svg class="gsq-auto-eta-icon" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" focusable="false"><circle cx="8" cy="9.25" r="5" fill="none" stroke="currentColor" stroke-width="1.5"></circle><path d="M6.15 1.7h3.7M8 1.7v1.55M8 9.25V6.35" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg>`;
 
 function chargePctClass(percent) {
   const band = chargeBandForPercent(percent);
@@ -2198,9 +2235,47 @@ function groupVehicleCharges(rows) {
   return grouped;
 }
 
-function chargeRowCells(row) {
+function pendingJobsFromRows(rows) {
+  const next = new Map();
+  (rows || []).forEach((row) => {
+    if (!row || row.fire_at == null || row.fire_at === "") return;
+    next.set(vehicleChargeKey(row), String(row.fire_at));
+  });
+  return next;
+}
+
+function pendingGsqAutoSnapshot(jobs) {
+  return [...jobs.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, fireAt]) => `${key}=${fireAt}`)
+    .join("|");
+}
+
+function vehicleChargeSnapshot(rows) {
+  return (rows || []).map((row) => [
+    row.created_at,
+    row.officer_email,
+    row.officer_name,
+    row.fleet,
+    row.vehicle,
+    row.charge_percent,
+    row.location
+  ].join("\u001f")).join("\u001e");
+}
+
+function gsqAutoEtaMarkup(row) {
+  if (String(row?.location || "").trim().toUpperCase() !== "GSQ") return "";
+  const fireAt = pendingGsqAutoJobs.get(vehicleChargeKey(row));
+  const label = gsqAutoRemainingLabel(fireAt);
+  if (!label) return "";
+  const title = gsqAutoRemainingTitle(fireAt);
+  return `<span class="gsq-auto-eta" data-gsq-fire-at="${esc(fireAt)}" title="${esc(title)}" aria-label="${esc(title)}">${GSQ_AUTO_ETA_ICON}<span class="gsq-auto-eta-time" aria-hidden="true">${esc(label)}</span></span>`;
+}
+
+function chargeRowCells(row, options) {
+  const eta = options && options.eta ? gsqAutoEtaMarkup(row) : "";
   return `<td class="charge-vehicle">${esc(row.vehicle)}</td>
-      <td class="${chargePctClass(row.charge_percent)}">${esc(chargePercentLabel(row.charge_percent))}</td>
+      <td class="${chargePctClass(row.charge_percent)}">${esc(chargePercentLabel(row.charge_percent))}${eta}</td>
       <td>${esc(row.fleet)}</td>
       <td>${esc(row.location)}</td>
       <td>${esc(formatLocalTimestamp(row.created_at))}</td>
@@ -2210,6 +2285,7 @@ function chargeRowCells(row) {
 function renderVehicleChargeLog() {
   const host = document.getElementById("vehicleChargeLog");
   if (!host) return;
+  const scrollLeft = host.scrollLeft;
   if (!vehicleChargeRows.length) {
     host.textContent = "No charge updates yet.";
     return;
@@ -2248,7 +2324,7 @@ function renderVehicleChargeLog() {
       : "";
     const serviceVehicle = String(group.latest.location || "").trim().toUpperCase() === "SERVICE";
     return `<tr class="charge-latest${serviceVehicle ? " charge-service" : ""}">
-      ${chargeRowCells(group.latest)}
+      ${chargeRowCells(group.latest, { eta: true })}
       <td><button type="button" class="charge-history-btn" data-vehicle-history="${esc(group.key)}" aria-expanded="${open ? "true" : "false"}" aria-label="${esc(aria)}">${label}${count && !open ? ` (${count})` : ""}</button></td>
     </tr>${historyHtml}`;
   }).join("");
@@ -2258,39 +2334,88 @@ function renderVehicleChargeLog() {
     </tr></thead>
     <tbody>${body}</tbody>
   </table>`;
+  host.scrollLeft = scrollLeft;
 }
 
-async function loadVehicleCharges() {
+function tickGsqAutoEta() {
+  document.querySelectorAll("#vehicleChargeLog .gsq-auto-eta").forEach((node) => {
+    const fireAt = node.getAttribute("data-gsq-fire-at");
+    const label = gsqAutoRemainingLabel(fireAt);
+    if (!label) {
+      node.remove();
+      return;
+    }
+    const time = node.querySelector(".gsq-auto-eta-time");
+    if (time && time.textContent !== label) time.textContent = label;
+    const title = gsqAutoRemainingTitle(fireAt);
+    if (node.getAttribute("title") !== title) {
+      node.title = title;
+      node.setAttribute("aria-label", title);
+    }
+  });
+}
+
+async function loadVehicleCharges(options) {
+  const quiet = !!(options && options.quiet);
   const host = document.getElementById("vehicleChargeLog");
-  if (!host) return;
+  if (!host || vehicleChargesLoading) return;
   const sb = getSupabase();
   if (!sb) {
     vehicleChargeRows = [];
+    pendingGsqAutoJobs = new Map();
     host.textContent = "Not signed in.";
     return;
   }
-  host.textContent = "Loading…";
-  let { data, error } = await sb
-    .from("vehicle_charges")
-    .select("created_at, officer_email, officer_name, fleet, vehicle, charge_percent, location")
-    .order("created_at", { ascending: false })
-    .limit(1000);
-  if (error) {
-    const retry = await sb
+  vehicleChargesLoading = true;
+  if (!quiet) host.textContent = "Loading…";
+  try {
+    const pendingPromise = sb.rpc("pending_gsq_auto_charges");
+    let { data, error } = await sb
       .from("vehicle_charges")
-      .select("created_at, officer_email, fleet, vehicle, charge_percent, location")
+      .select("created_at, officer_email, officer_name, fleet, vehicle, charge_percent, location")
       .order("created_at", { ascending: false })
       .limit(1000);
-    data = retry.data;
-    error = retry.error;
+    if (error) {
+      const retry = await sb
+        .from("vehicle_charges")
+        .select("created_at, officer_email, fleet, vehicle, charge_percent, location")
+        .order("created_at", { ascending: false })
+        .limit(1000);
+      data = retry.data;
+      error = retry.error;
+    }
+    const pendingResult = await pendingPromise;
+    const pendingOk = pendingResult && !pendingResult.error;
+    const nextJobs = pendingOk ? pendingJobsFromRows(pendingResult.data) : null;
+    if (error) {
+      if (!quiet) {
+        vehicleChargeRows = [];
+        if (nextJobs) pendingGsqAutoJobs = nextJobs;
+        else pendingGsqAutoJobs = new Map();
+        host.textContent = error.message || "Could not load the charge log.";
+      } else if (nextJobs) {
+        pendingGsqAutoJobs = nextJobs;
+        renderVehicleChargeLog();
+      }
+      return;
+    }
+    const nextRows = data || [];
+    const sameRows = vehicleChargeSnapshot(vehicleChargeRows) === vehicleChargeSnapshot(nextRows);
+    const sameJobs = !nextJobs || pendingGsqAutoSnapshot(pendingGsqAutoJobs) === pendingGsqAutoSnapshot(nextJobs);
+    if (quiet && sameRows && sameJobs && host.querySelector(".charge-table")) return;
+    vehicleChargeRows = nextRows;
+    if (nextJobs) pendingGsqAutoJobs = nextJobs;
+    else if (!quiet) pendingGsqAutoJobs = new Map();
+    renderVehicleChargeLog();
+  } catch (e) {
+    if (!quiet) {
+      vehicleChargeRows = [];
+      pendingGsqAutoJobs = new Map();
+      host.textContent = "Could not load the charge log.";
+    }
+  } finally {
+    vehicleChargesLoading = false;
   }
-  if (error) {
-    vehicleChargeRows = [];
-    host.textContent = error.message || "Could not load the charge log.";
-    return;
-  }
-  vehicleChargeRows = data || [];
-  renderVehicleChargeLog();
 }
 
 async function trySaveVehicleCharge(event) {
@@ -3779,6 +3904,22 @@ setInterval(() => {
     renderDash();
   }
 }, 30000);
+
+let gsqAutoEtaTicks = 0;
+setInterval(() => {
+  const screen = document.getElementById("vehicles");
+  if (!screen || screen.classList.contains("hidden") || !canViewChargeLog()) return;
+  tickGsqAutoEta();
+  gsqAutoEtaTicks += 1;
+  if (gsqAutoEtaTicks % 2 === 0) loadVehicleCharges({ quiet: true });
+}, 30000);
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible") return;
+  const screen = document.getElementById("vehicles");
+  if (!screen || screen.classList.contains("hidden") || !canViewChargeLog()) return;
+  loadVehicleCharges({ quiet: true });
+});
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {

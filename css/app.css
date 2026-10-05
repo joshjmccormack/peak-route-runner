@@ -359,6 +359,25 @@ table.user-table {
 }
 .charge-vehicle { font-weight: 700; }
 .charge-pct { font-weight: 800; }
+.gsq-auto-eta {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 6px;
+  padding: 1px 6px 1px 4px;
+  border-radius: 999px;
+  background: #edf1f7;
+  color: var(--muted);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1.2;
+  vertical-align: 1px;
+  cursor: default;
+}
+.gsq-auto-eta-icon {
+  display: block;
+  flex: 0 0 auto;
+}
 .charge-pct-high { color: var(--green); }
 .charge-pct-mid { color: #c4a000; }
 .charge-pct-low { color: #e07000; }
