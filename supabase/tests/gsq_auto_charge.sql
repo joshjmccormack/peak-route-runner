@@ -150,6 +150,7 @@ values
   (80, 100, interval '2 hours');
 
 \ir ../migrations/20261004103523_gsq_delay_bands_and_service_location.sql
+\ir ../migrations/20261005103000_pending_gsq_auto_charge_eta.sql
 
 do $test$
 #variable_conflict use_column
@@ -172,6 +173,12 @@ declare
   pending_before integer;
   backfill_status text;
   cp_at timestamptz;
+  pending_future integer;
+  visible_eta integer;
+  sample_fleet text;
+  sample_vehicle text;
+  sample_fire timestamptz;
+  eta_matches boolean;
 begin
   if exists (
     select 1
@@ -255,6 +262,29 @@ begin
   perform pg_temp.expect(
     not has_table_privilege('anon', 'private.gsq_auto_charge_delays', 'select'),
     'anon must not read the delay map'
+  );
+  perform pg_temp.expect(
+    has_function_privilege('authenticated', 'public.pending_gsq_auto_charges()', 'execute'),
+    'authenticated must execute the pending GSQ eta function'
+  );
+  perform pg_temp.expect(
+    not has_function_privilege('anon', 'public.pending_gsq_auto_charges()', 'execute'),
+    'anon must not execute the pending GSQ eta function'
+  );
+  perform pg_temp.expect(
+    not has_function_privilege('public', 'public.pending_gsq_auto_charges()', 'execute'),
+    'public must not execute the pending GSQ eta function'
+  );
+  perform pg_temp.expect(
+    (select prosecdef and 'search_path=""' = any(proconfig)
+     from pg_proc
+     where oid = 'public.pending_gsq_auto_charges()'::regprocedure),
+    'pending GSQ eta function must be security definer with an empty search_path'
+  );
+  perform pg_temp.expect(
+    pg_get_function_result('public.pending_gsq_auto_charges()'::regprocedure)
+      = 'TABLE(fleet text, vehicle text, fire_at timestamp with time zone)',
+    'pending GSQ eta function exposes more than fleet, vehicle, and fire_at'
   );
 
   perform set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111111', true);
@@ -693,6 +723,95 @@ begin
     not exists (select 1 from private.gsq_auto_charge_jobs where vehicle = 'CP115' and status = 'pending'),
     'CP115 backfill queued a job after a newer charge'
   );
+
+  select count(*)::integer into pending_future
+  from private.gsq_auto_charge_jobs
+  where status = 'pending' and fire_at > now();
+  perform pg_temp.expect(pending_future > 0, 'fixture should still have a future pending auto-100');
+
+  select j.fleet, j.vehicle, j.fire_at
+  into sample_fleet, sample_vehicle, sample_fire
+  from private.gsq_auto_charge_jobs j
+  where j.status = 'pending' and j.fire_at > now()
+  order by j.fleet, j.vehicle
+  limit 1;
+
+  perform set_config('pinassist.test_role', 'officer', true);
+  begin
+    execute 'set role authenticated';
+    select count(*)::integer into visible_eta from public.pending_gsq_auto_charges();
+    execute 'reset role';
+  exception
+    when others then
+      execute 'reset role';
+      raise;
+  end;
+  perform pg_temp.expect(visible_eta = 0, 'an officer could see pending GSQ auto times');
+
+  perform set_config('pinassist.test_role', 'roc', true);
+  begin
+    execute 'set role authenticated';
+    select count(*)::integer into visible_eta from public.pending_gsq_auto_charges();
+    select exists (
+      select 1
+      from public.pending_gsq_auto_charges() p
+      where p.fleet = sample_fleet
+        and p.vehicle = sample_vehicle
+        and p.fire_at = sample_fire
+    ) into eta_matches;
+    execute 'reset role';
+  exception
+    when others then
+      execute 'reset role';
+      raise;
+  end;
+  perform pg_temp.expect(visible_eta = pending_future, 'ROC pending eta count does not match future pending jobs');
+  perform pg_temp.expect(eta_matches, 'ROC eta fire_at does not match the queued job');
+
+  perform set_config('pinassist.test_role', 'slg', true);
+  select count(*)::integer into visible_eta from public.pending_gsq_auto_charges();
+  perform pg_temp.expect(visible_eta = pending_future, 'SLG pending eta count does not match future pending jobs');
+
+  perform set_config('pinassist.test_role', 'admin', true);
+  select count(*)::integer into visible_eta from public.pending_gsq_auto_charges();
+  perform pg_temp.expect(visible_eta = pending_future, 'admin pending eta count does not match future pending jobs');
+
+  update private.gsq_auto_charge_jobs
+  set fire_at = now() - interval '1 minute'
+  where fleet = sample_fleet and vehicle = sample_vehicle and status = 'pending';
+  select count(*)::integer into visible_eta from public.pending_gsq_auto_charges();
+  perform pg_temp.expect(visible_eta = pending_future - 1, 'a due job was still listed as a pending eta');
+
+  update private.gsq_auto_charge_jobs
+  set fire_at = sample_fire,
+      status = 'cancelled',
+      cancel_reason = 'test',
+      resolved_at = clock_timestamp()
+  where fleet = sample_fleet and vehicle = sample_vehicle;
+  select count(*)::integer into visible_eta from public.pending_gsq_auto_charges();
+  perform pg_temp.expect(visible_eta = pending_future - 1, 'a cancelled job was still listed as a pending eta');
+
+  perform set_config('pinassist.test_role', 'viewer', true);
+  select count(*)::integer into visible_eta from public.pending_gsq_auto_charges();
+  perform pg_temp.expect(visible_eta = 0, 'an unknown role could see pending GSQ auto times');
+
+  begin
+    execute 'set role anon';
+    begin
+      perform 1 from public.pending_gsq_auto_charges();
+      raise exception 'GSQ test failed: anon read pending GSQ auto times';
+    exception
+      when insufficient_privilege then
+        null;
+    end;
+    execute 'reset role';
+  exception
+    when others then
+      execute 'reset role';
+      raise;
+  end;
+
+  perform set_config('pinassist.test_role', 'officer', true);
 
   begin
     execute 'set role authenticated';
