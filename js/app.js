@@ -2193,6 +2193,13 @@ function vehicleLogQuery() {
   return String(box?.value || "").trim().toLowerCase();
 }
 
+const CHARGE_LOG_LOCATIONS = ["oct", "gsq", "service"];
+
+function chargeLogLocationTokens(q) {
+  if (!q) return [];
+  return CHARGE_LOG_LOCATIONS.filter((token) => new RegExp(`\\b${token}\\b`).test(q));
+}
+
 function rowMatchesLogQuery(row, q) {
   if (!q) return true;
   const who = officerDisplayName(row).toLowerCase();
@@ -2292,8 +2299,13 @@ function renderVehicleChargeLog() {
   }
   const q = vehicleLogQuery();
   const grouped = groupVehicleCharges(vehicleChargeRows);
+  // OCT, GSQ, or SERVICE means "what is there now". Other searches still match earlier rows.
+  const locationTokens = chargeLogLocationTokens(q);
+  const locationQuery = locationTokens.length > 0;
   if (q !== lastVehicleLogQuery) {
-    if (q) {
+    if (locationQuery) {
+      expandedVehicleKeys.clear();
+    } else if (q) {
       grouped.forEach((group) => {
         if (group.history.some((row) => rowMatchesLogQuery(row, q))) expandedVehicleKeys.add(group.key);
       });
@@ -2302,6 +2314,10 @@ function renderVehicleChargeLog() {
   }
   const groups = grouped.filter((group) => {
     if (!q) return true;
+    if (locationQuery) {
+      const location = String(group.latest.location || "").trim().toLowerCase();
+      return locationTokens.includes(location);
+    }
     if (rowMatchesLogQuery(group.latest, q)) return true;
     return group.history.some((row) => rowMatchesLogQuery(row, q));
   });
