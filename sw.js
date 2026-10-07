@@ -1,4 +1,4 @@
-const CACHE = "pinassist-v1.28";
+const CACHE = "pinassist-v1.29";
 const CORE = [
   "./",
   "./index.html",
@@ -8,11 +8,14 @@ const CORE = [
   "./js/app.js",
   "./js/supabase-config.js",
   "./js/vehicles.js",
+  "./js/legislation.js",
   "./js/vendor/supabase.js",
+  "./data/parking-offences.json",
   "./icons/peak-routes.png?v=1.11",
   "./icons/run-maps.png?v=1.11",
   "./icons/vehicles.png?v=1.18",
-  "./icons/job-closures.png?v=1.11"
+  "./icons/job-closures.png?v=1.11",
+  "./icons/torum-index.png?v=1.29"
 ];
 
 self.addEventListener("install", (event) => {
@@ -34,6 +37,8 @@ function isAppShell(url) {
     url.pathname.endsWith("/js/app.js") ||
     url.pathname.endsWith("/js/supabase-config.js") ||
     url.pathname.endsWith("/js/vehicles.js") ||
+    url.pathname.endsWith("/js/legislation.js") ||
+    url.pathname.endsWith("/data/parking-offences.json") ||
     url.pathname.endsWith("/js/vendor/supabase.js") ||
     url.pathname.endsWith("/css/app.css") ||
     url.pathname.endsWith("/")

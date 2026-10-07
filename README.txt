@@ -3,7 +3,7 @@ Current app version: v1.1
 Live URL: https://pinassist.app
 GitHub repository: joshjmccormack/peak-route-runner (will be renamed to joshjmccormack/PinAssist later)
 
-PinAssist is the field app for peak routes, run maps, vehicle charges, and job closures. The site is a static PWA on GitHub Pages, served from the site root so it works at https://pinassist.app.
+PinAssist is the field app for peak routes, run maps, vehicle charges, job closures, and the TORUM Index. TORUM Index is an offline home tile for Queensland parking and stopping rules (plain English, then the section cite). Admins see it by default; other roles see it only when an admin ticks TORUM Index for that user. Apply supabase/migrations/20261007123000_show_legislation.sql once on Parking Project. After deploy, hard-refresh so the service worker updates to pinassist-v1.29. The site is a static PWA on GitHub Pages, served from the site root so it works at https://pinassist.app.
 
 ROUTE DATA (SUPABASE)
 ---------------------
