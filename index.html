@@ -19,7 +19,7 @@
 <meta property="og:description" content="PinAssist">
 <meta property="og:url" content="https://pinassist.app/">
 <title>PinAssist</title>
-<link rel="stylesheet" href="css/app.css?v=1.29">
+<link rel="stylesheet" href="css/app.css?v=1.30">
 </head>
 <body class="locked">
 <section id="lockScreen" class="lock-screen">
@@ -74,10 +74,10 @@
     </span>
   </button>
   <button id="openLegislation" class="secondary home-choice home-legislation" type="button">
-    <img class="home-choice-icon" src="icons/torum-index.png?v=1.29" alt="" aria-hidden="true" width="72" height="72">
+    <img class="home-choice-icon" src="icons/torum-index.png?v=1.30" alt="" aria-hidden="true" width="72" height="72">
     <span class="home-choice-copy">
       <strong>TORUM Index</strong>
-      <span>QLD parking / stopping — plain English + section cites</span>
+      <span>Brisbane parking — plain English, then the cite</span>
     </span>
   </button>
   <p id="signedInAs" class="muted signed-in-line"></p>
@@ -233,13 +233,13 @@
 
 <section id="legislation" class="card hidden">
   <h2>TORUM Index</h2>
-  <p class="muted">QLD parking and stopping rules. Plain English first, then the section cite.</p>
+  <p class="muted">Brisbane parking and stopping. Plain English first, then the cite. Council rules and the Road Rules — check the sign.</p>
   <details id="legislationDisclaimer" class="legislation-disclaimer">
     <summary>Field guidance only — not legal advice.</summary>
-    <p>Always verify the current wording and any local law overlays via the official link before enforcement.</p>
+    <p>Brisbane enforcement guidance, not a statewide digest. Verify the official text, local laws, and the sign before you act.</p>
   </details>
   <label class="hidden" for="legislationSearch">Search legislation</label>
-  <input id="legislationSearch" type="search" placeholder="Try yellow line, nature strip, driveway, bus zone…" enterkeyhint="search" autocomplete="off">
+  <input id="legislationSearch" type="search" placeholder="Try commercial loading, wrong way, yellow line, island, mail…" enterkeyhint="search" autocomplete="off">
   <div id="legislationChips" class="legislation-chips" role="group" aria-label="Category"></div>
   <div id="legislationResults" class="legislation-results muted">Loading…</div>
   <article id="legislationDetail" class="legislation-detail hidden"></article>
@@ -390,8 +390,8 @@
 <script src="js/vendor/supabase.js" defer></script>
 <script src="js/supabase-config.js" defer></script>
 <script src="js/vehicles.js?v=1.28" defer></script>
-<script src="js/legislation.js?v=1.29" defer></script>
-<script src="js/app.js?v=1.29" defer></script>
+<script src="js/legislation.js?v=1.30" defer></script>
+<script src="js/app.js?v=1.30" defer></script>
 <div id="resetDialog" class="dialog-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="resetDialogMsg">
   <div class="dialog-card">
     <p id="resetDialogMsg">Reset all completed and skipped locations for this route?</p>

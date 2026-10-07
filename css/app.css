@@ -1163,5 +1163,11 @@ a.legislation-official {
   text-align: center;
   text-decoration: none;
   font-weight: 700;
+  box-sizing: border-box;
+}
+a.legislation-official.secondary {
+  background: #edf3fc;
+  color: #174f98;
+  border: 1px solid #cfdbef;
 }
 .legislation-back { margin-top: 0; }
