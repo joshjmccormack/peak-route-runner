@@ -1669,6 +1669,7 @@ function showLegislation() {
     return;
   }
   showScreen("legislation");
+  window.scrollTo(0, 0);
   if (window.PinLegislation && typeof window.PinLegislation.open === "function") {
     window.PinLegislation.open();
   }
