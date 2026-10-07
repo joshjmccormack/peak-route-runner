@@ -1,4 +1,4 @@
-const CACHE = "pinassist-v1.29";
+const CACHE = "pinassist-v1.30";
 const CORE = [
   "./",
   "./index.html",
@@ -15,7 +15,7 @@ const CORE = [
   "./icons/run-maps.png?v=1.11",
   "./icons/vehicles.png?v=1.18",
   "./icons/job-closures.png?v=1.11",
-  "./icons/torum-index.png?v=1.29"
+  "./icons/torum-index.png?v=1.30"
 ];
 
 self.addEventListener("install", (event) => {

@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "updated": "2026-10-07",
   "instrument": {
     "shortTitle": "Queensland Road Rules",
@@ -7,7 +7,7 @@
     "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194",
     "part": "Part 12 — Restrictions on stopping and parking"
   },
-  "disclaimer": "Field guidance only — not legal advice. Always verify the current wording, amendments, and any local-law overlays via the official Queensland legislation link before enforcement. Emergency and compliance exceptions in Part 12 (e.g. s 165) may also apply.",
+  "disclaimer": "Brisbane parking enforcement guidance only — not legal advice and not a full statewide digest. Road Rules and TORUM cites support these cards; Brisbane local laws and Council published rules overlay them, including commercial loading zones. Verify the official text and the sign before enforcement.",
   "categories": [
     {
       "id": "signs_lines",
@@ -88,10 +88,13 @@
     {
       "id": "rr-169-yellow-edge",
       "title": "Yellow continuous edge line",
-      "plainEnglish": "Do not stop at the side of a road marked with a continuous yellow edge line. Treat it like a painted no-stopping control along that edge.",
+      "plainEnglish": "Do not stop at the side of a road marked with a continuous yellow edge line. Treat the yellow line as no stopping along that side. A reference to a road includes a road-related area unless a section says otherwise (ss 11 and 13), so the side can include the shoulder and the area beyond the line, such as the nature strip. Stopping on the nature strip, footpath, painted island, or traffic island can also be s 197. Brisbane has not published a different yellow-line rule.",
       "exceptions": [
-        "Applies to a continuous yellow edge line at the side of the road — broken/other markings are different rules.",
-        "Confirm the vehicle is stopped at the marked side of the road (not merely near yellow elsewhere)."
+        "The offence is stopping at the side of a road marked with a continuous yellow edge line.",
+        "ss 11 and 13: “road” includes a road-related area — a footpath or nature strip beside the road, and the shoulder. On a sealed road the shoulder includes the sealed area outside an edge line.",
+        "If the vehicle is on the nature strip or footpath, also open the s 197 card. Painted island and traffic island are their own cards.",
+        "A broken yellow line or another marking is a different rule.",
+        "Part 12 defences (s 165) and named Part 19 exemptions are not a general Brisbane permit. Open the exemptions card and check the section actually covers this stop."
       ],
       "keywords": [
         "yellow line",
@@ -99,7 +102,29 @@
         "continuous yellow",
         "kerb line",
         "no stopping yellow",
-        "edge line"
+        "edge line",
+        "nature strip",
+        "beyond the line",
+        "shoulder",
+        "brisbane"
+      ],
+      "sources": [
+        {
+          "label": "Road Rules s 169 — yellow edge line",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.169"
+        },
+        {
+          "label": "Road Rules s 11 — road includes a road-related area",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.11"
+        },
+        {
+          "label": "Road Rules s 13 — road-related area",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.13"
+        },
+        {
+          "label": "Road Rules s 197 — path, nature strip, islands",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.197"
+        }
       ],
       "tags": [
         "line",
@@ -139,12 +164,13 @@
     },
     {
       "id": "rr-197-path-nature-strip",
-      "title": "Path, nature strip, footpath or island",
-      "plainEnglish": "Do not stop on a bicycle path, footpath, shared path, dividing strip, or a nature strip next to a road in a built-up area, unless a parking control sign applies and stopping is permitted there. Also do not stop on a painted island or a traffic island.",
+      "title": "Path, nature strip or footpath",
+      "plainEnglish": "Do not stop on a bicycle path, footpath, shared path, dividing strip, or a nature strip next to a road in a built-up area, unless a parking control sign applies and the Road Rules allow that stop. Painted islands and traffic islands are separate bans with no sign exception — use those cards. Beyond a continuous yellow edge line, also check s 169 (the “side” of the road can include the nature strip under ss 11 and 13).",
       "exceptions": [
-        "Parking control sign applies and stopping is permitted under the Road Rules at that place.",
-        "The path, nature strip, and traffic-island bans do not apply to the rider of a bicycle, personal mobility device, or animal (s 197(2)). The painted-island ban still applies to those riders.",
-        "Nature-strip rule is about a nature strip adjacent to a length of road in a built-up area."
+        "The parking-control-sign exception is only for the path, dividing strip, and nature strip (s 197(1)). It does not apply to a painted island (s 197(1A)) or a traffic island (s 197(1B)).",
+        "s 197(2): the path, nature strip, and traffic-island bans do not apply to the rider of a bicycle, personal mobility device, or animal. The painted-island ban still applies to those riders.",
+        "The nature-strip rule is a nature strip adjacent to a length of road in a built-up area.",
+        "Brisbane has not published a looser footpath or nature-strip rule."
       ],
       "keywords": [
         "nature strip",
@@ -153,10 +179,28 @@
         "grass",
         "shared path",
         "bicycle path",
-        "painted island",
-        "traffic island",
         "dividing strip",
-        "parked on footpath"
+        "parked on footpath",
+        "yellow line",
+        "brisbane"
+      ],
+      "sources": [
+        {
+          "label": "Road Rules s 197 — path, nature strip, islands",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.197"
+        },
+        {
+          "label": "Road Rules s 169 — yellow edge line",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.169"
+        },
+        {
+          "label": "Road Rules s 11 — road includes a road-related area",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.11"
+        },
+        {
+          "label": "Road Rules s 13 — road-related area",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.13"
+        }
       ],
       "tags": [
         "path",
@@ -164,6 +208,73 @@
       ],
       "regCite": "Queensland Road Rules s 197",
       "section": 197,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.197",
+      "category": "path_access",
+      "penaltyNote": "Maximum penalty — 20 penalty units (verify current)."
+    },
+    {
+      "id": "rr-197-painted-island",
+      "title": "Painted island",
+      "plainEnglish": "Do not stop on a painted island (Road Rules s 197(1A)). A painted island is paint on the road — stripes or chevrons, edged by a line or lines, and sometimes also by a kerb. It is not a raised structure. There is no parking-sign exception, and the ban still applies to bicycles, personal mobility devices, and ridden animals. A traffic island is the structure, under s 197(1B). Brisbane has not published a looser island rule.",
+      "exceptions": [
+        "Painted island means an area of road with contrasting stripes or chevrons, surrounded by a line or lines, or partly by lines and partly by a kerb or a structure. It is not a traffic island.",
+        "s 197(1A) is a straight ban. The parking-control-sign exception in s 197(1) does not apply.",
+        "s 197(2) drops the path, nature strip, and traffic-island bans for a bicycle, personal mobility device, or animal. It does not drop the painted-island ban.",
+        "Driving on the lines around a painted island can be a different offence (s 138). This card is about stopping.",
+        "A slip lane is separated by a painted island or traffic island. Stopping in the slip lane is s 203A, not this card.",
+        "Brisbane Council has not published a different painted-island rule. Do not treat chevrons as a loading spot."
+      ],
+      "keywords": [
+        "island",
+        "painted island",
+        "chevrons",
+        "stripes",
+        "painted chevron",
+        "ghost island",
+        "stop on paint",
+        "traffic island",
+        "brisbane"
+      ],
+      "tags": [
+        "path",
+        "island",
+        "high-frequency"
+      ],
+      "regCite": "Queensland Road Rules s 197(1A)",
+      "section": "197(1A)",
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.197",
+      "category": "path_access",
+      "penaltyNote": "Maximum penalty — 20 penalty units (verify current)."
+    },
+    {
+      "id": "rr-197-traffic-island",
+      "title": "Traffic island",
+      "plainEnglish": "Do not stop on a traffic island (Road Rules s 197(1B)). A traffic island is a structure on the road to direct traffic, such as a kerbed pedestrian refuge. It is not paint and not a road marking. There is no parking-sign exception. Riders of bicycles, personal mobility devices, and animals are not covered by this ban. They are still banned from a painted island. Brisbane has not published a different traffic-island rule.",
+      "exceptions": [
+        "Traffic island means a structure on a road to direct traffic. It does not include a road marking or a painted island.",
+        "s 197(1B) is a straight ban. The parking-control-sign exception in s 197(1) does not apply.",
+        "s 197(2): this ban does not apply to the rider of a bicycle, a personal mobility device, or an animal. The painted-island ban still does.",
+        "Driving on a traffic island (other than a roundabout island designed to be driven on) can be s 290. This card is about stopping.",
+        "Brisbane Council has not published a different traffic-island rule. A refuge or kerbed island is not a loading spot."
+      ],
+      "keywords": [
+        "island",
+        "traffic island",
+        "pedestrian refuge",
+        "kerbed island",
+        "concrete island",
+        "median island",
+        "stop on island",
+        "painted island",
+        "brisbane"
+      ],
+      "tags": [
+        "path",
+        "island",
+        "high-frequency"
+      ],
+      "regCite": "Queensland Road Rules s 197(1B)",
+      "section": "197(1B)",
       "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.197",
       "category": "path_access",
       "penaltyNote": "Maximum penalty — 20 penalty units (verify current)."
@@ -198,23 +309,49 @@
     },
     {
       "id": "rr-179-loading-zone",
-      "title": "Loading zone",
-      "plainEnglish": "Do not stop in a loading zone unless you fit an allowed category (passenger drop-off/pick-up, goods drop-off/pick-up, authorised commercial vehicle label, bus/truck as permitted) and you stay only for the allowed time — follow the sign if it shows a different time.",
+      "title": "Loading zone — Road Rules s 179",
+      "plainEnglish": "If the sign is a Brisbane commercial vehicle loading zone, use that card first. Council’s published rules are the field answer there, and they are tighter than “any other vehicle with goods for 20 minutes”. This card is the Road Rules offence for a standard loading zone. A driver must not stop unless they are one of the four kinds below, and only for the time that kind is allowed.",
       "exceptions": [
-        "Passenger drop-off/pick-up — typically max 2 minutes (5 minutes if dropping off/picking up a person with a disability) — confirm current s 179.",
-        "Goods drop-off/pick-up — typically max 20 minutes unless the sign says otherwise.",
-        "Commercial vehicle identification label issued for that area — typically max 30 minutes unless the sign says otherwise.",
-        "Bus / truck dropping off or picking up passengers or goods — typically max 30 minutes unless the sign says otherwise.",
-        "Always prefer times printed on the loading zone sign."
+        "Bus dropping off or picking up passengers — 30 minutes, or the time on the loading zone sign (s 179(1)(a) and (2)).",
+        "Truck dropping off or picking up passengers or goods — 30 minutes, or the time on the sign (s 179(1)(b) and (2)).",
+        "Motor vehicle displaying a commercial vehicle ID label issued by the local government for the area the zone is in — 30 minutes, or the time on the sign (s 179(1)(c) and (2)). In Brisbane that is a Brisbane label, not another council’s. See TORUM Act Sch 4 and Chapter 14.",
+        "Any other motor vehicle dropping off or picking up goods — 20 minutes, or the time on the sign (s 179(1)(d)(i) and (2A)).",
+        "Any other motor vehicle dropping off or picking up passengers — 2 minutes, or 5 minutes if dropping off or picking up a person with a disability (s 179(1)(d)(ii) and (2B)). The passenger limb does not say “or the time on the sign”.",
+        "A person with a disability includes someone with an intellectual, cognitive, or physical impairment who needs help getting in or out of the vehicle.",
+        "Brisbane commercial loading zone: do not apply the “any other motor vehicle, goods, 20 minutes” limb as the field answer. Without a permit, Council allows a goods vehicle (ute, including dual cab, or truck) loading or unloading, or a passenger vehicle with the back seats and seat belts removed, up to 20 minutes. A taxi or limousine may only drop off or pick up passengers for 2 minutes and must not wait. An Uber Eats sedan with seats in and no label needs a permit.",
+        "Chapter 14 is Brisbane’s label scheme for a people-carrying vehicle. It does not rewrite s 179.",
+        "Australia Post postal vehicles may be exempt from s 179 under s 313. A private courier is not. Open the mail card."
       ],
       "keywords": [
         "loading zone",
         "loading",
         "goods",
         "commercial vehicle",
+        "commercial loading",
         "CV label",
         "30 minutes",
-        "20 minutes"
+        "20 minutes",
+        "2 minutes",
+        "disability",
+        "brisbane",
+        "uber",
+        "sedan",
+        "food delivery",
+        "permit"
+      ],
+      "sources": [
+        {
+          "label": "Road Rules s 179 — loading zone",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.179"
+        },
+        {
+          "label": "Brisbane: commercial vehicles and loading zones",
+          "url": "https://www.brisbane.qld.gov.au/transport-and-parking/parking/parking-in-brisbane/commercial-vehicles--trucks-and-motorcycles"
+        },
+        {
+          "label": "Brisbane: commercial vehicle parking permits",
+          "url": "https://www.brisbane.qld.gov.au/laws-and-permits/licences-permits-regulations/commercial-vehicle-parking-permits"
+        }
       ],
       "tags": [
         "zone",
@@ -225,6 +362,137 @@
       "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.179",
       "category": "zones",
       "penaltyNote": "Maximum penalty — 20 penalty units (verify current)."
+    },
+    {
+      "id": "bcc-commercial-loading-zone",
+      "title": "Commercial loading zone (Brisbane)",
+      "plainEnglish": "On a Brisbane commercial vehicle loading zone, Council’s published rule is the field answer. Without a permit, and for no more than 20 minutes, only a goods vehicle loading or unloading (a ute, including a dual cab, or a truck) or a passenger vehicle with the back seats and the seat belts removed may stop. TMR registration type does not turn a sedan into a goods vehicle. A taxi or limousine may only drop off or pick up passengers for 2 minutes and must not wait. Everyone else needs a commercial vehicle parking permit. An Uber Eats or other food-delivery sedan with the seats still in and no commercial label is not a TORUM Schedule 4 commercial vehicle and needs a permit. Do not use the Road Rules “any other vehicle with goods, 20 minutes” allowance on that signed commercial zone. Council has not replaced s 179 for a standard loading zone.",
+      "exceptions": [
+        "No permit, up to 20 minutes: a commercial vehicle loading or unloading goods. Council describes that as a vehicle constructed, fitted, or equipped to carry goods — a ute, including a dual cab, or a truck.",
+        "No permit, up to 20 minutes: a passenger vehicle modified for commercial use. Council’s test is that the back seats and the seat belts are removed. Registration with TMR does not change this.",
+        "Taxi or limousine: passenger drop-off or pick-up only, 2 minutes. Must not wait or park.",
+        "Otherwise a commercial vehicle parking permit is required: a plain sedan, a passenger-only vehicle, a taxi waiting for a passenger, and any other vehicle not in the permit-free list.",
+        "Uber Eats / food delivery: a sedan with the seats still in and no commercial ID label is not a Schedule 4 commercial vehicle (a car is excluded from the goods limb, and there is no approved label). On a Brisbane commercial loading zone it needs a permit.",
+        "Read the sign. Council says the sign controls the conditions and the time limit.",
+        "Chapter 14 is the local-law label and approval scheme for a people-carrying vehicle (TORUM Act s 103(5) and the Manual of Uniform Traffic Control Devices). It is not a rewrite of Road Rules s 179.",
+        "Road Rules s 179 still sets out who may stop in a standard loading zone, and for how long. Use that card when the sign is a standard loading zone. Do not use s 179(1)(d)(i) to override a Brisbane commercial loading zone."
+      ],
+      "keywords": [
+        "loading zone",
+        "commercial loading",
+        "commercial vehicle",
+        "brisbane",
+        "permit",
+        "ute",
+        "dual cab",
+        "truck",
+        "sedan",
+        "uber",
+        "uber eats",
+        "food delivery",
+        "seats",
+        "seat belts",
+        "taxi",
+        "limousine",
+        "20 minutes",
+        "label",
+        "chapter 14",
+        "local law"
+      ],
+      "tags": [
+        "brisbane",
+        "commercial",
+        "local-law",
+        "zone",
+        "high-frequency"
+      ],
+      "regCite": "Brisbane City Council — commercial vehicle loading zones (Road Rules s 179 and TORUM Act Sch 4 support this)",
+      "section": "BCC",
+      "officialUrl": "https://www.brisbane.qld.gov.au/transport-and-parking/parking/parking-in-brisbane/commercial-vehicles--trucks-and-motorcycles",
+      "sources": [
+        {
+          "label": "Brisbane: commercial vehicles and loading zones",
+          "url": "https://www.brisbane.qld.gov.au/transport-and-parking/parking/parking-in-brisbane/commercial-vehicles--trucks-and-motorcycles"
+        },
+        {
+          "label": "Brisbane: commercial vehicle parking permits",
+          "url": "https://www.brisbane.qld.gov.au/laws-and-permits/licences-permits-regulations/commercial-vehicle-parking-permits"
+        },
+        {
+          "label": "Brisbane Chapter 14 — parking local law (label scheme)",
+          "url": "https://www.brisbane.qld.gov.au/content/dam/brisbanecitycouncil/corpwebsite/laws-and-permits-/documents/chapter-14-parking-and-control-of-traffic-local-law.pdf"
+        },
+        {
+          "label": "Road Rules s 179 — loading zone",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.179"
+        },
+        {
+          "label": "TORUM Act Schedule 4 — commercial vehicle",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/act-1995-009#sch.4"
+        }
+      ],
+      "category": "zones",
+      "penaltyNote": "Where Road Rules s 179 is the offence, the maximum is 20 penalty units (verify current). Brisbane permit conditions are separate — check the sign and Council’s permit rules."
+    },
+    {
+      "id": "torum-sch4-commercial-vehicle",
+      "title": "Commercial vehicle — TORUM Sch 4",
+      "plainEnglish": "For a loading zone, TORUM Act Schedule 4 “commercial vehicle” is not “any vehicle doing a job”. It is a horse-drawn vehicle built to carry goods; or a motor vehicle that is not a car or motorbike and is built to carry goods; or a vehicle built to carry people that displays an approved commercial ID label issued under a local law made under s 103(5) and matching the Manual of Uniform Traffic Control Devices. A car is excluded from the goods limb. An Uber Eats or food-delivery sedan with the seats still in and no label is not a Schedule 4 commercial vehicle. On a Brisbane commercial loading zone, Council’s published permit rules are the field answer — Schedule 4 does not make that sedan permit-free.",
+      "exceptions": [
+        "Horse-drawn vehicle constructed, fitted, or equipped to carry goods.",
+        "Motor vehicle, excluding a car or motorbike, constructed, fitted, or equipped to carry goods.",
+        "People-carrying motor vehicle with a commercial ID label issued by a local government under a local law made under TORUM Act s 103(5), and matching the Manual of Uniform Traffic Control Devices.",
+        "Brisbane Chapter 14 is that label and approval scheme for a people-carrying vehicle. It does not rewrite Road Rules s 179.",
+        "Brisbane Council’s commercial loading zone page uses its own goods-vehicle test (ute, including dual cab, or truck) and treats a passenger vehicle as commercial only if the back seats and seat belts are removed. A sedan with seats in still needs a permit on that signed zone.",
+        "This is a definition used for loading zones. It is not a charge by itself. The stopping offence is s 179, read with the Brisbane commercial loading zone card when that sign applies."
+      ],
+      "keywords": [
+        "commercial vehicle",
+        "schedule 4",
+        "sch 4",
+        "loading zone",
+        "commercial loading",
+        "label",
+        "MUTCD",
+        "ute",
+        "car",
+        "motorbike",
+        "sedan",
+        "uber",
+        "uber eats",
+        "food delivery",
+        "brisbane",
+        "chapter 14",
+        "s 103"
+      ],
+      "tags": [
+        "brisbane",
+        "commercial",
+        "local-law"
+      ],
+      "regCite": "TORUM Act 1995 Schedule 4 — commercial vehicle, for stopping in a loading zone",
+      "section": "Sch 4",
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/act-1995-009#sch.4",
+      "sources": [
+        {
+          "label": "TORUM Act Schedule 4 (legislation.qld.gov.au)",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/act-1995-009#sch.4"
+        },
+        {
+          "label": "TORUM Act Schedule 4 dictionary (AustLII)",
+          "url": "https://www5.austlii.edu.au/au/legis/qld/consol_act/touma1995434/sch4.html"
+        },
+        {
+          "label": "Brisbane: commercial vehicles and loading zones",
+          "url": "https://www.brisbane.qld.gov.au/transport-and-parking/parking/parking-in-brisbane/commercial-vehicles--trucks-and-motorcycles"
+        },
+        {
+          "label": "Road Rules s 179 — loading zone",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.179"
+        }
+      ],
+      "category": "zones",
+      "penaltyNote": "Definition for loading-zone use — not a standalone offence. The stopping offence is Road Rules s 179, read with Brisbane’s commercial loading zone rules when that sign applies."
     },
     {
       "id": "rr-183-bus-zone",
@@ -472,6 +740,398 @@
       "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.203A",
       "category": "other",
       "penaltyNote": "Maximum penalty — 20 penalty units (verify current)."
+    },
+    {
+      "id": "rr-208-wrong-direction",
+      "title": "Facing the wrong way",
+      "plainEnglish": "In Brisbane, a vehicle facing the wrong way is Road Rules s 208. Council has not published a separate wrong-way rule. On a two-way road, park parallel on the far left, nose with the traffic on that side. The opposite kerb — the right-hand side — is not allowed. On a one-way road, either kerb is allowed unless a sign says otherwise, but the vehicle must still face the direction of travel. If nothing is moving, use the direction vehicles ordinarily travel there. A signed angle bay is s 210, not this card. On a nature strip, direction is s 208A, and the stop may also be s 197.",
+      "exceptions": [
+        "Direction (s 208(2)): face the traffic in the lane or line next to where the vehicle is parked. If there is no traffic, face the direction vehicles ordinarily travel on or next to that part of the road.",
+        "Two-way road (s 208(3)): also parallel, and as near as practicable, to the far left side. Against traffic on the left, or parked at the opposite kerb, is this section.",
+        "One-way road (s 208(4)): far left or far right, unless a parking sign says otherwise. Nose against the one-way arrows is still wrong. Check the arrows on Brisbane one-way streets.",
+        "s 208 does not apply where a sign or marking says angle parking, or to a motorbike in a signed motorbike area (s 208(9)). Angle bays are s 210, including any rear-in or front-in words.",
+        "A motorbike may put one wheel as near as practicable to the far left or far right instead of the kerb-side rules (s 208(10)). It must still face the right direction unless s 208(9) applies.",
+        "For s 208, “road” includes the shoulder and does not include a road-related area. Nature strip, footpath, or other road-related area: direction is s 208A. Stopping there may also be s 197.",
+        "Median-strip parallel bays (s 209) must face the traffic to the driver’s left.",
+        "A service road is its own road (s 208(11)). Match that service road, not the main carriageway beside it.",
+        "A Brisbane commercial loading zone, a permit, or a short stop does not excuse facing against traffic. Part 12 defences are only the circumstances on the exemptions card."
+      ],
+      "keywords": [
+        "wrong way",
+        "wrong direction",
+        "against traffic",
+        "facing wrong direction",
+        "opposite kerb",
+        "facing oncoming",
+        "parallel park",
+        "one way",
+        "one-way",
+        "right hand side",
+        "nose the wrong way",
+        "brisbane"
+      ],
+      "tags": [
+        "other",
+        "high-frequency",
+        "brisbane"
+      ],
+      "regCite": "Queensland Road Rules s 208(2) — direction when parallel parking. Kerbside position is s 208(3) and (4). Road-related areas are s 208A. Median strip parallel bays are s 209.",
+      "section": 208,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.208",
+      "sources": [
+        {
+          "label": "Road Rules s 208 — parallel parking on a road",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.208"
+        },
+        {
+          "label": "Road Rules s 208A — road-related area",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.208A"
+        },
+        {
+          "label": "Road Rules s 209 — median strip parallel parking",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.209"
+        },
+        {
+          "label": "Road Rules s 210 — angle parking",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.210"
+        }
+      ],
+      "category": "other",
+      "penaltyNote": "Maximum penalty — 20 penalty units (verify current)."
+    },
+    {
+      "id": "rr-exemptions-check",
+      "title": "Stopping exemptions — what to check",
+      "plainEnglish": "An exemption is not a free park in Brisbane. Check the sign, that the person is actually doing the authorised job now, and that the section you are using covers this stop. Road Rules s 165 is a Part 12 defence for an emergency, a breakdown, or complying with another rule, and only for as long as necessary. Named Part 19 exemptions each have their own limits. Cash-in-transit and NBN are not blanket exemptions. A Brisbane Council commercial bay still follows Council’s published permit rules unless the exemption actually covers that stop.",
+      "exceptions": [
+        "Mail / Australia Post — s 313, and only the listed sections. A private courier is not a postal vehicle.",
+        "Cash transit / armoured vehicle — no Part 12 stopping exemption. s 213(7) only relaxes locking up and switching off while the driver is on duty.",
+        "Telecommunications / NBN — not a named exemption. s 310 applies only if the work is roadworks, at the site, and the other tests are met.",
+        "Police and emergency vehicles — s 307, for Part 12, if the driver is taking reasonable care and it is reasonable that the rule should not apply.",
+        "Garbage, waste, and recycling trucks — s 313A. It does not cover s 197 (paths, nature strips, painted islands, or traffic islands).",
+        "Tow trucks — s 312, while loading a crash, disabled, or authorised tow, with a flashing light, and acting safely.",
+        "What to check: sign and times; identity or credentials; work happening now, not a van left while someone is inside; whether this section is in the exemption list; how long the stop needs to be.",
+        "Brisbane commercial loading zone: do not treat a vest, a magnet, or “on a job” as a permit. Open that card."
+      ],
+      "keywords": [
+        "exemption",
+        "exemptions",
+        "exception",
+        "authorised",
+        "authorized",
+        "mail",
+        "australia post",
+        "auspost",
+        "cash",
+        "armoured",
+        "armored",
+        "telecom",
+        "nbn",
+        "telecommunications",
+        "emergency",
+        "garbage",
+        "tow",
+        "brisbane"
+      ],
+      "tags": [
+        "exemption",
+        "brisbane"
+      ],
+      "regCite": "Queensland Road Rules Part 12 defence (s 165) and Part 19 exemptions",
+      "section": "Pt 19",
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.165",
+      "sources": [
+        {
+          "label": "Road Rules s 165 — emergency or compliance stop",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.165"
+        },
+        {
+          "label": "Road Rules s 307 — police and emergency vehicles",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.307"
+        },
+        {
+          "label": "Road Rules s 310 — road workers",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.310"
+        },
+        {
+          "label": "Road Rules s 313 — postal vehicles",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.313"
+        }
+      ],
+      "category": "other",
+      "penaltyNote": "Guidance only. An exemption is a defence or a disapplied section, not a new offence."
+    },
+    {
+      "id": "rr-165-emergency-stop",
+      "title": "Emergency or compliance stop",
+      "plainEnglish": "Part 12 (the stopping and parking rules) has a defence if the stop is to avoid a collision, because the vehicle is disabled, to deal with a medical or other emergency or to help a disabled vehicle, because the driver, a passenger, or the vehicle makes it necessary for safety, or to comply with another Road Rules provision. Stop only for as long as necessary. It is not a works pass, a delivery pass, or permission to sit in a Brisbane Council commercial bay.",
+      "exceptions": [
+        "Avoiding a collision — no longer than necessary to avoid it.",
+        "Disabled vehicle — no longer than necessary to move it to a place where it may be parked.",
+        "Medical or other emergency, or assisting a disabled vehicle — no longer than necessary in the circumstances.",
+        "Condition of the driver, a passenger, or the vehicle makes the stop necessary for safety — no longer than necessary.",
+        "Complying with another provision of the Road Rules, such as stopping at a stop line. The example in s 165 is that this is not “stopping in an intersection” under s 170.",
+        "Check that one of those reasons is real and current. A job, a phone call, or “I’ll only be a minute” is not s 165.",
+        "Brisbane: s 165 does not replace Council’s commercial loading zone permit rules."
+      ],
+      "keywords": [
+        "exemption",
+        "defence",
+        "defense",
+        "emergency",
+        "breakdown",
+        "disabled",
+        "collision",
+        "medical",
+        "compliance",
+        "s 165",
+        "part 12",
+        "brisbane"
+      ],
+      "tags": [
+        "exemption"
+      ],
+      "regCite": "Queensland Road Rules s 165",
+      "section": 165,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.165",
+      "category": "other",
+      "penaltyNote": "Defence to a Part 12 offence when the facts fit — not a penalty provision."
+    },
+    {
+      "id": "rr-307-police-emergency",
+      "title": "Police and emergency vehicles",
+      "plainEnglish": "A provision of Part 12 does not apply to the driver of a police vehicle or an emergency vehicle if the driver is taking reasonable care and it is reasonable that the provision should not apply. Check that the vehicle is on duty and that the stop is part of that work. An unmarked car parked off duty is not this exemption. It does not hand a Brisbane Council commercial bay to a private vehicle.",
+      "exceptions": [
+        "Police vehicle: driven by a police officer of the Queensland, Commonwealth, or another State police service, in the course of duty.",
+        "Both tests: reasonable care, and it is reasonable that the Part 12 rule should not apply.",
+        "The exemption is Part 12 only. It is not a reason to ignore a sign once the job no longer needs the stop.",
+        "Brisbane commercial loading zone rules are for commercial vehicles and permits. They are not an extra restriction you invent for police or emergency vehicles that meet s 307."
+      ],
+      "keywords": [
+        "exemption",
+        "police",
+        "emergency",
+        "ambulance",
+        "fire",
+        "qfes",
+        "qas",
+        "on duty",
+        "brisbane"
+      ],
+      "tags": [
+        "exemption"
+      ],
+      "regCite": "Queensland Road Rules s 307",
+      "section": 307,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.307",
+      "category": "other",
+      "penaltyNote": "Exemption from Part 12 when both tests are met — verify the current section."
+    },
+    {
+      "id": "rr-310-telecom-roadworks",
+      "title": "Telecommunications, NBN and roadworks",
+      "plainEnglish": "NBN, Telstra, and other telecommunications work is not a named stopping exemption. Road Rules s 310 can disapply Part 12 only for a person at the site of, and engaged in, roadworks, where it is not practicable to comply and sufficient warning has been given to other road users. Roadworks means road or road-transport construction or maintenance, road cleaning, installing or maintaining a traffic control device or traffic monitoring device, or a road surface survey. A van parked while a technician is inside a building is not that. Brisbane’s one-hour limit for heavy or long vehicles near homes has its own utility-works note — that is not permission to stop on a yellow line, an island, or in a Council commercial bay.",
+      "exceptions": [
+        "At the site, and actually engaged in the roadworks. Not parked nearby for convenience.",
+        "Not practicable to comply with the provision, and sufficient warning to other road users (signs, cones, lights — whatever the scene needs).",
+        "If those tests are met, s 310 disapplies Part 12, including stopping rules.",
+        "Telecommunications or NBN is covered only when the work itself fits the roadworks definition. A service call, a pit inspection with no roadworks, or a coil of cable in a passenger car does not.",
+        "A signed works zone is s 181: the vehicle must be engaged in construction work in or near the zone. That is separate from s 310.",
+        "Brisbane heavy and long vehicles: installing utility services can be relevant to the residential one-hour limit under Council’s heavy-vehicle rules. It does not clear a yellow edge line, a painted or traffic island, or a commercial loading zone.",
+        "Check credentials and that the work is happening now."
+      ],
+      "keywords": [
+        "exemption",
+        "telecom",
+        "telecommunications",
+        "nbn",
+        "telstra",
+        "optus",
+        "utility",
+        "roadworks",
+        "road work",
+        "works zone",
+        "cones",
+        "brisbane"
+      ],
+      "tags": [
+        "exemption",
+        "brisbane"
+      ],
+      "regCite": "Queensland Road Rules s 310 (roadworks). Telecommunications is not a separate exemption.",
+      "section": 310,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.310",
+      "sources": [
+        {
+          "label": "Road Rules s 310 — road workers",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.310"
+        },
+        {
+          "label": "Road Rules s 181 — works zone",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.181"
+        },
+        {
+          "label": "Brisbane: heavy and long vehicles (different rule)",
+          "url": "https://www.brisbane.qld.gov.au/transport-and-parking/parking/parking-in-brisbane/commercial-vehicles--trucks-and-motorcycles"
+        }
+      ],
+      "category": "other",
+      "penaltyNote": "s 310 disapplies listed rules only when the roadworks tests are met. It is not a penalty provision."
+    },
+    {
+      "id": "rr-312-tow-truck",
+      "title": "Tow truck at a pickup",
+      "plainEnglish": "A tow truck driver has a defence to Part 12 only while loading or connecting a vehicle at a crash, a disabled vehicle, or a vehicle they are authorised to tow because it is unsafely or unlawfully parked. They must be unable to comply, the truck must be displaying a flashing light, and they must be acting safely. Hooked up and driving off ends the reason to stay. It is not a permit for a Brisbane Council commercial bay.",
+      "exceptions": [
+        "Engaged in loading or connecting the vehicle, unable to comply, flashing light on, acting safely.",
+        "The vehicle is at a crash, disabled, or being towed under an authority in the Act or the Heavy Vehicle National Law.",
+        "The defence covers Part 12. It does not cover waiting for a job in a no-stopping area.",
+        "Brisbane: a tow truck is not permit-free on a commercial loading zone just because it is a tow truck."
+      ],
+      "keywords": [
+        "exemption",
+        "tow",
+        "tow truck",
+        "breakdown",
+        "crash",
+        "hook",
+        "brisbane"
+      ],
+      "tags": [
+        "exemption"
+      ],
+      "regCite": "Queensland Road Rules s 312",
+      "section": 312,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.312",
+      "category": "other",
+      "penaltyNote": "Defence for the tow truck driver when the pickup tests are met — verify the current section."
+    },
+    {
+      "id": "rr-313-postal",
+      "title": "Mail delivery — Australia Post",
+      "plainEnglish": "Australia Post delivery can stop where some other vehicles cannot, and only on the sections s 313 lists. The driver must be an Australia Post employee or contractor delivering letter mail and parcels, and must be driving in the course of that work. A private courier, an Uber, or a food-delivery sedan is not a postal vehicle. The exemption does not cover a yellow edge line, a clearway, a no-stopping sign, a bus stop, a painted island, or a traffic island. On a Brisbane commercial loading zone, s 313 can disapply the Road Rules loading-zone offence. It is not Council’s permit. Confirm it is Australia Post, doing delivery now.",
+      "exceptions": [
+        "Postal vehicle: driven by a postal worker in the course of postal duties. Postal worker means a person who delivers letter mail and parcels in Australia as an employee or contractor of Australia Post.",
+        "s 313(2) disapplies only: s 179 loading zone, s 180 truck zone, s 182 taxi zone, s 185 permit zone, s 186 mail zone, s 189 double parking, and s 198 driveway or footpath access.",
+        "It does not disapply s 167 no stopping, s 169 yellow edge line, s 176 clearway, s 195 bus stop, or s 197 paths, nature strips, painted islands, or traffic islands.",
+        "A postal motorbike of 125 mL or less may use a path or nature strip under s 313(3) only at 10 km/h or less, without danger or obstruction, and with reasonable care. That is moving, not a parking pass.",
+        "Brisbane commercial loading zone: do not treat a courier magnet as Australia Post. If it is a real postal vehicle doing delivery, s 179 may not apply — still read the sign and do not assume a Council permit exemption the section does not give.",
+        "Check the work is happening now, not a vehicle left while the driver is off the street."
+      ],
+      "keywords": [
+        "exemption",
+        "mail",
+        "australia post",
+        "auspost",
+        "postal",
+        "postie",
+        "parcel",
+        "letter",
+        "courier",
+        "loading zone",
+        "commercial loading",
+        "brisbane"
+      ],
+      "tags": [
+        "exemption",
+        "brisbane"
+      ],
+      "regCite": "Queensland Road Rules s 313",
+      "section": 313,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.313",
+      "sources": [
+        {
+          "label": "Road Rules s 313 — postal vehicles",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.313"
+        },
+        {
+          "label": "Brisbane: commercial vehicles and loading zones",
+          "url": "https://www.brisbane.qld.gov.au/transport-and-parking/parking/parking-in-brisbane/commercial-vehicles--trucks-and-motorcycles"
+        }
+      ],
+      "category": "other",
+      "penaltyNote": "Exemption from the listed sections only — verify the current section."
+    },
+    {
+      "id": "rr-313a-garbage",
+      "title": "Garbage, waste and recycling trucks",
+      "plainEnglish": "A garbage truck, waste truck, or recycling collection vehicle can be exempt from most Part 12 stopping rules while it is collecting, if it is not practicable to comply, a flashing light is on, and the driver is acting safely. The exemption does not cover s 197, so it is not a pass to stop on a path, nature strip, painted island, or traffic island. It also does not cover a freeway, a bridge or tunnel, or a level crossing. A truck parked between runs is not collecting. Staging in a Council commercial bay between jobs is not this card.",
+      "exceptions": [
+        "Driver is engaged in collecting garbage, waste, or goods for recycling.",
+        "Not practicable to comply, flashing light displayed, driver acting safely.",
+        "Does not apply to s 175 level crossing, s 177 freeway, s 178 emergency stopping lane, s 192 bridge or tunnel, s 196 tram stop, or s 197 (path, dividing strip, nature strip, painted island, or traffic island).",
+        "s 213(7) separately lets a waste vehicle leave the cab to empty wheelie bins without the engine-off and lock-up steps. That is not the stopping exemption.",
+        "Brisbane: collection in progress is the test. Staging on a yellow line or in a Council commercial bay between jobs is not this card."
+      ],
+      "keywords": [
+        "exemption",
+        "garbage",
+        "rubbish",
+        "waste",
+        "recycling",
+        "wheelie bin",
+        "brisbane"
+      ],
+      "tags": [
+        "exemption"
+      ],
+      "regCite": "Queensland Road Rules s 313A",
+      "section": "313A",
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.313A",
+      "category": "other",
+      "penaltyNote": "Exemption while collecting, with the listed sections still applying — verify the current section."
+    },
+    {
+      "id": "rr-213-armoured",
+      "title": "Armoured vehicle / cash transit",
+      "plainEnglish": "An armoured or cash-in-transit vehicle does not have a Part 12 stopping exemption. Being on duty does not allow it to stop on a yellow line, on an island, in a no-stopping area, or in a Brisbane Council commercial bay without meeting that bay’s rules. What s 213(7) does is narrower: while on duty, the driver need not switch the engine off, remove the key, or lock the vehicle when leaving it. The parking brake rule still applies. If they are loading cash, use the loading-zone or commercial-loading card for where they may stop.",
+      "exceptions": [
+        "No general exemption from no stopping, yellow edge lines, loading zones, clearways, bus stops, driveways, painted islands, or traffic islands.",
+        "s 213(7)(b): subsections (3) to (5) — engine off if more than 3 m away, key removed if nobody 16 or older remains, windows secured and doors locked — do not apply to the driver of an armoured vehicle while on duty.",
+        "They must still apply the parking brake effectively before leaving the vehicle (s 213(2)), unless another provision says they need not.",
+        "Check that it is an armoured vehicle and that the crew is actually on duty, not parked up.",
+        "Brisbane commercial loading zone: a cash van still needs to fit Council’s permit-free list (goods vehicle loading or unloading, or a permit). “Armoured” is not a permit.",
+        "s 165 applies only if there is a real emergency or one of the other listed reasons, and only for as long as necessary."
+      ],
+      "keywords": [
+        "exemption",
+        "cash",
+        "cash transit",
+        "cash in transit",
+        "armoured",
+        "armored",
+        "armoured vehicle",
+        "security",
+        "brinks",
+        "prosegur",
+        "loomis",
+        "commercial loading",
+        "brisbane"
+      ],
+      "tags": [
+        "exemption",
+        "brisbane",
+        "commercial"
+      ],
+      "regCite": "Queensland Road Rules s 213(7) — not a Part 12 stopping exemption",
+      "section": 213,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.213",
+      "sources": [
+        {
+          "label": "Road Rules s 213 — making a vehicle secure",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.213"
+        },
+        {
+          "label": "Brisbane: commercial vehicles and loading zones",
+          "url": "https://www.brisbane.qld.gov.au/transport-and-parking/parking/parking-in-brisbane/commercial-vehicles--trucks-and-motorcycles"
+        },
+        {
+          "label": "Road Rules s 165 — emergency or compliance stop",
+          "url": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.165"
+        }
+      ],
+      "category": "other",
+      "penaltyNote": "s 213 is about securing the vehicle. Stopping offences stay under Part 12 unless another exemption applies."
     }
   ]
 }

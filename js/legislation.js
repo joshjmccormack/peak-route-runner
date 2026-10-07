@@ -22,25 +22,41 @@
 
   function sectionRank(section) {
     const text = String(section ?? "");
+    // Keep Brisbane commercial-loading guidance beside s 179, not at the bottom.
+    if (/^bcc$/i.test(text)) return [178.5, ""];
+    if (/^sch\b/i.test(text)) return [179.5, text.toLowerCase()];
+    if (/^pt\b/i.test(text)) return [164.5, text.toLowerCase()];
     const match = text.match(/^(\d+)(.*)$/);
     if (!match) return [Number.MAX_SAFE_INTEGER, text.toLowerCase()];
     return [Number(match[1]), match[2].toLowerCase()];
   }
 
   function sectionLabel(section) {
-    return `s ${section}`;
+    const text = String(section ?? "");
+    if (/^(sch|bcc|pt)\b/i.test(text)) return text;
+    return `s ${text}`;
+  }
+
+  function matchRank(offence, needle) {
+    const title = String(offence.title || "").toLowerCase();
+    const keywords = (Array.isArray(offence.keywords) ? offence.keywords : []).join("\n").toLowerCase();
+    if (title.includes(needle)) return 0;
+    if (keywords.includes(needle)) return 1;
+    return 2;
   }
 
   function haystack(offence) {
     const tags = Array.isArray(offence.tags) ? offence.tags : [];
     const keywords = Array.isArray(offence.keywords) ? offence.keywords : [];
+    const exceptions = Array.isArray(offence.exceptions) ? offence.exceptions : [];
     return [
       offence.title,
       offence.plainEnglish,
       offence.regCite,
       String(offence.section ?? ""),
       keywords.join(" "),
-      tags.join(" ")
+      tags.join(" "),
+      exceptions.join(" ")
     ].join("\n").toLowerCase();
   }
 
@@ -53,6 +69,11 @@
       return haystack(offence).includes(needle);
     });
     filtered.sort((a, b) => {
+      if (needle) {
+        const ma = matchRank(a, needle);
+        const mb = matchRank(b, needle);
+        if (ma !== mb) return ma - mb;
+      }
       const ra = sectionRank(a.section);
       const rb = sectionRank(b.section);
       if (ra[0] !== rb[0]) return ra[0] - rb[0];
@@ -117,7 +138,7 @@
     }
     const offences = filterOffences(pack.offences, query, activeCategory);
     if (!offences.length) {
-      host.innerHTML = `<p class="legislation-empty">No matches — try yellow line, nature strip, driveway, bus zone…</p>`;
+      host.innerHTML = `<p class="legislation-empty">No matches — try commercial loading, wrong way, yellow line, island, mail…</p>`;
       return;
     }
     const rows = offences.map((offence) => {
@@ -149,6 +170,16 @@
     const disclaimer = pack && pack.disclaimer
       ? `<p class="legislation-card-disclaimer">${esc(pack.disclaimer)}</p>`
       : "";
+    const sources = sourceList(offence);
+    const sourceButtons = sources.map((source, index) => {
+      const cls = index === 0 ? "primary legislation-official" : "secondary legislation-official";
+      const label = source.label || sourceButtonLabel(source.url);
+      return `<a class="${cls}" href="${esc(source.url)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>`;
+    }).join("");
+    const legislationSource = sources.some((source) => /legislation\.qld\.gov\.au/i.test(String(source.url || "")));
+    const jump = legislationSource
+      ? `<p class="legislation-jump-note">If a legislation link does not jump, search for ${esc(sectionLabel(offence.section))} in the official viewer.</p>`
+      : "";
     host.innerHTML = `<button type="button" class="secondary legislation-back" id="legislationBack">Back to results</button>
       <h3 class="legislation-title">${esc(offence.title)}</h3>
       <p class="legislation-plain">${esc(offence.plainEnglish)}</p>
@@ -156,8 +187,8 @@
       <p class="legislation-cite">${esc(offence.regCite)}</p>
       ${penalty}
       ${disclaimer}
-      <a class="primary legislation-official" href="${esc(offence.officialUrl)}" target="_blank" rel="noopener noreferrer">Open official legislation</a>
-      <p class="legislation-jump-note">Search for section ${esc(offence.section)} in the official viewer if the page does not jump.</p>`;
+      ${sourceButtons}
+      ${jump}`;
     const back = el("legislationBack");
     if (back) {
       back.onclick = () => {
@@ -168,6 +199,23 @@
     }
     const screen = el("legislation");
     if (screen) screen.scrollIntoView({ block: "start" });
+  }
+
+  function sourceButtonLabel(url) {
+    const text = String(url || "");
+    if (/legislation\.qld\.gov\.au/i.test(text)) return "Open official legislation";
+    if (/brisbane\.qld\.gov\.au/i.test(text)) return "Open Brisbane Council guidance";
+    return "Open official source";
+  }
+
+  function sourceList(offence) {
+    const extra = Array.isArray(offence.sources) ? offence.sources : [];
+    const sources = extra.filter((source) => source && source.url);
+    if (sources.length) return sources;
+    if (offence.officialUrl) {
+      return [{ label: sourceButtonLabel(offence.officialUrl), url: offence.officialUrl }];
+    }
+    return [];
   }
 
   function findOffence(id) {
