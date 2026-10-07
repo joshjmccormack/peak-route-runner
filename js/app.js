@@ -1,5 +1,5 @@
 const APP_VERSION = "v1.1";
-const SCREEN_IDS = ["home", "select", "runMaps", "dash", "changePassword", "vehicles", "jobClosures", "addOfficer"];
+const SCREEN_IDS = ["home", "select", "runMaps", "dash", "changePassword", "vehicles", "jobClosures", "legislation", "addOfficer"];
 const RUNMAP_PREFIX = "runmap:";
 const SHOW_ALL_MAPS_URL = "https://www.google.com/maps/d/u/1/edit?mid=1du12Xr1YcXO5iB9CEYstssvNaV92LZI&usp=sharing";
 const RUN_MAPS = [
@@ -510,7 +510,8 @@ const HOME_FLAGS = [
   { key: "show_peak_routes", label: "Peak Routes", short: "Peak", buttonId: "openPeakRoutes", screens: ["select", "dash"] },
   { key: "show_run_maps", label: "Run Maps", short: "Maps", buttonId: "openRunMaps", screens: ["runMaps"] },
   { key: "show_vehicles", label: "Vehicles", short: "Vehicles", buttonId: "openVehicles", screens: ["vehicles"] },
-  { key: "show_job_closures", label: "Job closures", short: "Jobs", buttonId: "openJobClosures", screens: ["jobClosures"] }
+  { key: "show_job_closures", label: "Job closures", short: "Jobs", buttonId: "openJobClosures", screens: ["jobClosures"] },
+  { key: "show_legislation", label: "TORUM Index", short: "TORUM Index", buttonId: "openLegislation", screens: ["legislation"] }
 ];
 
 function defaultHomeButtons() {
@@ -518,11 +519,13 @@ function defaultHomeButtons() {
     show_peak_routes: true,
     show_run_maps: true,
     show_vehicles: true,
-    show_job_closures: true
+    show_job_closures: true,
+    show_legislation: false
   };
 }
 
 let homeButtons = defaultHomeButtons();
+let legislationColumnReady = true;
 
 function resetHomeButtons() {
   homeButtons = defaultHomeButtons();
@@ -534,10 +537,16 @@ function homeButtonOn(key) {
 
 function readHomeButtons(row) {
   const next = defaultHomeButtons();
+  if (!row) return next;
   HOME_FLAGS.forEach((flag) => {
-    if (row && row[flag.key] === false) next[flag.key] = false;
+    if (typeof row[flag.key] === "boolean") next[flag.key] = row[flag.key];
   });
   return next;
+}
+
+function homeFlagChecked(row, key) {
+  if (row && typeof row[key] === "boolean") return row[key];
+  return defaultHomeButtons()[key] !== false;
 }
 
 function homeChoiceSentence() {
@@ -644,7 +653,7 @@ function renderUserList() {
     const email = String(row.email || "").trim() || "—";
     const code = String(row.officer_code || "").trim() || "—";
     const flags = HOME_FLAGS.map((flag) => {
-      const checked = row[flag.key] === false ? "" : " checked";
+      const checked = homeFlagChecked(row, flag.key) ? " checked" : "";
       const label = `${flag.label} for ${name}`;
       return `<td class="user-flag-cell"><label class="user-flag-hit"><input class="user-flag" type="checkbox" data-home-flag="${esc(flag.key)}" data-user-id="${esc(row.id)}"${checked} aria-label="${esc(label)}"></label></td>`;
     }).join("");
@@ -670,7 +679,7 @@ function renderUserList() {
 
 function homeFlagSaveError(error) {
   const message = String(error?.message || "");
-  if (/show_peak_routes|show_run_maps|show_vehicles|show_job_closures|schema cache|column/i.test(message)) {
+  if (/show_peak_routes|show_run_maps|show_vehicles|show_job_closures|show_legislation|schema cache|column/i.test(message)) {
     return "Could not save that tick. Run the home buttons SQL on Supabase first.";
   }
   if (/Only an admin can change home buttons/i.test(message)) {
@@ -691,7 +700,7 @@ async function setUserHomeFlag(input) {
   if (!userId || !HOME_FLAGS.some((flag) => flag.key === key)) return;
   const visible = input.checked;
   const row = userRows.find((item) => item.id === userId);
-  const previous = row ? row[key] !== false : true;
+  const previous = homeFlagChecked(row, key);
   input.disabled = true;
   const sb = getSupabase();
   if (!sb) {
@@ -749,12 +758,26 @@ async function loadUserList() {
   setUserTableMode(host, false);
   host.textContent = "Loading…";
   const flagColumns = HOME_FLAGS.map((flag) => flag.key).join(", ");
+  const legacyFlagColumns = HOME_FLAGS
+    .filter((flag) => flag.key !== "show_legislation")
+    .map((flag) => flag.key)
+    .join(", ");
   let flagsReady = true;
+  legislationColumnReady = true;
   let { data, error } = await sb
     .from("profiles")
     .select(`id, email, display_name, officer_code, role, ${flagColumns}`);
+  if (error && /show_legislation/i.test(String(error.message || ""))) {
+    legislationColumnReady = false;
+    const retryFlags = await sb
+      .from("profiles")
+      .select(`id, email, display_name, officer_code, role, ${legacyFlagColumns}`);
+    data = retryFlags.data;
+    error = retryFlags.error;
+  }
   if (error) {
     flagsReady = false;
+    legislationColumnReady = false;
     const retry = await sb
       .from("profiles")
       .select("id, email, display_name, officer_code, role");
@@ -768,9 +791,16 @@ async function loadUserList() {
     return;
   }
   userRows = data || [];
+  if (!legislationColumnReady) {
+    userRows.forEach((row) => {
+      if (typeof row.show_legislation !== "boolean") row.show_legislation = row.role === "admin";
+    });
+  }
   renderUserList();
   if (!flagsReady) {
     showUserListStatus("Home button ticks need the home buttons SQL on Supabase before they can be saved. Existing buttons stay visible.", "err");
+  } else if (!legislationColumnReady) {
+    showUserListStatus("TORUM Index ticks need the show_legislation SQL on Supabase before they can be saved. Admins still see TORUM Index.", "err");
   }
 }
 
@@ -1631,6 +1661,17 @@ function showJobClosures() {
   showScreen("jobClosures");
   if (canViewJobLog()) loadJobClosures();
   else loadOfficerClosedJobs();
+}
+
+function showLegislation() {
+  if (!homeButtonOn("show_legislation")) {
+    showHome();
+    return;
+  }
+  showScreen("legislation");
+  if (window.PinLegislation && typeof window.PinLegislation.open === "function") {
+    window.PinLegislation.open();
+  }
 }
 
 async function trySaveJobClosure(event) {
@@ -3386,12 +3427,24 @@ async function loadProfile(userId) {
   currentDisplayName = "";
   currentOfficerCode = "";
   resetHomeButtons();
+  legislationColumnReady = true;
   const sb = getSupabase();
   if (!sb || !userId) return;
   try {
     const flagColumns = HOME_FLAGS.map((flag) => flag.key).join(", ");
+    const legacyFlagColumns = HOME_FLAGS
+      .filter((flag) => flag.key !== "show_legislation")
+      .map((flag) => flag.key)
+      .join(", ");
     let { data, error } = await sb.from("profiles").select(`role, display_name, officer_code, ${flagColumns}`).eq("id", userId).maybeSingle();
+    if (error && /show_legislation/i.test(String(error.message || ""))) {
+      legislationColumnReady = false;
+      const retryFlags = await sb.from("profiles").select(`role, display_name, officer_code, ${legacyFlagColumns}`).eq("id", userId).maybeSingle();
+      data = retryFlags.data;
+      error = retryFlags.error;
+    }
     if (error) {
+      legislationColumnReady = false;
       const retry = await sb.from("profiles").select("role, display_name, officer_code").eq("id", userId).maybeSingle();
       if (retry.error) {
         const again = await sb.from("profiles").select("role, display_name").eq("id", userId).maybeSingle();
@@ -3406,11 +3459,13 @@ async function loadProfile(userId) {
     currentDisplayName = String(data?.display_name || "").trim();
     currentOfficerCode = String(data?.officer_code || "").trim();
     homeButtons = readHomeButtons(data);
+    if (!legislationColumnReady && currentRole === "admin") homeButtons.show_legislation = true;
   } catch (e) {
     currentRole = "officer";
     currentDisplayName = "";
     currentOfficerCode = "";
     resetHomeButtons();
+    legislationColumnReady = true;
   }
 }
 
@@ -3694,6 +3749,8 @@ function bindUi() {
   document.getElementById("openVehicles").onclick = showVehicles;
   const openJobs = document.getElementById("openJobClosures");
   if (openJobs) openJobs.onclick = showJobClosures;
+  const openLegislation = document.getElementById("openLegislation");
+  if (openLegislation) openLegislation.onclick = showLegislation;
   document.querySelectorAll("[data-job-complainant]").forEach((btn) => {
     btn.onclick = () => {
       jobComplainantChoice = btn.getAttribute("data-job-complainant") || "";

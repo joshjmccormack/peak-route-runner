@@ -1,0 +1,477 @@
+{
+  "version": "1.0.0",
+  "updated": "2026-10-07",
+  "instrument": {
+    "shortTitle": "Queensland Road Rules",
+    "fullTitle": "Transport Operations (Road Use Management—Road Rules) Regulation 2009",
+    "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194",
+    "part": "Part 12 — Restrictions on stopping and parking"
+  },
+  "disclaimer": "Field guidance only — not legal advice. Always verify the current wording, amendments, and any local-law overlays via the official Queensland legislation link before enforcement. Emergency and compliance exceptions in Part 12 (e.g. s 165) may also apply.",
+  "categories": [
+    {
+      "id": "signs_lines",
+      "label": "Signs & lines"
+    },
+    {
+      "id": "path_access",
+      "label": "Path & access"
+    },
+    {
+      "id": "zones",
+      "label": "Zones"
+    },
+    {
+      "id": "intersections_crossings",
+      "label": "Intersections & stops"
+    },
+    {
+      "id": "other",
+      "label": "Other"
+    }
+  ],
+  "offences": [
+    {
+      "id": "rr-167-no-stopping",
+      "title": "No stopping sign",
+      "plainEnglish": "Do not stop on a length of road or in an area where a no stopping sign applies. Stopping (even briefly, including drop-off) is not allowed in the signed length/area.",
+      "exceptions": [
+        "Check sign arrows and times — the restriction only applies where/when the sign applies.",
+        "Part 12 emergency / compliance exceptions (e.g. s 165) may still apply — verify before enforcing."
+      ],
+      "keywords": [
+        "no stopping",
+        "no stop",
+        "red circle",
+        "clearway style sign",
+        "cannot stop",
+        "drop off blocked"
+      ],
+      "tags": [
+        "sign",
+        "high-frequency"
+      ],
+      "regCite": "Queensland Road Rules s 167",
+      "section": 167,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.167",
+      "category": "signs_lines",
+      "penaltyNote": "Maximum penalty — 20 penalty units (verify current)."
+    },
+    {
+      "id": "rr-168-no-parking",
+      "title": "No parking sign",
+      "plainEnglish": "Do not stop where a no parking sign applies unless you are dropping off or picking up passengers or goods, you stay with the vehicle (within 3 m), and you finish and drive on as soon as possible — usually within 2 minutes (or the time on the sign; disability passenger pick-up/drop-off can be up to 5 minutes in some cases).",
+      "exceptions": [
+        "Drop-off / pick-up of passengers or goods is allowed if the vehicle is not left unattended (driver more than 3 m away = unattended).",
+        "Required time: time shown on/with the sign; if none, generally 2 minutes; disability-related cases may allow 5 minutes — confirm against current s 168 and related provisions.",
+        "Outside the signed times/area, the no-parking restriction does not apply."
+      ],
+      "keywords": [
+        "no parking",
+        "P with slash",
+        "2 minutes",
+        "drop off",
+        "pick up",
+        "unattended",
+        "3 metres"
+      ],
+      "tags": [
+        "sign",
+        "high-frequency"
+      ],
+      "regCite": "Queensland Road Rules s 168",
+      "section": 168,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.168",
+      "category": "signs_lines",
+      "penaltyNote": "Maximum penalty — 20 penalty units (verify current)."
+    },
+    {
+      "id": "rr-169-yellow-edge",
+      "title": "Yellow continuous edge line",
+      "plainEnglish": "Do not stop at the side of a road marked with a continuous yellow edge line. Treat it like a painted no-stopping control along that edge.",
+      "exceptions": [
+        "Applies to a continuous yellow edge line at the side of the road — broken/other markings are different rules.",
+        "Confirm the vehicle is stopped at the marked side of the road (not merely near yellow elsewhere)."
+      ],
+      "keywords": [
+        "yellow line",
+        "yellow edge",
+        "continuous yellow",
+        "kerb line",
+        "no stopping yellow",
+        "edge line"
+      ],
+      "tags": [
+        "line",
+        "high-frequency"
+      ],
+      "regCite": "Queensland Road Rules s 169",
+      "section": 169,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.169",
+      "category": "signs_lines",
+      "penaltyNote": "Maximum penalty — 20 penalty units (verify current)."
+    },
+    {
+      "id": "rr-176-clearway",
+      "title": "Clearway",
+      "plainEnglish": "Do not stop on a length of road (other than a road-related area) to which a clearway sign applies during the days and times shown, unless you are driving a bus or taxi and dropping off or picking up passengers.",
+      "exceptions": [
+        "Applies only for the days and times on the clearway sign, from the sign to the next clearway sign with different days or times, an end clearway sign, or the end of the road.",
+        "The permitted stop is a bus or taxi dropping off or picking up passengers. Confirm the current section before treating a limousine or rideshare as allowed.",
+        "Vehicles stopped in a clearway may also be towed — operational note, not a separate offence section."
+      ],
+      "keywords": [
+        "clearway",
+        "peak hour",
+        "tow",
+        "end clearway",
+        "no stopping peak"
+      ],
+      "tags": [
+        "sign",
+        "high-frequency"
+      ],
+      "regCite": "Queensland Road Rules s 176",
+      "section": 176,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.176",
+      "category": "signs_lines",
+      "penaltyNote": "Maximum penalty — 20 penalty units (verify current)."
+    },
+    {
+      "id": "rr-197-path-nature-strip",
+      "title": "Path, nature strip, footpath or island",
+      "plainEnglish": "Do not stop on a bicycle path, footpath, shared path, dividing strip, or a nature strip next to a road in a built-up area, unless a parking control sign applies and stopping is permitted there. Also do not stop on a painted island or a traffic island.",
+      "exceptions": [
+        "Parking control sign applies and stopping is permitted under the Road Rules at that place.",
+        "The path, nature strip, and traffic-island bans do not apply to the rider of a bicycle, personal mobility device, or animal (s 197(2)). The painted-island ban still applies to those riders.",
+        "Nature-strip rule is about a nature strip adjacent to a length of road in a built-up area."
+      ],
+      "keywords": [
+        "nature strip",
+        "footpath",
+        "verge",
+        "grass",
+        "shared path",
+        "bicycle path",
+        "painted island",
+        "traffic island",
+        "dividing strip",
+        "parked on footpath"
+      ],
+      "tags": [
+        "path",
+        "high-frequency"
+      ],
+      "regCite": "Queensland Road Rules s 197",
+      "section": 197,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.197",
+      "category": "path_access",
+      "penaltyNote": "Maximum penalty — 20 penalty units (verify current)."
+    },
+    {
+      "id": "rr-198-driveway-access",
+      "title": "Driveway / access obstruction",
+      "plainEnglish": "Do not stop where you block a footpath ramp, bicycle path, or similar access, and do not stop on or across a driveway or other vehicle access to adjacent land. The short passenger drop-off exception applies to the driveway, not to blocking a footpath ramp.",
+      "exceptions": [
+        "Blocking a footpath ramp, bicycle path, or passageway: a bus dropping off or picking up passengers, or a stop in a permitted parking bay.",
+        "On or across a driveway: passenger drop-off or pick-up only if you stay within 3 m of the vehicle and drive on within 2 minutes, or you stop in a permitted parking bay.",
+        "The 2-minute driveway exception is for passengers, not goods."
+      ],
+      "keywords": [
+        "driveway",
+        "blocked driveway",
+        "across driveway",
+        "access",
+        "footpath ramp",
+        "obstructing access",
+        "garage"
+      ],
+      "tags": [
+        "access",
+        "high-frequency"
+      ],
+      "regCite": "Queensland Road Rules s 198",
+      "section": 198,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.198",
+      "category": "path_access",
+      "penaltyNote": "Maximum penalty — 20 penalty units (verify current)."
+    },
+    {
+      "id": "rr-179-loading-zone",
+      "title": "Loading zone",
+      "plainEnglish": "Do not stop in a loading zone unless you fit an allowed category (passenger drop-off/pick-up, goods drop-off/pick-up, authorised commercial vehicle label, bus/truck as permitted) and you stay only for the allowed time — follow the sign if it shows a different time.",
+      "exceptions": [
+        "Passenger drop-off/pick-up — typically max 2 minutes (5 minutes if dropping off/picking up a person with a disability) — confirm current s 179.",
+        "Goods drop-off/pick-up — typically max 20 minutes unless the sign says otherwise.",
+        "Commercial vehicle identification label issued for that area — typically max 30 minutes unless the sign says otherwise.",
+        "Bus / truck dropping off or picking up passengers or goods — typically max 30 minutes unless the sign says otherwise.",
+        "Always prefer times printed on the loading zone sign."
+      ],
+      "keywords": [
+        "loading zone",
+        "loading",
+        "goods",
+        "commercial vehicle",
+        "CV label",
+        "30 minutes",
+        "20 minutes"
+      ],
+      "tags": [
+        "zone",
+        "high-frequency"
+      ],
+      "regCite": "Queensland Road Rules s 179",
+      "section": 179,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.179",
+      "category": "zones",
+      "penaltyNote": "Maximum penalty — 20 penalty units (verify current)."
+    },
+    {
+      "id": "rr-183-bus-zone",
+      "title": "Bus zone",
+      "plainEnglish": "Do not stop in a bus zone unless you are driving a bus that is permitted to stop there (check any bus-type restrictions on or with the bus zone sign).",
+      "exceptions": [
+        "Permitted bus (and not excluded by information on/with the bus zone sign).",
+        "A bus zone is the length of road to which a bus zone sign applies."
+      ],
+      "keywords": [
+        "bus zone",
+        "bus only",
+        "coach",
+        "not a bus"
+      ],
+      "tags": [
+        "zone",
+        "high-frequency"
+      ],
+      "regCite": "Queensland Road Rules s 183",
+      "section": 183,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.183",
+      "category": "zones",
+      "penaltyNote": "Maximum penalty — 20 penalty units (verify current)."
+    },
+    {
+      "id": "rr-182-taxi-zone",
+      "title": "Taxi zone",
+      "plainEnglish": "Do not stop in a taxi zone unless you are driving a taxi. A taxi zone is the length of road to which a taxi zone sign applies.",
+      "exceptions": [
+        "Driver of a taxi.",
+        "Confirm vehicle meets the regulation definition of taxi for the purpose of the zone."
+      ],
+      "keywords": [
+        "taxi zone",
+        "cab rank",
+        "taxi rank",
+        "not a taxi",
+        "rideshare"
+      ],
+      "tags": [
+        "zone"
+      ],
+      "regCite": "Queensland Road Rules s 182",
+      "section": 182,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.182",
+      "category": "zones",
+      "penaltyNote": "Maximum penalty — 20 penalty units (verify current)."
+    },
+    {
+      "id": "rr-203-disability-parking",
+      "title": "Disability parking bay",
+      "plainEnglish": "Do not stop in a parking area for people with disabilities unless the vehicle displays a current parking permit for people with disabilities and the driver complies with the permit conditions. The area may be signed and/or marked with the people-with-disabilities symbol.",
+      "exceptions": [
+        "Current disability parking permit displayed and used in accordance with its conditions.",
+        "Area identified by permissive parking sign with PWD symbol, PWD parking sign, and/or PWD road marking."
+      ],
+      "keywords": [
+        "disabled bay",
+        "disability parking",
+        "PWD",
+        "wheelchair",
+        "accessible parking",
+        "blue bay",
+        "permit"
+      ],
+      "tags": [
+        "zone",
+        "high-frequency"
+      ],
+      "regCite": "Queensland Road Rules s 203",
+      "section": 203,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.203",
+      "category": "zones",
+      "penaltyNote": "Maximum penalty — 20 penalty units (verify current)."
+    },
+    {
+      "id": "rr-181-works-zone",
+      "title": "Works zone",
+      "plainEnglish": "Do not stop in a works zone unless you are driving a vehicle engaged in construction work in or near the zone.",
+      "exceptions": [
+        "Vehicle engaged in construction work in or near the works zone."
+      ],
+      "keywords": [
+        "works zone",
+        "construction zone",
+        "building site parking"
+      ],
+      "tags": [
+        "zone"
+      ],
+      "regCite": "Queensland Road Rules s 181",
+      "section": 181,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.181",
+      "category": "zones",
+      "penaltyNote": "Maximum penalty — 20 penalty units (verify current)."
+    },
+    {
+      "id": "rr-170-intersection",
+      "title": "Stopping in or near an intersection",
+      "plainEnglish": "Do not stop in an intersection, within 20 m of an intersecting road at traffic lights, or within 10 m of an intersecting road without traffic lights, unless a parking control sign permits the stop. At a T-intersection with no traffic lights you may stop along the continuous side of the continuing road, including in the intersection itself. Measure in the direction of travel and confirm current s 170.",
+      "exceptions": [
+        "Parking control sign applies and stopping is permitted under the Road Rules.",
+        "T-intersection without traffic lights: stopping along the continuous side of the continuing road is allowed.",
+        "If a no stopping sign is installed inside the 20 m or 10 m distance, read s 170(3) and (5) — that distance rule may not apply.",
+        "Distances are measured in the direction of travel."
+      ],
+      "keywords": [
+        "intersection",
+        "20 metres",
+        "10 metres",
+        "traffic lights",
+        "T-intersection",
+        "corner"
+      ],
+      "tags": [
+        "distance",
+        "high-frequency"
+      ],
+      "regCite": "Queensland Road Rules s 170",
+      "section": 170,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.170",
+      "category": "intersections_crossings",
+      "penaltyNote": "Maximum penalty — 20 penalty units (verify current)."
+    },
+    {
+      "id": "rr-195-bus-stop",
+      "title": "Stopping at or near a bus stop",
+      "plainEnglish": "Except if driving a bus, do not stop at a bus stop, or on the road within 20 m before the bus-stop sign and 10 m after it (measured in the direction of travel), unless a parking control sign applies and permits stopping.",
+      "exceptions": [
+        "Bus drivers stopping as permitted at the stop/zone.",
+        "Parking control sign applies and stopping is permitted.",
+        "Distances measured in the direction of travel."
+      ],
+      "keywords": [
+        "bus stop",
+        "near bus stop",
+        "20 metres before",
+        "10 metres after",
+        "bus stop sign"
+      ],
+      "tags": [
+        "distance",
+        "high-frequency"
+      ],
+      "regCite": "Queensland Road Rules s 195",
+      "section": 195,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.195",
+      "category": "intersections_crossings",
+      "penaltyNote": "Maximum penalty — 20 penalty units (verify current)."
+    },
+    {
+      "id": "rr-189-double-parking",
+      "title": "Double parking",
+      "plainEnglish": "Do not stop on a road if any part of your vehicle would sit between a parked vehicle and the centre of the road.",
+      "exceptions": [
+        "Parking on the side of the road, or in a median strip parking area, in accordance with s 210 is not double parking.",
+        "Confirm the other vehicle is parked on the road in the way s 189 describes. The examples include one-way roads."
+      ],
+      "keywords": [
+        "double park",
+        "double parking",
+        "alongside",
+        "two cars deep",
+        "middle of road"
+      ],
+      "tags": [
+        "other",
+        "high-frequency"
+      ],
+      "regCite": "Queensland Road Rules s 189",
+      "section": 189,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.189",
+      "category": "other",
+      "penaltyNote": "Maximum penalty — 20 penalty units (verify current)."
+    },
+    {
+      "id": "rr-199-postbox",
+      "title": "Stopping near a post box",
+      "plainEnglish": "Do not stop on a road within 3 m of a public postbox unless you are dropping off or picking up passengers or mail, or a parking control sign permits the stop.",
+      "exceptions": [
+        "Dropping off or picking up passengers or mail.",
+        "Parking control sign applies and stopping is permitted under the Road Rules."
+      ],
+      "keywords": [
+        "post box",
+        "postbox",
+        "mailbox",
+        "3 metres",
+        "mail"
+      ],
+      "tags": [
+        "distance"
+      ],
+      "regCite": "Queensland Road Rules s 199",
+      "section": 199,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.199",
+      "category": "other",
+      "penaltyNote": "Maximum penalty — 20 penalty units (verify current)."
+    },
+    {
+      "id": "rr-205-timed-parking",
+      "title": "Parking longer than signed time",
+      "plainEnglish": "Where a permissive parking sign shows a time limit, do not park continuously for longer than the period indicated. A current disability parking permit may allow longer under s 206. Parking outside the signed days or times is s 205A, not this section.",
+      "exceptions": [
+        "If the sign shows no period and no times, parking is allowed unless another rule prohibits it (s 205(1A)).",
+        "Outside the times shown on the sign, use s 205A.",
+        "A current disability parking permit can extend the time under s 206."
+      ],
+      "keywords": [
+        "timed parking",
+        "P 1P 2P",
+        "overstay",
+        "time limit",
+        "meter",
+        "permissive parking"
+      ],
+      "tags": [
+        "sign",
+        "high-frequency"
+      ],
+      "regCite": "Queensland Road Rules s 205",
+      "section": 205,
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.205",
+      "category": "other",
+      "penaltyNote": "Maximum penalty — 20 penalty units (verify current)."
+    },
+    {
+      "id": "rr-203a-slip-lane",
+      "title": "Stopping in a slip lane",
+      "plainEnglish": "Do not stop in a slip lane unless a parking control sign applies to that place and the Road Rules permit the stop.",
+      "exceptions": [
+        "Signs that allow stopping in the slip lane."
+      ],
+      "keywords": [
+        "slip lane",
+        "turn lane",
+        "channelised"
+      ],
+      "tags": [
+        "other"
+      ],
+      "regCite": "Queensland Road Rules s 203A",
+      "section": "203A",
+      "officialUrl": "https://www.legislation.qld.gov.au/view/html/inforce/current/sl-2009-0194#sec.203A",
+      "category": "other",
+      "penaltyNote": "Maximum penalty — 20 penalty units (verify current)."
+    }
+  ]
+}

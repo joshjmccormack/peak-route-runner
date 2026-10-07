@@ -19,7 +19,7 @@
 <meta property="og:description" content="PinAssist">
 <meta property="og:url" content="https://pinassist.app/">
 <title>PinAssist</title>
-<link rel="stylesheet" href="css/app.css?v=1.28">
+<link rel="stylesheet" href="css/app.css?v=1.29">
 </head>
 <body class="locked">
 <section id="lockScreen" class="lock-screen">
@@ -71,6 +71,13 @@
     <span class="home-choice-copy">
       <strong>Job closures</strong>
       <span id="jobClosuresHomeHint">Record attendance and close a job</span>
+    </span>
+  </button>
+  <button id="openLegislation" class="secondary home-choice home-legislation" type="button">
+    <img class="home-choice-icon" src="icons/torum-index.png?v=1.29" alt="" aria-hidden="true" width="72" height="72">
+    <span class="home-choice-copy">
+      <strong>TORUM Index</strong>
+      <span>QLD parking / stopping — plain English + section cites</span>
     </span>
   </button>
   <p id="signedInAs" class="muted signed-in-line"></p>
@@ -224,6 +231,20 @@
   </div>
 </section>
 
+<section id="legislation" class="card hidden">
+  <h2>TORUM Index</h2>
+  <p class="muted">QLD parking and stopping rules. Plain English first, then the section cite.</p>
+  <details id="legislationDisclaimer" class="legislation-disclaimer">
+    <summary>Field guidance only — not legal advice.</summary>
+    <p>Always verify the current wording and any local law overlays via the official link before enforcement.</p>
+  </details>
+  <label class="hidden" for="legislationSearch">Search legislation</label>
+  <input id="legislationSearch" type="search" placeholder="Try yellow line, nature strip, driveway, bus zone…" enterkeyhint="search" autocomplete="off">
+  <div id="legislationChips" class="legislation-chips" role="group" aria-label="Category"></div>
+  <div id="legislationResults" class="legislation-results muted">Loading…</div>
+  <article id="legislationDetail" class="legislation-detail hidden"></article>
+</section>
+
 <section id="addOfficer" class="card hidden">
   <h2>Add User</h2>
   <p class="muted">Create a login and choose User Role</p>
@@ -369,7 +390,8 @@
 <script src="js/vendor/supabase.js" defer></script>
 <script src="js/supabase-config.js" defer></script>
 <script src="js/vehicles.js?v=1.28" defer></script>
-<script src="js/app.js?v=1.28" defer></script>
+<script src="js/legislation.js?v=1.29" defer></script>
+<script src="js/app.js?v=1.29" defer></script>
 <div id="resetDialog" class="dialog-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="resetDialogMsg">
   <div class="dialog-card">
     <p id="resetDialogMsg">Reset all completed and skipped locations for this route?</p>
