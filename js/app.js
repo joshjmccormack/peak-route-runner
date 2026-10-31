@@ -511,7 +511,8 @@ const HOME_FLAGS = [
   { key: "show_run_maps", label: "Run Maps", short: "Maps", buttonId: "openRunMaps", screens: ["runMaps"] },
   { key: "show_vehicles", label: "Vehicles", short: "Vehicles", buttonId: "openVehicles", screens: ["vehicles"] },
   { key: "show_job_closures", label: "Job closures", short: "Jobs", buttonId: "openJobClosures", screens: ["jobClosures"] },
-  { key: "show_legislation", label: "TORUM Index", short: "TORUM Index", buttonId: "openLegislation", screens: ["legislation"] }
+  { key: "show_legislation", label: "TORUM Index", short: "TORUM Index", buttonId: "openLegislation", screens: ["legislation"] },
+  { key: "show_longer_than_permitted", label: "Longer Than Permitted", short: "Longer", buttonId: "openLongerThanPermitted", screens: ["longerThanPermitted"] }
 ];
 
 function defaultHomeButtons() {
@@ -520,12 +521,14 @@ function defaultHomeButtons() {
     show_run_maps: true,
     show_vehicles: true,
     show_job_closures: true,
-    show_legislation: false
+    show_legislation: false,
+    show_longer_than_permitted: false
   };
 }
 
 let homeButtons = defaultHomeButtons();
 let legislationColumnReady = true;
+let longerThanPermittedColumnReady = true;
 
 function resetHomeButtons() {
   homeButtons = defaultHomeButtons();
@@ -679,7 +682,7 @@ function renderUserList() {
 
 function homeFlagSaveError(error) {
   const message = String(error?.message || "");
-  if (/show_peak_routes|show_run_maps|show_vehicles|show_job_closures|show_legislation|schema cache|column/i.test(message)) {
+  if (/show_peak_routes|show_run_maps|show_vehicles|show_job_closures|show_legislation|show_longer_than_permitted|schema cache|column/i.test(message)) {
     return "Could not save that tick. Run the home buttons SQL on Supabase first.";
   }
   if (/Only an admin can change home buttons/i.test(message)) {
@@ -758,26 +761,45 @@ async function loadUserList() {
   setUserTableMode(host, false);
   host.textContent = "Loading…";
   const flagColumns = HOME_FLAGS.map((flag) => flag.key).join(", ");
+  const withoutLongerColumns = HOME_FLAGS
+    .filter((flag) => flag.key !== "show_longer_than_permitted")
+    .map((flag) => flag.key)
+    .join(", ");
   const legacyFlagColumns = HOME_FLAGS
     .filter((flag) => flag.key !== "show_legislation")
     .map((flag) => flag.key)
     .join(", ");
+  const legacyWithoutLongerColumns = HOME_FLAGS
+    .filter((flag) => flag.key !== "show_legislation" && flag.key !== "show_longer_than_permitted")
+    .map((flag) => flag.key)
+    .join(", ");
   let flagsReady = true;
   legislationColumnReady = true;
+  longerThanPermittedColumnReady = true;
   let { data, error } = await sb
     .from("profiles")
     .select(`id, email, display_name, officer_code, role, ${flagColumns}`);
+  if (error && /show_longer_than_permitted/i.test(String(error.message || ""))) {
+    longerThanPermittedColumnReady = false;
+    const retryLonger = await sb
+      .from("profiles")
+      .select(`id, email, display_name, officer_code, role, ${withoutLongerColumns}`);
+    data = retryLonger.data;
+    error = retryLonger.error;
+  }
   if (error && /show_legislation/i.test(String(error.message || ""))) {
     legislationColumnReady = false;
+    const legislationColumns = longerThanPermittedColumnReady ? legacyFlagColumns : legacyWithoutLongerColumns;
     const retryFlags = await sb
       .from("profiles")
-      .select(`id, email, display_name, officer_code, role, ${legacyFlagColumns}`);
+      .select(`id, email, display_name, officer_code, role, ${legislationColumns}`);
     data = retryFlags.data;
     error = retryFlags.error;
   }
   if (error) {
     flagsReady = false;
     legislationColumnReady = false;
+    longerThanPermittedColumnReady = false;
     const retry = await sb
       .from("profiles")
       .select("id, email, display_name, officer_code, role");
@@ -796,11 +818,20 @@ async function loadUserList() {
       if (typeof row.show_legislation !== "boolean") row.show_legislation = row.role === "admin";
     });
   }
+  if (!longerThanPermittedColumnReady) {
+    userRows.forEach((row) => {
+      if (typeof row.show_longer_than_permitted !== "boolean") row.show_longer_than_permitted = row.role === "admin";
+    });
+  }
   renderUserList();
   if (!flagsReady) {
     showUserListStatus("Home button ticks need the home buttons SQL on Supabase before they can be saved. Existing buttons stay visible.", "err");
+  } else if (!legislationColumnReady && !longerThanPermittedColumnReady) {
+    showUserListStatus("TORUM Index and Longer Than Permitted ticks need their SQL on Supabase before they can be saved. Admins still see those tiles.", "err");
   } else if (!legislationColumnReady) {
     showUserListStatus("TORUM Index ticks need the show_legislation SQL on Supabase before they can be saved. Admins still see TORUM Index.", "err");
+  } else if (!longerThanPermittedColumnReady) {
+    showUserListStatus("Longer Than Permitted ticks need the show_longer_than_permitted SQL on Supabase before they can be saved. Admins still see Longer Than Permitted.", "err");
   }
 }
 
@@ -1676,6 +1707,10 @@ function showLegislation() {
 }
 
 function showLongerThanPermitted() {
+  if (!homeButtonOn("show_longer_than_permitted")) {
+    showHome();
+    return;
+  }
   showScreen("longerThanPermitted");
   window.scrollTo(0, 0);
   if (window.PinLongerThanPermitted && typeof window.PinLongerThanPermitted.open === "function") {
@@ -3437,23 +3472,40 @@ async function loadProfile(userId) {
   currentOfficerCode = "";
   resetHomeButtons();
   legislationColumnReady = true;
+  longerThanPermittedColumnReady = true;
   const sb = getSupabase();
   if (!sb || !userId) return;
   try {
     const flagColumns = HOME_FLAGS.map((flag) => flag.key).join(", ");
+    const withoutLongerColumns = HOME_FLAGS
+      .filter((flag) => flag.key !== "show_longer_than_permitted")
+      .map((flag) => flag.key)
+      .join(", ");
     const legacyFlagColumns = HOME_FLAGS
       .filter((flag) => flag.key !== "show_legislation")
       .map((flag) => flag.key)
       .join(", ");
+    const legacyWithoutLongerColumns = HOME_FLAGS
+      .filter((flag) => flag.key !== "show_legislation" && flag.key !== "show_longer_than_permitted")
+      .map((flag) => flag.key)
+      .join(", ");
     let { data, error } = await sb.from("profiles").select(`role, display_name, officer_code, ${flagColumns}`).eq("id", userId).maybeSingle();
+    if (error && /show_longer_than_permitted/i.test(String(error.message || ""))) {
+      longerThanPermittedColumnReady = false;
+      const retryLonger = await sb.from("profiles").select(`role, display_name, officer_code, ${withoutLongerColumns}`).eq("id", userId).maybeSingle();
+      data = retryLonger.data;
+      error = retryLonger.error;
+    }
     if (error && /show_legislation/i.test(String(error.message || ""))) {
       legislationColumnReady = false;
-      const retryFlags = await sb.from("profiles").select(`role, display_name, officer_code, ${legacyFlagColumns}`).eq("id", userId).maybeSingle();
+      const legislationColumns = longerThanPermittedColumnReady ? legacyFlagColumns : legacyWithoutLongerColumns;
+      const retryFlags = await sb.from("profiles").select(`role, display_name, officer_code, ${legislationColumns}`).eq("id", userId).maybeSingle();
       data = retryFlags.data;
       error = retryFlags.error;
     }
     if (error) {
       legislationColumnReady = false;
+      longerThanPermittedColumnReady = false;
       const retry = await sb.from("profiles").select("role, display_name, officer_code").eq("id", userId).maybeSingle();
       if (retry.error) {
         const again = await sb.from("profiles").select("role, display_name").eq("id", userId).maybeSingle();
@@ -3469,12 +3521,14 @@ async function loadProfile(userId) {
     currentOfficerCode = String(data?.officer_code || "").trim();
     homeButtons = readHomeButtons(data);
     if (!legislationColumnReady && currentRole === "admin") homeButtons.show_legislation = true;
+    if (!longerThanPermittedColumnReady && currentRole === "admin") homeButtons.show_longer_than_permitted = true;
   } catch (e) {
     currentRole = "officer";
     currentDisplayName = "";
     currentOfficerCode = "";
     resetHomeButtons();
     legislationColumnReady = true;
+    longerThanPermittedColumnReady = true;
   }
 }
 
