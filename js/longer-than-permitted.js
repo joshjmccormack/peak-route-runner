@@ -10,25 +10,25 @@
   // Same arrow as the Peak Routes directions button (NAV_ICON in app.js).
   const NAV_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" d="M8.4 18.45V12.1C8.4 8.9 10.75 7.25 14.15 7.25H16.9"/><path fill="currentColor" d="M15.55 4.6 21.45 7.45l-5.9 2.85z"/></svg>';
   const PRESETS = [
-    { minutes: 5, label: "5 min" },
-    { minutes: 10, label: "10 min" },
-    { minutes: 15, label: "15 min" },
-    { minutes: 20, label: "20 min" },
-    { minutes: 30, label: "30 min" },
-    { minutes: 35, label: "35 min" },
-    { minutes: 45, label: "45 min" },
-    { minutes: 60, label: "1 h" },
-    { minutes: 90, label: "1.5 h" },
-    { minutes: 120, label: "2 h" },
-    { minutes: 180, label: "3 h" },
-    { minutes: 240, label: "4 h" }
+    { minutes: 5, label: "5m" },
+    { minutes: 10, label: "10m" },
+    { minutes: 15, label: "15m" },
+    { minutes: 20, label: "20m" },
+    { minutes: 25, label: "25m" },
+    { minutes: 35, label: "35m" },
+    { minutes: 70, label: "1h 10m" },
+    { minutes: 130, label: "2h 10m" }
   ];
+  // Same gap as geocodeMissing() in app.js. Nominatim asks for at most one request a second.
+  const NOMINATIM_GAP_MS = 1100;
 
   let locations = [];
   let tickId = 0;
   let bound = false;
   let saving = false;
   let notifyAsked = false;
+  let geocodeChain = Promise.resolve();
+  const addressBusy = new Set();
 
   function esc(value) {
     return String(value ?? "")
@@ -108,6 +108,67 @@
     return `Location ${max + 1}`;
   }
 
+  function looksLikeHouseNumber(value) {
+    return /^(?:\d+[A-Za-z]?|\d+[A-Za-z]?(?:-\d+[A-Za-z]?)+)$/.test(String(value || "").trim());
+  }
+
+  function formatDisplayNameFallback(displayName) {
+    if (!displayName) return "";
+    const skip = /^(Australia|Queensland|QLD|\d{4})$/i;
+    const parts = String(displayName).split(",").map((part) => part.trim()).filter((part) => part && !skip.test(part));
+    if (!parts.length) return "";
+    if (looksLikeHouseNumber(parts[0]) && parts[1]) {
+      const street = `${parts[0]} ${parts[1]}`;
+      return parts[2] ? `${street}, ${parts[2]}` : street;
+    }
+    const numbered = parts.findIndex(looksLikeHouseNumber);
+    if (numbered >= 0 && parts[numbered + 1]) {
+      const street = `${parts[numbered]} ${parts[numbered + 1]}`;
+      const place = parts[numbered + 2] || parts[numbered - 1] || "";
+      return place ? `${street}, ${place}` : street;
+    }
+    return parts.slice(0, 3).join(", ");
+  }
+
+  function shortStreetAddress(result) {
+    if (!result || typeof result !== "object") return "";
+    const address = result.address || {};
+    const road = String(address.road || address.pedestrian || address.residential || address.footway || address.path || "").trim();
+    let houseNumber = String(address.house_number || "").trim();
+    if (!houseNumber && result.display_name) {
+      const parts = String(result.display_name).split(",").map((part) => part.trim()).filter(Boolean);
+      if (looksLikeHouseNumber(parts[0])) houseNumber = parts[0];
+      else if (road) {
+        const roadIdx = parts.findIndex((part) => part.toLowerCase() === road.toLowerCase());
+        if (roadIdx > 0 && looksLikeHouseNumber(parts[roadIdx - 1])) houseNumber = parts[roadIdx - 1];
+      }
+    }
+    const suburb = String(address.suburb || address.neighbourhood || address.city_district || address.city || address.town || "").trim();
+    if (houseNumber && road && suburb) return `${houseNumber} ${road}, ${suburb}`;
+    if (road && suburb) return `${road}, ${suburb}`;
+    return formatDisplayNameFallback(result.display_name).replace(/\s+/g, " ").trim();
+  }
+
+  function delay(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  async function fetchNominatim(url) {
+    if (typeof nominatimJson === "function") return nominatimJson(url);
+    const res = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+        "Accept-Language": "en-AU"
+      }
+    });
+    if (!res.ok) throw new Error(`Geocoder HTTP ${res.status}`);
+    return res.json();
+  }
+
+  function isOnline() {
+    return typeof navigator === "undefined" || navigator.onLine !== false;
+  }
+
   function normaliseLocations(value) {
     if (!Array.isArray(value)) return [];
     const seen = new Set();
@@ -125,7 +186,7 @@
       const timerEnd = Number(item.timerEnd);
       const durationMinutes = Number(item.durationMinutes);
       const label = String(item.label || "").trim().slice(0, 80) || "Location";
-      next.push({
+      const entry = {
         id,
         label,
         lat,
@@ -135,7 +196,10 @@
         timerEnd: Number.isFinite(timerEnd) ? timerEnd : null,
         durationMinutes: Number.isInteger(durationMinutes) && durationMinutes > 0 ? durationMinutes : null,
         alerted: item.alerted === true
-      });
+      };
+      // Old saves have no addressStatus. Keep their label and do not geocode them again.
+      if (item.addressStatus === "ready" || item.addressStatus === "pending") entry.addressStatus = item.addressStatus;
+      next.push(entry);
     });
     return next;
   }
@@ -224,10 +288,9 @@
         clock.textContent = text;
         clock.classList.toggle("hidden", !text);
       }
+      row.classList.toggle("ltp-running", running);
       const cancel = row.querySelector("[data-action='cancel']");
       if (cancel) cancel.classList.toggle("hidden", !running);
-      const restart = row.querySelector("[data-action='restart']");
-      if (restart) restart.classList.toggle("hidden", !loc.durationMinutes);
     });
   }
 
@@ -314,6 +377,21 @@
     ).join("");
   }
 
+  function displayLabel(loc) {
+    if (loc && addressBusy.has(loc.id)) return "Finding address…";
+    return (loc && loc.label) || "Location";
+  }
+
+  function paintName(id) {
+    const loc = findLoc(id);
+    const row = rowEl(id);
+    if (!loc || !row) return;
+    const name = row.querySelector(".ltp-name");
+    if (name) name.textContent = displayLabel(loc);
+    const directions = row.querySelector("[data-action='directions']");
+    if (directions) directions.setAttribute("aria-label", `Directions to ${loc.label}`);
+  }
+
   function renderList() {
     const list = el("ltpList");
     if (!list) return;
@@ -326,27 +404,20 @@
       const running = Number.isFinite(loc.timerEnd);
       const overdue = running && now >= loc.timerEnd;
       const clock = clockText(loc, now);
-      const labelId = `ltp-label-${loc.id}`;
-      const customId = `ltp-custom-${loc.id}`;
-      return `<article class="ltp-row${overdue ? " ltp-overdue" : ""}" data-id="${esc(loc.id)}">
+      return `<article class="ltp-row${running ? " ltp-running" : ""}${overdue ? " ltp-overdue" : ""}" data-id="${esc(loc.id)}">
         <div class="ltp-head">
-          <label class="hidden" for="${esc(labelId)}">Label</label>
-          <input id="${esc(labelId)}" class="ltp-label" type="text" maxlength="80" value="${esc(loc.label)}" autocomplete="off">
-          <button type="button" class="danger small" data-action="delete">Delete</button>
+          <p class="ltp-name">${esc(displayLabel(loc))}</p>
+          <button type="button" class="danger small ltp-delete" data-action="delete">Delete</button>
         </div>
         <p class="muted ltp-meta">${esc(formatSavedAt(loc.savedAt))} · ${esc(formatCoord(loc.lat))}, ${esc(formatCoord(loc.lng))} · ${esc(formatAccuracy(loc.accuracy))}</p>
         <p class="ltp-clock${clock ? "" : " hidden"}">${esc(clock)}</p>
-        <div class="field-label">Timer</div>
-        <div class="ltp-presets">${presetButtons()}</div>
-        <div class="ltp-custom">
-          <label class="hidden" for="${esc(customId)}">Custom minutes</label>
-          <input id="${esc(customId)}" class="ltp-custom-minutes" type="number" inputmode="numeric" min="1" max="${MAX_MINUTES}" step="1" placeholder="Minutes">
-          <button type="button" class="secondary" data-action="custom">Start</button>
+        <div class="ltp-setup">
+          <div class="field-label">Timer</div>
+          <div class="ltp-presets">${presetButtons()}</div>
+          <p class="ltp-row-msg change-password-status err hidden"></p>
         </div>
-        <p class="ltp-row-msg change-password-status err hidden"></p>
         <div class="ltp-actions">
-          <button type="button" class="secondary${running ? "" : " hidden"}" data-action="cancel">Cancel timer</button>
-          <button type="button" class="secondary${loc.durationMinutes ? "" : " hidden"}" data-action="restart">Restart</button>
+          <button type="button" class="secondary small ltp-cancel${running ? "" : " hidden"}" data-action="cancel">Cancel</button>
           <button type="button" class="locact locact-nav ltp-directions" data-action="directions" aria-label="Directions to ${esc(loc.label)}">${NAV_ICON}<span>Directions</span></button>
           <a class="secondary ltp-maps" data-action="maps" href="${esc(googleMapsUrl(loc.lat, loc.lng))}" target="_blank" rel="noopener noreferrer">Open in Maps</a>
         </div>
@@ -379,39 +450,78 @@
     syncTicker();
   }
 
-  function restartTimer(id) {
-    const loc = findLoc(id);
-    if (!loc || !loc.durationMinutes) return;
-    startTimer(id, loc.durationMinutes);
-  }
-
-  function parseCustomMinutes(raw) {
-    const text = String(raw ?? "").trim();
-    if (!text) return null;
-    if (!/^\d+$/.test(text)) return Number.NaN;
-    return Number(text);
-  }
-
-  function startCustom(row) {
-    const id = row.getAttribute("data-id");
-    const input = row.querySelector(".ltp-custom-minutes");
-    const minutes = parseCustomMinutes(input && input.value);
-    if (!validMinutes(minutes)) {
-      setRowMessage(id, `Enter whole minutes from 1 to ${MAX_MINUTES}.`);
-      return;
-    }
-    startTimer(id, minutes);
+  function ensureFallbackLabel(loc) {
+    const label = String(loc.label || "").trim();
+    if (/^Location \d+$/.test(label)) return;
+    if (label && label !== "Location" && label !== "Finding address…") return;
+    loc.label = defaultLabel(locations.filter((item) => item.id !== loc.id));
   }
 
   function deleteLocation(id) {
     const loc = findLoc(id);
     if (!loc) return;
-    const name = loc.label || "this location";
+    const name = displayLabel(loc);
     if (typeof window.confirm === "function" && !window.confirm(`Delete ${name}?`)) return;
+    addressBusy.delete(id);
     locations = locations.filter((item) => item.id !== id);
     persist();
     renderList();
     syncTicker();
+  }
+
+  async function lookupAddress(id) {
+    const loc = findLoc(id);
+    if (!loc || loc.addressStatus === "ready") return false;
+    if (!isOnline()) return false;
+    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(loc.lat)}&lon=${encodeURIComponent(loc.lng)}&zoom=18&addressdetails=1`;
+    try {
+      const data = await fetchNominatim(url);
+      const still = findLoc(id);
+      if (!still) return true;
+      const name = shortStreetAddress(data).replace(/\s+/g, " ").trim().slice(0, 80);
+      if (name) {
+        still.label = name;
+        still.addressStatus = "ready";
+      } else {
+        still.addressStatus = "pending";
+        ensureFallbackLabel(still);
+      }
+      persist();
+    } catch (e) {
+      const still = findLoc(id);
+      if (!still) return true;
+      still.addressStatus = "pending";
+      ensureFallbackLabel(still);
+      persist();
+    }
+    return true;
+  }
+
+  function scheduleAddressLookup(id) {
+    const loc = findLoc(id);
+    if (!loc || loc.addressStatus === "ready" || addressBusy.has(id)) return;
+    if (!isOnline()) return;
+    addressBusy.add(id);
+    paintName(id);
+    geocodeChain = geocodeChain.then(async () => {
+      let called = false;
+      try {
+        called = await lookupAddress(id);
+      } catch (e) {
+        called = true;
+      } finally {
+        addressBusy.delete(id);
+        paintName(id);
+        if (called) await delay(NOMINATIM_GAP_MS);
+      }
+    });
+  }
+
+  function retryPendingAddresses() {
+    if (!isOnline()) return;
+    locations.forEach((loc) => {
+      if (loc.addressStatus === "pending") scheduleAddressLookup(loc.id);
+    });
   }
 
   function openDirections(loc) {
@@ -455,16 +565,8 @@
     const actionEl = event.target.closest("[data-action]");
     if (!actionEl || !row.contains(actionEl)) return;
     const action = actionEl.getAttribute("data-action");
-    if (action === "custom") {
-      startCustom(row);
-      return;
-    }
     if (action === "cancel") {
       cancelTimer(id);
-      return;
-    }
-    if (action === "restart") {
-      restartTimer(id);
       return;
     }
     if (action === "delete") {
@@ -481,54 +583,13 @@
     }
   }
 
-  function onListInput(event) {
-    const input = event.target.closest(".ltp-label");
-    if (!input) return;
-    const row = input.closest(".ltp-row");
-    if (!row) return;
-    const loc = findLoc(row.getAttribute("data-id"));
-    if (!loc) return;
-    const value = input.value.slice(0, 80);
-    if (!value.trim()) return;
-    loc.label = value;
-    persist();
-  }
-
-  function onListBlur(event) {
-    const input = event.target.closest && event.target.closest(".ltp-label");
-    if (!input) return;
-    const row = input.closest(".ltp-row");
-    if (!row) return;
-    const loc = findLoc(row.getAttribute("data-id"));
-    if (!loc) return;
-    const value = input.value.replace(/\s+/g, " ").trim().slice(0, 80);
-    loc.label = value || "Location";
-    input.value = loc.label;
-    persist();
-  }
-
-  function onListKeydown(event) {
-    if (event.key !== "Enter") return;
-    const input = event.target.closest(".ltp-custom-minutes");
-    if (!input) return;
-    const row = input.closest(".ltp-row");
-    if (!row) return;
-    event.preventDefault();
-    startCustom(row);
-  }
-
   function bind() {
     if (bound || typeof document === "undefined") return;
     bound = true;
     const saveBtn = el("ltpSaveLocation");
     if (saveBtn) saveBtn.addEventListener("click", saveMyLocation);
     const list = el("ltpList");
-    if (list) {
-      list.addEventListener("click", onListClick);
-      list.addEventListener("input", onListInput);
-      list.addEventListener("keydown", onListKeydown);
-      list.addEventListener("focusout", onListBlur);
-    }
+    if (list) list.addEventListener("click", onListClick);
     document.addEventListener("visibilitychange", onVisibility);
   }
 
@@ -557,6 +618,7 @@
         const loc = {
           id: `ltp${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
           label: defaultLabel(locations),
+          addressStatus: "pending",
           lat,
           lng,
           accuracy: Number.isFinite(accuracy) && accuracy >= 0 ? accuracy : null,
@@ -567,6 +629,7 @@
         };
         locations.unshift(loc);
         persist();
+        scheduleAddressLookup(loc.id);
         renderList();
         setStatus("Location saved.", "ok");
         const row = rowEl(loc.id);
@@ -591,6 +654,7 @@
     catchUpAlerts(now);
     paintClocks(now);
     syncTicker();
+    retryPendingAddresses();
   }
 
   function boot() {
@@ -609,7 +673,9 @@
     normaliseLocations,
     googleMapsUrl,
     validMinutes,
-    clockText
+    clockText,
+    shortStreetAddress,
+    presets: PRESETS
   };
   root.PinLongerThanPermitted = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
