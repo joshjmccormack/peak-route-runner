@@ -9,15 +9,16 @@
   const GEO_TIMEOUT = 3;
   // Same arrow as the Peak Routes directions button (NAV_ICON in app.js).
   const NAV_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" d="M8.4 18.45V12.1C8.4 8.9 10.75 7.25 14.15 7.25H16.9"/><path fill="currentColor" d="M15.55 4.6 21.45 7.45l-5.9 2.85z"/></svg>';
+  // Button text is the permitted period on the sign. minutes is that period plus the grace allowance.
   const PRESETS = [
-    { minutes: 5, label: "5m" },
-    { minutes: 10, label: "10m" },
-    { minutes: 15, label: "15m" },
-    { minutes: 20, label: "20m" },
-    { minutes: 25, label: "25m" },
-    { minutes: 35, label: "35m" },
-    { minutes: 70, label: "1h 10m" },
-    { minutes: 130, label: "2h 10m" }
+    { permit: "P2min", minutes: 5 },
+    { permit: "P5min", minutes: 10 },
+    { permit: "P10min", minutes: 15 },
+    { permit: "P15min", minutes: 20 },
+    { permit: "P20min", minutes: 25 },
+    { permit: "P30min", minutes: 35 },
+    { permit: "P1hr", minutes: 70 },
+    { permit: "P2hr", minutes: 130 }
   ];
   // Same gap as geocodeMissing() in app.js. Nominatim asks for at most one request a second.
   const NOMINATIM_GAP_MS = 1100;
@@ -186,6 +187,7 @@
       const timerEnd = Number(item.timerEnd);
       const durationMinutes = Number(item.durationMinutes);
       const label = String(item.label || "").trim().slice(0, 80) || "Location";
+      const permitLabel = String(item.permitLabel || "").trim().slice(0, 20);
       const entry = {
         id,
         label,
@@ -197,6 +199,8 @@
         durationMinutes: Number.isInteger(durationMinutes) && durationMinutes > 0 ? durationMinutes : null,
         alerted: item.alerted === true
       };
+      // Older running timers have no permitLabel. Leave it off so they keep counting unlabeled.
+      if (permitLabel) entry.permitLabel = permitLabel;
       // Old saves have no addressStatus. Keep their label and do not geocode them again.
       if (item.addressStatus === "ready" || item.addressStatus === "pending") entry.addressStatus = item.addressStatus;
       next.push(entry);
@@ -289,6 +293,12 @@
         clock.classList.toggle("hidden", !text);
       }
       row.classList.toggle("ltp-running", running);
+      const permit = row.querySelector(".ltp-permit");
+      if (permit) {
+        const permitText = running ? String(loc.permitLabel || "").trim() : "";
+        permit.textContent = permitText;
+        permit.classList.toggle("hidden", !permitText);
+      }
       const cancel = row.querySelector("[data-action='cancel']");
       if (cancel) cancel.classList.toggle("hidden", !running);
     });
@@ -302,8 +312,9 @@
     } catch (e) { /* vibration is optional */ }
     try {
       if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+      const place = loc.permitLabel ? `${loc.permitLabel} · ${loc.label}` : loc.label;
       const note = new Notification("Longer Than Permitted", {
-        body: `${loc.label} is overdue.`,
+        body: `${place} is overdue.`,
         tag: `ltp-${loc.id}`,
         lang: "en-AU"
       });
@@ -373,7 +384,7 @@
 
   function presetButtons() {
     return PRESETS.map((preset) =>
-      `<button type="button" class="secondary ltp-preset" data-minutes="${preset.minutes}">${esc(preset.label)}</button>`
+      `<button type="button" class="secondary ltp-preset" data-minutes="${preset.minutes}" data-permit="${esc(preset.permit)}">${esc(preset.permit)}</button>`
     ).join("");
   }
 
@@ -386,8 +397,8 @@
     const loc = findLoc(id);
     const row = rowEl(id);
     if (!loc || !row) return;
-    const name = row.querySelector(".ltp-name");
-    if (name) name.textContent = displayLabel(loc);
+    const address = row.querySelector(".ltp-address");
+    if (address) address.textContent = displayLabel(loc);
     const directions = row.querySelector("[data-action='directions']");
     if (directions) directions.setAttribute("aria-label", `Directions to ${loc.label}`);
   }
@@ -404,9 +415,10 @@
       const running = Number.isFinite(loc.timerEnd);
       const overdue = running && now >= loc.timerEnd;
       const clock = clockText(loc, now);
+      const permit = running ? String(loc.permitLabel || "").trim() : "";
       return `<article class="ltp-row${running ? " ltp-running" : ""}${overdue ? " ltp-overdue" : ""}" data-id="${esc(loc.id)}">
         <div class="ltp-head">
-          <p class="ltp-name">${esc(displayLabel(loc))}</p>
+          <p class="ltp-name"><span class="ltp-address">${esc(displayLabel(loc))}</span><span class="ltp-permit${permit ? "" : " hidden"}">${esc(permit)}</span></p>
           <button type="button" class="danger small ltp-delete" data-action="delete">Delete</button>
         </div>
         <p class="muted ltp-meta">${esc(formatSavedAt(loc.savedAt))} · ${esc(formatCoord(loc.lat))}, ${esc(formatCoord(loc.lng))} · ${esc(formatAccuracy(loc.accuracy))}</p>
@@ -425,11 +437,14 @@
     }).join("");
   }
 
-  function startTimer(id, minutes) {
+  function startTimer(id, minutes, permitLabel) {
     const loc = findLoc(id);
     if (!loc || !validMinutes(minutes)) return false;
     requestNotifyPermission();
     loc.durationMinutes = minutes;
+    const permit = String(permitLabel || "").trim();
+    if (permit) loc.permitLabel = permit;
+    else delete loc.permitLabel;
     loc.timerEnd = Date.now() + minutes * 60 * 1000;
     loc.alerted = false;
     persist();
@@ -444,6 +459,7 @@
     if (!loc) return;
     loc.timerEnd = null;
     loc.alerted = false;
+    delete loc.permitLabel;
     persist();
     setRowMessage(id, "");
     paintClocks(Date.now());
@@ -559,7 +575,7 @@
     const id = row.getAttribute("data-id");
     const preset = event.target.closest("[data-minutes]");
     if (preset && row.contains(preset)) {
-      startTimer(id, Number(preset.getAttribute("data-minutes")));
+      startTimer(id, Number(preset.getAttribute("data-minutes")), preset.getAttribute("data-permit"));
       return;
     }
     const actionEl = event.target.closest("[data-action]");
