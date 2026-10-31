@@ -1,5 +1,5 @@
 const APP_VERSION = "v1.1";
-const SCREEN_IDS = ["home", "select", "runMaps", "dash", "changePassword", "vehicles", "jobClosures", "legislation", "addOfficer"];
+const SCREEN_IDS = ["home", "select", "runMaps", "dash", "changePassword", "vehicles", "jobClosures", "legislation", "longerThanPermitted", "addOfficer"];
 const RUNMAP_PREFIX = "runmap:";
 const SHOW_ALL_MAPS_URL = "https://www.google.com/maps/d/u/1/edit?mid=1du12Xr1YcXO5iB9CEYstssvNaV92LZI&usp=sharing";
 const RUN_MAPS = [
@@ -1672,6 +1672,14 @@ function showLegislation() {
   window.scrollTo(0, 0);
   if (window.PinLegislation && typeof window.PinLegislation.open === "function") {
     window.PinLegislation.open();
+  }
+}
+
+function showLongerThanPermitted() {
+  showScreen("longerThanPermitted");
+  window.scrollTo(0, 0);
+  if (window.PinLongerThanPermitted && typeof window.PinLongerThanPermitted.open === "function") {
+    window.PinLongerThanPermitted.open();
   }
 }
 
@@ -3752,6 +3760,10 @@ function bindUi() {
   if (openJobs) openJobs.onclick = showJobClosures;
   const openLegislation = document.getElementById("openLegislation");
   if (openLegislation) openLegislation.onclick = showLegislation;
+  const openLonger = document.getElementById("openLongerThanPermitted");
+  if (openLonger) openLonger.onclick = showLongerThanPermitted;
+  const longerBack = document.getElementById("longerThanPermittedBack");
+  if (longerBack) longerBack.onclick = showHome;
   document.querySelectorAll("[data-job-complainant]").forEach((btn) => {
     btn.onclick = () => {
       jobComplainantChoice = btn.getAttribute("data-job-complainant") || "";

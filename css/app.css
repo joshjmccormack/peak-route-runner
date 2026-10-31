@@ -571,6 +571,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .home-vehicles.home-vehicles-tight { margin-top: 10px; }
 .home-job-closures { margin-top: 10px; }
 .home-legislation { margin-top: 10px; }
+.home-longer { margin-top: 10px; }
 
 .runmap-all { grid-column: 1 / -1; }
 
@@ -1171,3 +1172,117 @@ a.legislation-official.secondary {
   border: 1px solid #cfdbef;
 }
 .legislation-back { margin-top: 0; }
+
+.ltp-back { margin-top: 0; }
+.ltp-list { margin-top: 8px; }
+.ltp-empty { margin: 8px 0 0; }
+.ltp-row {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  margin: 10px 0;
+  background: #fff;
+}
+.ltp-row.ltp-overdue {
+  background: #fdeceb;
+  border-color: #efb5b0;
+}
+.ltp-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ltp-head input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 12px 14px;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  background: #fff;
+  color: var(--txt);
+}
+.ltp-head button {
+  width: auto;
+  margin: 0;
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding: 10px 12px;
+  font-size: 0.875rem;
+}
+.ltp-meta {
+  margin: 8px 0 0;
+  word-break: break-word;
+}
+.ltp-clock {
+  margin: 8px 0 0;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.ltp-row.ltp-overdue .ltp-clock { color: var(--red); }
+.ltp-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 8px;
+}
+.ltp-presets button {
+  width: auto;
+  margin: 0;
+  min-height: 44px;
+  padding: 8px 12px;
+  font-size: 0.875rem;
+}
+.ltp-custom {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+.ltp-custom input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 12px 14px;
+  margin: 0;
+  font-size: 1rem;
+  background: #fff;
+  color: var(--txt);
+}
+.ltp-custom button {
+  width: auto;
+  margin: 0;
+  min-height: 48px;
+  padding: 12px 16px;
+}
+.ltp-row-msg { margin: 6px 0 0; }
+.ltp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.ltp-actions button {
+  flex: 1 1 40%;
+  margin: 0;
+}
+a.ltp-maps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 100%;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: 14px 15px;
+  border-radius: 13px;
+  text-align: center;
+  text-decoration: none;
+  font-weight: 700;
+}
