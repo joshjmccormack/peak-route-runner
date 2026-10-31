@@ -1272,6 +1272,21 @@ a.legislation-official.secondary {
   flex: 1 1 40%;
   margin: 0;
 }
+.ltp-actions .ltp-directions {
+  flex: 1 1 100%;
+  width: 100%;
+  height: auto;
+  min-height: 48px;
+  align-self: stretch;
+  gap: 8px;
+  padding: 12px 15px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.ltp-actions .ltp-directions svg {
+  width: 22px;
+  height: 22px;
+}
 a.ltp-maps {
   display: flex;
   align-items: center;

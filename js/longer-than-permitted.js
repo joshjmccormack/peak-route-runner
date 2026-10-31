@@ -7,6 +7,8 @@
   const GEO_DENIED = 1;
   const GEO_UNAVAILABLE = 2;
   const GEO_TIMEOUT = 3;
+  // Same arrow as the Peak Routes directions button (NAV_ICON in app.js).
+  const NAV_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" d="M8.4 18.45V12.1C8.4 8.9 10.75 7.25 14.15 7.25H16.9"/><path fill="currentColor" d="M15.55 4.6 21.45 7.45l-5.9 2.85z"/></svg>';
   const PRESETS = [
     { minutes: 5, label: "5 min" },
     { minutes: 10, label: "10 min" },
@@ -345,6 +347,7 @@
         <div class="ltp-actions">
           <button type="button" class="secondary${running ? "" : " hidden"}" data-action="cancel">Cancel timer</button>
           <button type="button" class="secondary${loc.durationMinutes ? "" : " hidden"}" data-action="restart">Restart</button>
+          <button type="button" class="locact locact-nav ltp-directions" data-action="directions" aria-label="Directions to ${esc(loc.label)}">${NAV_ICON}<span>Directions</span></button>
           <a class="secondary ltp-maps" data-action="maps" href="${esc(googleMapsUrl(loc.lat, loc.lng))}" target="_blank" rel="noopener noreferrer">Open in Maps</a>
         </div>
       </article>`;
@@ -411,6 +414,18 @@
     syncTicker();
   }
 
+  function openDirections(loc) {
+    if (!loc) return;
+    // Peak Routes directions: navigateTo sets location.href to the Google Maps
+    // driving-directions URL. Omitting origin uses the device's current position.
+    if (typeof navigateTo === "function") {
+      navigateTo(loc);
+      return;
+    }
+    const dest = `${Number(loc.lat)},${Number(loc.lng)}`;
+    location.href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}&travelmode=driving`;
+  }
+
   function openMaps(loc, href) {
     const url = href || (loc ? googleMapsUrl(loc.lat, loc.lng) : "");
     if (!url) return;
@@ -454,6 +469,10 @@
     }
     if (action === "delete") {
       deleteLocation(id);
+      return;
+    }
+    if (action === "directions") {
+      openDirections(findLoc(id));
       return;
     }
     if (action === "maps") {
