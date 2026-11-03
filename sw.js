@@ -1,4 +1,4 @@
-const CACHE = "pinassist-v1.35";
+const CACHE = "pinassist-v1.36";
 const CORE = [
   "./",
   "./index.html",
@@ -10,6 +10,7 @@ const CORE = [
   "./js/vehicles.js",
   "./js/legislation.js",
   "./js/longer-than-permitted.js",
+  "./js/garage-layout.js",
   "./js/vendor/supabase.js",
   "./data/parking-offences.json",
   "./icons/peak-routes.png?v=1.11",
@@ -41,6 +42,7 @@ function isAppShell(url) {
     url.pathname.endsWith("/js/vehicles.js") ||
     url.pathname.endsWith("/js/legislation.js") ||
     url.pathname.endsWith("/js/longer-than-permitted.js") ||
+    url.pathname.endsWith("/js/garage-layout.js") ||
     url.pathname.endsWith("/data/parking-offences.json") ||
     url.pathname.endsWith("/js/vendor/supabase.js") ||
     url.pathname.endsWith("/css/app.css") ||
