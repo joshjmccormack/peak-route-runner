@@ -3,3 +3,7 @@
 Thumbs.db
 desktop.ini
 *.log
+
+# Production build is produced on GitHub Actions (npm run build). Do not commit it.
+node_modules/
+dist/
