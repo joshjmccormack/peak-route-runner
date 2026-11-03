@@ -1,4 +1,9 @@
-const CACHE = "pinassist-v1.31";
+const CACHE = "pinassist-v1.35";
+
+function isDeploymentPlan(url) {
+  return url.pathname === "/DeploymentPlan" || url.pathname.startsWith("/DeploymentPlan/");
+}
+
 const CORE = [
   "./",
   "./index.html",
@@ -9,13 +14,15 @@ const CORE = [
   "./js/supabase-config.js",
   "./js/vehicles.js",
   "./js/legislation.js",
+  "./js/longer-than-permitted.js",
   "./js/vendor/supabase.js",
   "./data/parking-offences.json",
   "./icons/peak-routes.png?v=1.11",
   "./icons/run-maps.png?v=1.11",
   "./icons/vehicles.png?v=1.18",
   "./icons/job-closures.png?v=1.11",
-  "./icons/torum-index.png?v=1.30"
+  "./icons/torum-index.png?v=1.30",
+  "./icons/longer-than-permitted.svg?v=1.31"
 ];
 
 self.addEventListener("install", (event) => {
@@ -26,7 +33,7 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)));
+    await Promise.all(keys.filter((k) => k !== CACHE && !k.startsWith("deployment-roster-")).map((k) => caches.delete(k)));
     await self.clients.claim();
   })());
 });
@@ -38,6 +45,7 @@ function isAppShell(url) {
     url.pathname.endsWith("/js/supabase-config.js") ||
     url.pathname.endsWith("/js/vehicles.js") ||
     url.pathname.endsWith("/js/legislation.js") ||
+    url.pathname.endsWith("/js/longer-than-permitted.js") ||
     url.pathname.endsWith("/data/parking-offences.json") ||
     url.pathname.endsWith("/js/vendor/supabase.js") ||
     url.pathname.endsWith("/css/app.css") ||
@@ -49,6 +57,7 @@ self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
+  if (url.origin === self.location.origin && isDeploymentPlan(url)) return;
 
   if (isAppShell(url)) {
     event.respondWith((async () => {
