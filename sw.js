@@ -18,7 +18,8 @@ const CORE = [
   "./icons/vehicles.png?v=1.18",
   "./icons/job-closures.png?v=1.11",
   "./icons/torum-index.png?v=1.30",
-  "./icons/longer-than-permitted.svg?v=1.31"
+  "./icons/longer-than-permitted.svg?v=1.31",
+  "./icons/disabled-bay.png?v=1.36"
 ];
 
 self.addEventListener("install", (event) => {

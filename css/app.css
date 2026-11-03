@@ -1429,11 +1429,6 @@ button.garage-bay.is-selected {
   border-color: var(--blue);
   box-shadow: inset 0 0 0 2px var(--blue);
 }
-.garage-mark {
-  font-size: 0.5rem;
-  font-weight: 800;
-  letter-spacing: 0.03em;
-}
 .garage-num {
   font-size: 0.6875rem;
   font-weight: 800;
@@ -1449,18 +1444,18 @@ button.garage-bay.is-selected {
 .garage-cell.is-disabled.tone-purple { background: #ebe6f2; }
 .garage-cell.is-disabled.tone-pink { background: #f6e7ee; }
 .garage-cell.kind-pwd {
+  position: relative;
   background: #e4e7ee;
-  color: #4d5968;
-  gap: 0;
+  padding: 0;
+  overflow: hidden;
 }
-.garage-pwd-symbol {
-  font-size: 0.8rem;
-  line-height: 1;
-}
-.garage-pwd-text {
-  font-size: 0.5rem;
-  font-weight: 800;
-  letter-spacing: 0.03em;
+.garage-pwd-icon {
+  position: absolute;
+  inset: 3px;
+  width: calc(100% - 6px);
+  height: calc(100% - 6px);
+  object-fit: contain;
+  pointer-events: none;
 }
 .garage-cell.kind-strip {
   background: #d94a4a;

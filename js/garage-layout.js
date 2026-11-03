@@ -5,10 +5,11 @@
 //
 // Selectable (ours): 101–112 and 115–126. Those are the yellow bays.
 // Shown but not ours: 113, 114, 127–132, the unnumbered pink bay,
-// and both disabled (PWD) bays. The red cell between the PWD bays is
+// and both disabled bays. The red cell between the disabled bays is
 // not a bay.
 
 (function () {
+  var DISABLED_BAY_ICON = "icons/disabled-bay.png?v=1.36";
   var NOT_OURS = {
     "113": true,
     "114": true,
@@ -32,8 +33,7 @@
       region: region,
       ours: ours,
       selectable: ours,
-      tone: ours ? "compliance" : "other",
-      mark: ""
+      tone: ours ? "compliance" : "other"
     };
     if (extra) {
       Object.keys(extra).forEach(function (key) {
@@ -42,10 +42,6 @@
     }
     if (!cell.ours) cell.selectable = false;
     return cell;
-  }
-
-  function marked(number, col, row, region) {
-    return bay(number, col, row, region, { mark: "M" });
   }
 
   var layout = {
@@ -57,8 +53,8 @@
     columns: 15,
     rows: 8,
     cells: [
-      marked(102, 1, 1, "left"),
-      marked(101, 2, 1, "left"),
+      bay(102, 1, 1, "left"),
+      bay(101, 2, 1, "left"),
       bay(104, 1, 2, "left"),
       bay(103, 2, 2, "left"),
       bay(106, 1, 4, "left"),
@@ -74,15 +70,14 @@
         id: "pwd-west",
         kind: "pwd",
         number: null,
-        label: "PWD",
+        icon: DISABLED_BAY_ICON,
         accessibleLabel: "Disabled parking",
         col: 4,
         row: 3,
         region: "centre",
         ours: false,
         selectable: false,
-        tone: "pwd",
-        mark: ""
+        tone: "pwd"
       },
       {
         id: "centre-strip",
@@ -94,22 +89,20 @@
         region: "centre",
         ours: false,
         selectable: false,
-        tone: "red",
-        mark: ""
+        tone: "red"
       },
       {
         id: "pwd-east",
         kind: "pwd",
         number: null,
-        label: "PWD",
+        icon: DISABLED_BAY_ICON,
         accessibleLabel: "Disabled parking",
         col: 6,
         row: 3,
         region: "centre",
         ours: false,
         selectable: false,
-        tone: "pwd",
-        mark: ""
+        tone: "pwd"
       },
       bay(113, 7, 3, "centre", { tone: "compliance" }),
       bay(114, 8, 3, "centre", { tone: "compliance" }),
@@ -118,8 +111,8 @@
       bay(117, 11, 3, "centre"),
       bay(118, 12, 3, "centre"),
 
-      marked(119, 14, 1, "right"),
-      marked(120, 15, 1, "right"),
+      bay(119, 14, 1, "right"),
+      bay(120, 15, 1, "right"),
       bay(121, 14, 2, "right"),
       bay(122, 15, 2, "right"),
       bay(123, 14, 4, "right"),
@@ -143,8 +136,7 @@
         region: "bottom",
         ours: false,
         selectable: false,
-        tone: "pink",
-        mark: ""
+        tone: "pink"
       }
     ]
   };
@@ -205,9 +197,7 @@
         el.setAttribute("aria-pressed", pressed ? "true" : "false");
         if (pressed) el.classList.add("is-selected");
         var name = "Bay " + cell.number;
-        if (cell.mark) name += ", marked " + cell.mark;
         el.setAttribute("aria-label", pressed ? name + ", selected" : name);
-        if (cell.mark) appendText(el, "garage-mark", cell.mark);
         appendText(el, "garage-num", String(cell.number));
         el.addEventListener("click", function () {
           if (typeof onSelect === "function") onSelect(String(cell.number));
@@ -215,8 +205,13 @@
       } else if (cell.kind === "pwd") {
         el.setAttribute("role", "img");
         el.setAttribute("aria-label", (cell.accessibleLabel || "Disabled parking") + ", not available");
-        appendText(el, "garage-pwd-symbol", "\u267F").setAttribute("aria-hidden", "true");
-        appendText(el, "garage-pwd-text", cell.label || "PWD").setAttribute("aria-hidden", "true");
+        var icon = document.createElement("img");
+        icon.className = "garage-pwd-icon";
+        icon.src = cell.icon || DISABLED_BAY_ICON;
+        icon.alt = "";
+        icon.decoding = "async";
+        icon.setAttribute("aria-hidden", "true");
+        el.appendChild(icon);
       } else if (cell.kind === "strip") {
         el.setAttribute("role", "presentation");
         el.setAttribute("aria-hidden", "true");
