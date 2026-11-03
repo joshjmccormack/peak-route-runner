@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#163f38">
+  <meta name="description" content="Parking Compliance deployment roster. See your week or edit the full plan.">
+  <title>Deployment Roster · Parking Compliance</title>
+  <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./css/app.css">
+</head>
+<body>
+  <p class="boot" id="boot">Loading roster…</p>
+
+  <main class="login" id="screen-login" hidden>
+    <div class="login-frame">
+      <section class="login-story">
+        <p class="eyebrow">Parking Compliance</p>
+        <h1 class="display">Deployment Roster</h1>
+        <p class="lede">The weekly plan for Field Supervisors, Suburban Safety, Parking, ROC, senior leadership, and after hours.</p>
+        <div class="mini-board" aria-hidden="true">
+          <div><strong>MON</strong><span class="bar"></span><span class="bar short"></span></div>
+          <div><strong>TUE</strong><span class="bar mid"></span><span class="bar"></span></div>
+          <div><strong>WED</strong><span class="bar short"></span><span class="bar mid"></span></div>
+          <div><strong>THU</strong><span class="bar"></span><span class="bar short"></span></div>
+          <div><strong>FRI</strong><span class="bar mid"></span></div>
+        </div>
+      </section>
+      <section class="login-card">
+        <h2>Sign in</h2>
+        <p class="hint">Use the email and password on your Parking Project account.</p>
+        <div id="config-error" class="banner error" hidden>
+          <p><strong>Config missing.</strong> Copy <code>js/config.example.js</code> to <code>js/config.js</code> and set the Parking Project URL and anon key.</p>
+        </div>
+        <form id="login-form">
+          <label>Email
+            <input id="email" name="email" type="email" autocomplete="username" required inputmode="email">
+          </label>
+          <label>Password
+            <span class="password-field">
+              <input id="password" name="password" type="password" autocomplete="current-password" required>
+              <button type="button" class="show-password" id="toggle-password" aria-pressed="false">Show</button>
+            </span>
+          </label>
+          <p id="login-error" class="banner error" hidden></p>
+          <button class="primary" type="submit" id="login-submit">Sign in</button>
+        </form>
+        <button type="button" class="text-btn" id="show-magic">Email me a sign-in link</button>
+        <form id="magic-form" hidden>
+          <label>Email for the link
+            <input id="magic-email" type="email" autocomplete="username" inputmode="email">
+          </label>
+          <p id="magic-status" class="banner ok" hidden></p>
+          <button class="primary" type="submit" id="magic-submit">Send link</button>
+        </form>
+        <p class="fine">Dates follow Sydney time. Everyone can read the plan. Admin and SLG edit it. This is separate from route running and uses the shared Parking Project directory.</p>
+      </section>
+    </div>
+  </main>
+
+  <div class="app" id="screen-app" hidden>
+    <div class="sticky-bar">
+      <header class="topbar">
+        <div class="brand">
+          <div class="mark" aria-hidden="true"><span></span><span></span><span></span></div>
+          <div>
+            <p class="eyebrow">Parking Compliance</p>
+            <h1 class="display">Deployment Roster</h1>
+          </div>
+        </div>
+        <div class="who">
+          <div class="who-text">
+            <strong id="who-name">Signed in</strong>
+            <span id="who-meta"></span>
+          </div>
+          <button type="button" class="ghost" id="sign-out">Sign out</button>
+        </div>
+      </header>
+      <div class="toolbar">
+        <nav class="tabs" aria-label="Roster views">
+          <button type="button" class="tab is-active" data-view="my-week" id="tab-mine">My week</button>
+          <button type="button" class="tab" data-view="day" id="tab-day">Day</button>
+          <button type="button" class="tab" data-view="plan" id="tab-plan">Full plan</button>
+          <button type="button" class="tab" data-view="officers" id="tab-officers" hidden>Officers</button>
+        </nav>
+        <div class="week-nav" id="week-nav">
+          <button type="button" class="icon-btn" id="prev-week" aria-label="Previous week">‹</button>
+          <div class="week-label" id="week-label"></div>
+          <button type="button" class="icon-btn" id="next-week" aria-label="Next week">›</button>
+          <button type="button" class="ghost" id="this-week">This week</button>
+          <div id="span-toggle" hidden>
+            <button type="button" class="chip is-active" data-span="weekday">Mon–Fri</button>
+            <button type="button" class="chip" data-span="weekend">Sat–Sun</button>
+          </div>
+        </div>
+        <div class="plan-search" id="plan-search" hidden>
+          <input id="plan-query" type="search" placeholder="Name, code, radio, vehicle…" aria-label="Search the roster" enterkeyhint="search" autocomplete="off" autocapitalize="off" spellcheck="false">
+          <button type="button" class="plan-search-clear" id="plan-query-clear" hidden aria-label="Clear search">×</button>
+        </div>
+        <div class="filters" id="board-toggle" hidden>
+          <button type="button" class="chip is-active" data-board="live">Live</button>
+          <button type="button" class="chip" data-board="archive">Archived</button>
+        </div>
+        <div class="filters" id="filters" hidden>
+          <button type="button" class="chip" data-filter="draft" hidden>Draft</button>
+          <button type="button" class="chip" data-filter="published" hidden>Published</button>
+          <button type="button" class="chip is-active" data-filter="all">All</button>
+        </div>
+        <div class="filters" id="density-toggle" hidden>
+          <button type="button" class="chip is-active" data-density="compact">Compact</button>
+          <button type="button" class="chip" data-density="comfortable">Comfortable</button>
+        </div>
+        <button type="button" class="ghost" id="refresh">Refresh</button>
+        <button type="button" class="ghost" id="archive-week" hidden>Archive</button>
+        <button type="button" class="ghost" id="restore-week" hidden>Restore</button>
+        <button type="button" class="primary" id="add-assignment" hidden>Add</button>
+      </div>
+    </div>
+    <div class="main">
+      <div id="app-banner"></div>
+      <div id="view" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div class="modal-back" id="modal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow" id="modal-kicker">Assignment</p>
+          <h2 id="modal-title">Add assignment</h2>
+        </div>
+        <button type="button" class="ghost" id="modal-close">Close</button>
+      </div>
+
+      <form id="assignment-form">
+        <div class="form-grid">
+          <label>Date
+            <input id="f-date" name="work_date" type="date" required>
+          </label>
+          <div class="copy-days wide" id="form-copy-days">
+            <p>Days this week</p>
+            <div class="copy-day-row" id="form-copy-day-row" role="group" aria-label="Days this week"></div>
+          </div>
+          <label>Section
+            <select id="f-section" name="section" required>
+              <option value="FS">FS — Field Supervisors</option>
+              <option value="SST">SST — Suburban Safety Team</option>
+              <option value="Parking">Parking — Parking Compliance</option>
+              <option value="ROC">ROC — Coordinators</option>
+              <option value="SLG">Senior Leadership</option>
+              <option value="After hours">After hours</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+          <label class="wide" id="officer-label">Officer
+            <select id="f-officer" name="officer_id">
+              <option value="">Not linked to the directory</option>
+            </select>
+          </label>
+          <p class="officer-meta wide" id="officer-meta"></p>
+          <label>Officer code
+            <input id="f-code" name="officer_code" maxlength="40" autocomplete="off" spellcheck="false">
+          </label>
+          <label>Shift
+            <input id="f-shift" name="shift" list="list-shift" maxlength="80" autocomplete="off">
+          </label>
+          <label>Function
+            <input id="f-function" name="function" list="list-function" maxlength="80" autocomplete="off">
+          </label>
+          <label>Vehicle
+            <input id="f-vehicle" name="vehicle_id" list="list-vehicle" maxlength="80" autocomplete="off">
+          </label>
+          <label>Peak
+            <input id="f-peak" name="peak" list="list-peak" maxlength="120" autocomplete="off">
+          </label>
+          <label>Area
+            <input id="f-area" name="area" list="list-area" maxlength="120" autocomplete="off">
+          </label>
+          <label>Status
+            <select id="f-status" name="status" required>
+              <option value="draft">Draft</option>
+              <option value="published">Published</option>
+              <option value="leave">Leave</option>
+              <option value="ot">Overtime</option>
+              <option value="stood_down">STOOD DOWN</option>
+              <option value="sick">Sick</option>
+            </select>
+          </label>
+          <label class="wide">Notes
+            <textarea id="f-notes" name="notes" maxlength="2000"></textarea>
+          </label>
+          <p class="hint wide" id="form-hint">Shifts show on My week when the officer code matches that person’s profile.</p>
+          <p id="form-error" class="banner error wide" hidden></p>
+          <div class="modal-actions wide">
+            <button type="button" class="danger" id="delete-assignment" hidden>Remove</button>
+            <button type="button" class="ghost" id="modal-cancel">Cancel</button>
+            <button type="submit" class="primary" id="save-assignment">Save assignment</button>
+          </div>
+          <div id="delete-confirm" class="banner warn wide" hidden>
+            <p>Remove this assignment? This cannot be undone.</p>
+            <div class="modal-actions">
+              <button type="button" class="ghost" id="delete-keep">Keep</button>
+              <button type="button" class="danger" id="delete-confirm-btn">Remove</button>
+            </div>
+          </div>
+        </div>
+        <datalist id="list-shift"></datalist>
+        <datalist id="list-function"></datalist>
+        <datalist id="list-vehicle"></datalist>
+        <datalist id="list-peak"></datalist>
+        <datalist id="list-area"></datalist>
+      </form>
+
+      <div id="read-panel" hidden>
+        <dl class="readout" id="readout"></dl>
+        <div class="modal-actions">
+          <button type="button" class="primary" id="read-close">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="presence-menu" class="presence-menu" hidden role="dialog" aria-labelledby="presence-menu-title">
+    <p class="cell-editor-kicker">Radio status</p>
+    <h2 id="presence-menu-title">Officer</h2>
+    <div class="presence-choices" role="group" aria-label="Set radio status">
+      <button type="button" class="presence-choice presence-online" data-menu-presence="online">Online</button>
+      <button type="button" class="presence-choice presence-admin_oct" data-menu-presence="admin_oct">Office</button>
+      <button type="button" class="presence-choice presence-lunch" data-menu-presence="lunch">Lunch</button>
+      <button type="button" class="presence-choice presence-offline" data-menu-presence="offline">Offline</button>
+      <button type="button" class="presence-choice presence-end" data-menu-presence="end">Finished</button>
+    </div>
+    <p id="presence-menu-lock" class="presence-lock" hidden>Radio dispatch signs you on as Online or Office.</p>
+    <label>Note
+      <input id="presence-menu-note" maxlength="200" placeholder="Optional" autocomplete="off">
+    </label>
+    <div class="cell-editor-actions">
+      <button type="button" class="ghost" id="presence-menu-close">Close</button>
+    </div>
+  </div>
+
+  <div id="contact-pop" class="contact-pop" hidden role="dialog" aria-labelledby="contact-name">
+    <p class="cell-editor-kicker">Contact</p>
+    <h2 id="contact-name">Officer</h2>
+    <p id="contact-meta"></p>
+    <a id="contact-phone" href=""></a>
+    <p id="contact-empty" hidden>No phone on file.</p>
+    <div class="cell-editor-actions">
+      <button type="button" class="ghost" id="contact-close">Close</button>
+    </div>
+  </div>
+
+  <div id="cell-editor" class="cell-editor" hidden role="dialog" aria-labelledby="cell-editor-title">
+    <form id="cell-form">
+      <p class="cell-editor-kicker" id="cell-editor-kicker"></p>
+      <h2 id="cell-editor-title">Edit shift</h2>
+      <div class="cell-pair">
+        <label>Date
+          <input id="c-date" type="date" required>
+        </label>
+        <label>Section
+          <select id="c-section" required>
+            <option value="FS">FS</option>
+            <option value="SST">SST</option>
+            <option value="Parking">Parking</option>
+            <option value="ROC">ROC</option>
+            <option value="SLG">Senior Leadership</option>
+            <option value="After hours">After hours</option>
+            <option value="Other">Other</option>
+          </select>
+        </label>
+      </div>
+      <div class="copy-days" id="copy-days">
+        <p>Days this week</p>
+        <div class="copy-day-row" id="copy-day-row" role="group" aria-label="Days this week"></div>
+      </div>
+      <label>Officer code
+        <input id="c-code" list="list-officer" maxlength="40" autocomplete="off" spellcheck="false">
+      </label>
+      <div class="cell-pair">
+        <label>Shift
+          <input id="c-shift" list="list-shift" maxlength="80" autocomplete="off">
+        </label>
+        <label>Vehicle
+          <input id="c-vehicle" list="list-vehicle" maxlength="80" autocomplete="off">
+        </label>
+        <label>Peak
+          <input id="c-peak" list="list-peak" maxlength="120" autocomplete="off">
+        </label>
+        <label>Area
+          <input id="c-area" list="list-area" maxlength="120" autocomplete="off">
+        </label>
+        <label>Function
+          <input id="c-function" list="list-function" maxlength="80" autocomplete="off">
+        </label>
+        <label class="checkline">
+          <input id="c-ot" type="checkbox">
+          This line is overtime
+        </label>
+        <label>Status
+          <select id="c-status" required>
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+            <option value="leave">Leave</option>
+            <option value="ot">Overtime</option>
+            <option value="stood_down">STOOD DOWN</option>
+            <option value="sick">Sick</option>
+          </select>
+        </label>
+        <div id="sick-range" class="sick-range" hidden>
+          <label>Sick from
+            <input id="c-sick-from" type="date">
+          </label>
+          <label>Sick to
+            <input id="c-sick-to" type="date">
+          </label>
+          <p>Each day in this range is marked Sick. Empty days get a sick line for this officer.</p>
+        </div>
+      </div>
+      <label>Notes
+        <input id="c-notes" maxlength="2000" autocomplete="off">
+      </label>
+      <p id="cell-error" class="banner error" hidden></p>
+      <div class="cell-editor-actions">
+        <button type="button" class="ghost" id="cell-add-ot" hidden>Add OT line</button>
+        <button type="button" class="danger" id="cell-clear" hidden>Clear</button>
+        <button type="button" class="ghost" id="cell-cancel">Cancel</button>
+        <button type="submit" class="primary" id="cell-save">Save</button>
+      </div>
+      <div id="cell-clear-ask" class="cell-clear-ask" hidden>
+        <p>Remove this line from the plan?</p>
+        <div class="cell-editor-actions">
+          <button type="button" class="ghost" id="cell-clear-no">Keep</button>
+          <button type="button" class="danger" id="cell-clear-yes">Remove</button>
+        </div>
+      </div>
+    </form>
+  </div>
+  <datalist id="list-officer"></datalist>
+
+  <div id="toast" role="status"></div>
+  <script src="./js/vendor/supabase.js"></script>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
