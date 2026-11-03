@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Page not found</title>
+<script>
+(function () {
+  var head = location.pathname.split("/")[1] || "";
+  if (head.toLowerCase() !== "deploymentplan" || head === "DeploymentPlan") return;
+  var meta = document.createElement("meta");
+  meta.httpEquiv = "refresh";
+  meta.content = "0; url=/DeploymentPlan/";
+  document.head.appendChild(meta);
+  location.replace("/DeploymentPlan/" + location.search + location.hash);
+})();
+</script>
+</head>
+<body>
+<p id="missing">Page not found. <a href="/">PinAssist</a></p>
+<p id="roster-link" hidden><a href="/DeploymentPlan/">Deployment Roster</a></p>
+<script>
+(function () {
+  var head = location.pathname.split("/")[1] || "";
+  if (head.toLowerCase() !== "deploymentplan" || head === "DeploymentPlan") return;
+  document.getElementById("missing").hidden = true;
+  document.getElementById("roster-link").hidden = false;
+})();
+</script>
+</body>
+</html>

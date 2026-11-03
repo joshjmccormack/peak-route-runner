@@ -1,7 +1,9 @@
 const CACHE = "pinassist-v1.35";
 
 function isDeploymentPlan(url) {
-  return url.pathname === "/DeploymentPlan" || url.pathname.startsWith("/DeploymentPlan/");
+  const path = url.pathname;
+  if (path === "/DeploymentPlan" || path.startsWith("/DeploymentPlan/")) return true;
+  return /^\/deploymentplan(?:\/|$)/i.test(path);
 }
 
 const CORE = [
