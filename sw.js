@@ -1,4 +1,4 @@
-const CACHE = "pinassist-v1.35";
+const CACHE = "pinassist-v1.36";
 
 function isDeploymentPlan(url) {
   return url.pathname === "/DeploymentPlan" || url.pathname.startsWith("/DeploymentPlan/");
@@ -15,6 +15,7 @@ const CORE = [
   "./js/vehicles.js",
   "./js/legislation.js",
   "./js/longer-than-permitted.js",
+  "./js/garage-layout.js",
   "./js/vendor/supabase.js",
   "./data/parking-offences.json",
   "./icons/peak-routes.png?v=1.11",
@@ -22,7 +23,8 @@ const CORE = [
   "./icons/vehicles.png?v=1.18",
   "./icons/job-closures.png?v=1.11",
   "./icons/torum-index.png?v=1.30",
-  "./icons/longer-than-permitted.svg?v=1.31"
+  "./icons/longer-than-permitted.svg?v=1.31",
+  "./icons/disabled-bay.png?v=1.36"
 ];
 
 self.addEventListener("install", (event) => {
@@ -46,6 +48,7 @@ function isAppShell(url) {
     url.pathname.endsWith("/js/vehicles.js") ||
     url.pathname.endsWith("/js/legislation.js") ||
     url.pathname.endsWith("/js/longer-than-permitted.js") ||
+    url.pathname.endsWith("/js/garage-layout.js") ||
     url.pathname.endsWith("/data/parking-offences.json") ||
     url.pathname.endsWith("/js/vendor/supabase.js") ||
     url.pathname.endsWith("/css/app.css") ||

@@ -964,6 +964,7 @@ function showChangePassword() {
 let vehicleFleet = "";
 let vehicleLocation = "";
 let vehicleChargePercent = null;
+let vehicleBay = "";
 
 function chargeBandList() {
   const list = window.PEAK_CHARGE_BANDS;
@@ -1422,16 +1423,63 @@ function showVehicleStatus(message, tone) {
   if (tone) el.classList.add(tone);
 }
 
+function garageSelectableNumbers() {
+  if (typeof window.peakGarageSelectableNumbers !== "function") return [];
+  const numbers = window.peakGarageSelectableNumbers();
+  return Array.isArray(numbers) ? numbers : [];
+}
+
+function normalizeVehicleBay(value) {
+  const bay = String(value ?? "").trim();
+  if (!bay) return "";
+  return garageSelectableNumbers().indexOf(bay) === -1 ? "" : bay;
+}
+
+function paintGarageBay() {
+  const summary = document.getElementById("garageBaySummary");
+  if (summary) {
+    summary.textContent = vehicleBay ? "Bay " + vehicleBay : "Optional";
+    summary.classList.toggle("has-bay", !!vehicleBay);
+  }
+  const host = document.getElementById("garageBayMap");
+  if (!host || typeof window.peakRenderGarageMap !== "function") return;
+  const focusBay = document.activeElement && document.activeElement.getAttribute
+    ? document.activeElement.getAttribute("data-bay")
+    : "";
+  window.peakRenderGarageMap(host, {
+    selected: vehicleBay,
+    onSelect: function (bay) {
+      const next = normalizeVehicleBay(bay);
+      vehicleBay = next && vehicleBay === next ? "" : next;
+      paintGarageBay();
+    }
+  });
+  if (focusBay && /^\d{3}$/.test(focusBay)) {
+    const again = host.querySelector('[data-bay="' + focusBay + '"]');
+    if (again && typeof again.focus === "function") again.focus();
+  }
+  refreshGarageScrollHint();
+}
+
+function refreshGarageScrollHint() {
+  const map = document.getElementById("garageBayMap");
+  const hint = document.getElementById("garageBayScrollHint");
+  if (!map || !hint) return;
+  hint.classList.toggle("hidden", map.scrollWidth <= map.clientWidth + 2);
+}
+
 function resetVehicleChargeForm() {
   const form = document.getElementById("vehicleChargeForm");
   if (form) form.reset();
   vehicleFleet = "";
   vehicleLocation = "";
   vehicleChargePercent = null;
+  vehicleBay = "";
   setChoiceGroup("[data-fleet]", "data-fleet", "");
   setChoiceGroup("[data-location]", "data-location", "");
   fillVehicleSelect();
   paintChargeGauge();
+  paintGarageBay();
   refreshGsqAutoChargeNote();
 }
 
@@ -2299,7 +2347,10 @@ function rowMatchesLogQuery(row, q) {
     chargePercentLabel(row.charge_percent),
     chargeBandLabel(row.charge_percent),
     chargeBandForPercent(row.charge_percent)?.id,
-    String(row.charge_percent)
+    String(row.charge_percent),
+    chargeBayLabel(row.bay),
+    row.bay,
+    row.bay ? "bay" + String(row.bay).trim() : ""
   ].join(" ").toLowerCase();
   return hay.includes(q);
 }
@@ -2351,8 +2402,15 @@ function vehicleChargeSnapshot(rows) {
     row.fleet,
     row.vehicle,
     row.charge_percent,
-    row.location
+    row.location,
+    row.bay
   ].join("\u001f")).join("\u001e");
+}
+
+function chargeBayLabel(bay) {
+  const value = String(bay ?? "").trim();
+  if (!/^\d{3}$/.test(value)) return "";
+  return "Bay " + value;
 }
 
 function gsqAutoEtaMarkup(row) {
@@ -2366,10 +2424,14 @@ function gsqAutoEtaMarkup(row) {
 
 function chargeRowCells(row, options) {
   const eta = options && options.eta ? gsqAutoEtaMarkup(row) : "";
+  const bay = chargeBayLabel(row.bay);
+  const location = bay
+    ? `${esc(row.location)} <span class="charge-bay">${esc(bay)}</span>`
+    : esc(row.location);
   return `<td class="charge-vehicle">${esc(row.vehicle)}</td>
       <td class="${chargePctClass(row.charge_percent)}">${esc(chargePercentLabel(row.charge_percent))}${eta}</td>
       <td>${esc(row.fleet)}</td>
-      <td>${esc(row.location)}</td>
+      <td>${location}</td>
       <td>${esc(formatLocalTimestamp(row.created_at))}</td>
       <td>${esc(officerDisplayName(row))}</td>`;
 }
@@ -2473,9 +2535,18 @@ async function loadVehicleCharges(options) {
     const pendingPromise = sb.rpc("pending_gsq_auto_charges");
     let { data, error } = await sb
       .from("vehicle_charges")
-      .select("created_at, officer_email, officer_name, fleet, vehicle, charge_percent, location")
+      .select("created_at, officer_email, officer_name, fleet, vehicle, charge_percent, location, bay")
       .order("created_at", { ascending: false })
       .limit(1000);
+    if (error && /bay/i.test(error.message || "") && /column/i.test(error.message || "")) {
+      const withoutBay = await sb
+        .from("vehicle_charges")
+        .select("created_at, officer_email, officer_name, fleet, vehicle, charge_percent, location")
+        .order("created_at", { ascending: false })
+        .limit(1000);
+      data = withoutBay.data;
+      error = withoutBay.error;
+    }
     if (error) {
       const retry = await sb
         .from("vehicle_charges")
@@ -2559,7 +2630,8 @@ async function trySaveVehicleCharge(event) {
       showVehicleStatus("Sign in again, then save the charge.", "err");
       return;
     }
-    const { error } = await sb.from("vehicle_charges").insert({
+    const bay = normalizeVehicleBay(vehicleBay);
+    const chargeRow = {
       user_id: user.id,
       officer_email: user.email || "",
       officer_name: currentDisplayName || officerLabel(user.email || ""),
@@ -2567,9 +2639,18 @@ async function trySaveVehicleCharge(event) {
       vehicle,
       charge_percent: percent,
       location: vehicleLocation
-    });
+    };
+    if (bay) chargeRow.bay = bay;
+    const { error } = await sb.from("vehicle_charges").insert(chargeRow);
     if (error) {
-      showVehicleStatus(error.message || "Could not save. Check the database is set up.", "err");
+      const message = error.message || "";
+      const missingBay = bay && /bay/i.test(message) && /column/i.test(message);
+      showVehicleStatus(
+        missingBay
+          ? "Bay could not be saved yet. Apply the bay column migration, then try again."
+          : (message || "Could not save. Check the database is set up."),
+        "err"
+      );
       return;
     }
     const autoHours = !service && vehicleLocation === "GSQ" ? gsqAutoChargeDelayHours(percent) : null;
@@ -3923,6 +4004,10 @@ function bindUi() {
   });
   const vehicleForm = document.getElementById("vehicleChargeForm");
   if (vehicleForm) vehicleForm.addEventListener("submit", trySaveVehicleCharge);
+  paintGarageBay();
+  const garagePicker = document.getElementById("garageBayPicker");
+  if (garagePicker) garagePicker.addEventListener("toggle", refreshGarageScrollHint);
+  window.addEventListener("resize", refreshGarageScrollHint);
   const refreshLog = document.getElementById("refreshVehicleLog");
   if (refreshLog) refreshLog.onclick = loadVehicleCharges;
   const logSearch = document.getElementById("vehicleLogSearch");

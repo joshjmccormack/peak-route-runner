@@ -19,7 +19,7 @@
 <meta property="og:description" content="PinAssist">
 <meta property="og:url" content="https://pinassist.app/">
 <title>PinAssist</title>
-<link rel="stylesheet" href="css/app.css?v=1.35">
+<link rel="stylesheet" href="css/app.css?v=1.36">
 </head>
 <body class="locked">
 <section id="lockScreen" class="lock-screen">
@@ -118,6 +118,15 @@
       <button type="button" id="locGsq" class="sort-opt" data-location="GSQ" aria-pressed="false">GSQ</button>
       <button type="button" id="locService" class="sort-opt hidden" data-location="SERVICE" aria-pressed="false">SERVICE</button>
     </div>
+    <details id="garageBayPicker" class="garage-picker">
+      <summary>
+        <span class="garage-picker-title">Parking bay</span>
+        <span id="garageBaySummary" class="garage-picker-choice">Optional</span>
+      </summary>
+      <p class="garage-picker-note muted">Optional. 41 OC Level 1. Yellow bays only.</p>
+      <div id="garageBayMap" class="garage-map"></div>
+      <p id="garageBayScrollHint" class="garage-scroll-hint muted hidden">Swipe sideways for the rest of the floor.</p>
+    </details>
     <p id="gsqAutoChargeNote" class="muted field-hint hidden" aria-live="polite"></p>
     <button id="vehicleChargeBtn" class="primary" type="submit">Save charge</button>
     <p id="vehicleChargeStatus" class="change-password-status hidden"></p>
@@ -128,7 +137,7 @@
       <button id="refreshVehicleLog" class="secondary small" type="button">Refresh</button>
     </div>
     <label class="hidden" for="vehicleLogSearch">Search charge log</label>
-    <input id="vehicleLogSearch" type="search" placeholder="Search vehicle, fleet, location, officer…">
+    <input id="vehicleLogSearch" type="search" placeholder="Search vehicle, fleet, location, bay, officer…">
     <div id="vehicleChargeLog" class="vehicle-log-body muted">Loading…</div>
   </div>
 </section>
@@ -408,7 +417,8 @@
 <script src="js/vehicles.js?v=1.28" defer></script>
 <script src="js/legislation.js?v=1.30" defer></script>
 <script src="js/longer-than-permitted.js?v=1.35" defer></script>
-<script src="js/app.js?v=1.33" defer></script>
+<script src="js/garage-layout.js?v=1.36" defer></script>
+<script src="js/app.js?v=1.36" defer></script>
 <div id="resetDialog" class="dialog-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="resetDialogMsg">
   <div class="dialog-card">
     <p id="resetDialogMsg">Reset all completed and skipped locations for this route?</p>

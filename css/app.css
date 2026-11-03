@@ -1312,3 +1312,165 @@ a.ltp-maps {
   width: 16px;
   height: 16px;
 }
+
+.garage-picker {
+  margin: 8px 0 4px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: #f8fafc;
+  padding: 0 12px;
+}
+.garage-picker summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 48px;
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--txt);
+  list-style: none;
+}
+.garage-picker summary::-webkit-details-marker { display: none; }
+.garage-picker-title::before {
+  content: "";
+  display: inline-block;
+  width: 0.42em;
+  height: 0.42em;
+  margin-right: 8px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(-45deg) translateY(-0.1em);
+}
+.garage-picker[open] .garage-picker-title::before {
+  transform: rotate(45deg) translateY(-0.15em);
+}
+.garage-picker-title { flex: 1 1 auto; }
+.garage-picker-choice {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+.garage-picker-choice.has-bay { color: var(--blue); }
+.garage-picker-note { margin: 0 0 8px; }
+.garage-scroll-hint { margin: 2px 0 0; }
+.garage-map {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 0 2px;
+  padding-bottom: 4px;
+}
+.garage-picker[open] { padding-bottom: 10px; }
+.garage-grid {
+  display: grid;
+  grid-template-columns:
+    minmax(40px, 1.15fr)
+    minmax(40px, 1.15fr)
+    minmax(16px, 0.7fr)
+    minmax(36px, 1fr)
+    minmax(8px, 0.22fr)
+    minmax(36px, 1fr)
+    repeat(9, minmax(34px, 1fr));
+  grid-template-rows: repeat(8, minmax(36px, auto));
+  gap: 3px;
+  min-width: 560px;
+}
+.gc-1 { grid-column: 1; }
+.gc-2 { grid-column: 2; }
+.gc-3 { grid-column: 3; }
+.gc-4 { grid-column: 4; }
+.gc-5 { grid-column: 5; }
+.gc-6 { grid-column: 6; }
+.gc-7 { grid-column: 7; }
+.gc-8 { grid-column: 8; }
+.gc-9 { grid-column: 9; }
+.gc-10 { grid-column: 10; }
+.gc-11 { grid-column: 11; }
+.gc-12 { grid-column: 12; }
+.gc-13 { grid-column: 13; }
+.gc-14 { grid-column: 14; }
+.gc-15 { grid-column: 15; }
+.gr-1 { grid-row: 1; }
+.gr-2 { grid-row: 2; }
+.gr-3 { grid-row: 3; }
+.gr-4 { grid-row: 4; }
+.gr-5 { grid-row: 5; }
+.gr-6 { grid-row: 6; }
+.gr-7 { grid-row: 7; }
+.gr-8 { grid-row: 8; }
+.garage-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  height: 100%;
+  border-radius: 5px;
+  border: 1px solid transparent;
+  line-height: 1.05;
+}
+button.garage-bay {
+  width: 100%;
+  margin: 0;
+  padding: 1px 0;
+  border-radius: 5px;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  background: #f0b445;
+  color: #3d2c08;
+  border: 1px solid #d09a2e;
+  box-shadow: none;
+  cursor: pointer;
+}
+button.garage-bay.is-selected {
+  background: #ffe7a3;
+  color: var(--blue-dark);
+  border-color: var(--blue);
+  box-shadow: inset 0 0 0 2px var(--blue);
+}
+.garage-num {
+  font-size: 0.6875rem;
+  font-weight: 800;
+}
+.garage-cell.is-disabled {
+  background: #e6e9ef;
+  color: #8a93a1;
+  border-color: #d5dae3;
+  cursor: default;
+}
+.garage-cell.is-disabled.tone-compliance { background: #e8e6e2; }
+.garage-cell.is-disabled.tone-green { background: #e3eee6; }
+.garage-cell.is-disabled.tone-purple { background: #ebe6f2; }
+.garage-cell.is-disabled.tone-pink { background: #f6e7ee; }
+.garage-cell.kind-pwd {
+  position: relative;
+  background: #e4e7ee;
+  padding: 0;
+  overflow: hidden;
+}
+.garage-pwd-icon {
+  position: absolute;
+  inset: 3px;
+  width: calc(100% - 6px);
+  height: calc(100% - 6px);
+  object-fit: contain;
+  pointer-events: none;
+}
+.garage-cell.kind-strip {
+  background: #d94a4a;
+  border-color: #c43b3b;
+  border-radius: 2px;
+  min-width: 0;
+}
+.charge-bay {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #fff4d6;
+  color: #6a4b00;
+  font-weight: 800;
+  font-size: 0.6875rem;
+  vertical-align: 1px;
+}
